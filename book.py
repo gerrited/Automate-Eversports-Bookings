@@ -53,7 +53,11 @@ def gql(session: requests.Session, operation: str, query: str, variables: dict) 
         headers={"Content-Type": "application/json"},
         timeout=TIMEOUT,
     )
-    resp.raise_for_status()
+    if not resp.ok:
+        print(f"HTTP {resp.status_code} from {resp.url}")
+        print(f"Response headers: {dict(resp.headers)}")
+        print(f"Response body: {resp.text[:2000]}")
+        resp.raise_for_status()
     body = resp.json()
     if "errors" in body:
         raise RuntimeError(f"GraphQL error: {body['errors']}")
