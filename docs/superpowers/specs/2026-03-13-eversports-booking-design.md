@@ -7,7 +7,7 @@
 
 ## Overview
 
-Automate the weekly booking of the 18:00 CrossFit class at CrossFit Rabbit Hole on Eversports. A GitHub Action runs every Friday at 17:00 UTC (18:00 CET in winter, 19:00 CEST in summer) and books the CrossFit class for the following Tuesday (4 days later) using the Eversports internal GraphQL API — no browser required.
+Automate the weekly booking of the 18:00 CrossFit class at CrossFit Rabbit Hole on Eversports. A GitHub Action runs every Friday at exactly 18:00 Europe/Berlin time (DST-aware) and books the CrossFit class for the following Tuesday (4 days later) using the Eversports internal GraphQL API — no browser required.
 
 ---
 
@@ -225,7 +225,7 @@ book.py                          # Main booking script
 name: Book CrossFit Tuesday 18:00
 on:
   schedule:
-    - cron: '0 17 * * 5'   # Friday 17:00 UTC = 18:00 CET (winter) / 19:00 CEST (summer)
+    - cron: '0 16 * * 5'   # Friday 16:00 UTC — earliest possible so sleep step can reach 18:00 Berlin in both CET and CEST
   workflow_dispatch:
     inputs:
       target_date:
@@ -240,17 +240,29 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Wait until 18:00 Europe/Berlin
+        run: |
+          BERLIN_HOUR=$(TZ="Europe/Berlin" date +%H)
+          BERLIN_MIN=$(TZ="Europe/Berlin" date +%M)
+          TARGET=18
+          if [ "$BERLIN_HOUR" -lt "$TARGET" ]; then
+            SLEEP_SECS=$(( (TARGET - BERLIN_HOUR) * 3600 - BERLIN_MIN * 60 ))
+            echo "Berlin time is ${BERLIN_HOUR}:${BERLIN_MIN}. Sleeping ${SLEEP_SECS}s until 18:00."
+            sleep "$SLEEP_SECS"
+          else
+            echo "Berlin time is ${BERLIN_HOUR}:${BERLIN_MIN}. No sleep needed."
+          fi
       - run: pip install requests beautifulsoup4
       - run: python book.py
         env:
           EVERSPORTS_EMAIL: ${{ secrets.EVERSPORTS_EMAIL }}
           EVERSPORTS_PASSWORD: ${{ secrets.EVERSPORTS_PASSWORD }}
-                TARGET_DATE: ${{ inputs.target_date }}
+          TARGET_DATE: ${{ inputs.target_date }}
           # Note: when input is not provided, this evaluates to empty string "".
           # The script uses `if override:` (falsy check) which correctly treats "" as absent.
 ```
 
-**Cron note:** `0 17 * * 5` = 17:00 UTC. In CET (UTC+1, winter) this is 18:00 local; in CEST (UTC+2, summer) this is 19:00 local. The 1-hour summer drift is acceptable because the CrossFit class booking window is open for days, not minutes. Spots are not expected to fill within 1 hour of the window opening.
+**Cron note:** `0 16 * * 5` = 16:00 UTC. In CET (UTC+1, winter) this is 17:00 Berlin; the sleep step waits 1 hour until 18:00. In CEST (UTC+2, summer) this is 18:00 Berlin; the sleep step is skipped. The booking is always executed at exactly 18:00 Europe/Berlin regardless of DST.
 
 ---
 
@@ -269,7 +281,7 @@ def get_target_tuesday() -> date:
         if d <= datetime.now(timezone.utc).date():
             raise ValueError(f"TARGET_DATE {override} is not in the future")
         return d
-    # UTC date on the runner (cron fires Friday 17:00 UTC → still Friday)
+    # UTC date on the runner (cron fires Friday 16:00 UTC → still Friday)
     return datetime.now(timezone.utc).date() + timedelta(days=4)
 
 def get_week_start(d: date) -> date:

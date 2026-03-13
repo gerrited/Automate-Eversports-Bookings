@@ -1,0 +1,43 @@
+name: Book CrossFit Tuesday 18:00
+
+on:
+  schedule:
+    - cron: '0 16 * * 5'  # Friday 16:00 UTC — sleep step handles DST to reach 18:00 Berlin
+  workflow_dispatch:
+    inputs:
+      target_date:
+        description: 'Target Tuesday date (YYYY-MM-DD). Defaults to today+4.'
+        required: false
+
+jobs:
+  book:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Wait until 18:00 Europe/Berlin
+        run: |
+          BERLIN_HOUR=$(TZ="Europe/Berlin" date +%H)
+          BERLIN_MIN=$(TZ="Europe/Berlin" date +%M)
+          TARGET=18
+          if [ "$BERLIN_HOUR" -lt "$TARGET" ]; then
+            SLEEP_SECS=$(( (TARGET - BERLIN_HOUR) * 3600 - BERLIN_MIN * 60 ))
+            echo "Berlin time is ${BERLIN_HOUR}:${BERLIN_MIN}. Sleeping ${SLEEP_SECS}s until 18:00."
+            sleep "$SLEEP_SECS"
+          else
+            echo "Berlin time is ${BERLIN_HOUR}:${BERLIN_MIN}. No sleep needed."
+          fi
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: Book CrossFit class
+        run: python book.py
+        env:
+          EVERSPORTS_EMAIL: ${{ secrets.EVERSPORTS_EMAIL }}
+          EVERSPORTS_PASSWORD: ${{ secrets.EVERSPORTS_PASSWORD }}
+          TARGET_DATE: ${{ inputs.target_date }}
