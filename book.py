@@ -12,6 +12,16 @@ GRAPHQL_URL = "https://www.eversports.de/api/checkout"
 CALENDAR_URL = "https://www.eversports.de/api/eventsession/calendar"
 FACILITY_ID = "73041"
 TIMEOUT = 30
+BASE_URL = "https://www.eversports.de"
+SESSION_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0.0.0 Safari/537.36"
+    ),
+    "Origin": BASE_URL,
+    "Referer": BASE_URL + "/",
+}
 
 
 def get_target_tuesday() -> date:
@@ -202,6 +212,7 @@ def main() -> None:
     print(f"Target Tuesday: {target_tuesday}, time: {target_time}")
 
     session = requests.Session()
+    session.headers.update(SESSION_HEADERS)
 
     login(session, email, password)
     bookable_item_id = find_session_uuid(session, target_tuesday, target_time)
