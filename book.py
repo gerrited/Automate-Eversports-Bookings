@@ -17,10 +17,15 @@ SESSION_HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
         "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/124.0.0.0 Safari/537.36"
+        "Chrome/145.0.0.0 Safari/537.36"
     ),
+    "Accept": "*/*",
+    "Accept-Language": "en-GB,en;q=0.9",
     "Origin": BASE_URL,
     "Referer": BASE_URL + "/",
+    "sec-ch-ua": '"Not:A-Brand";v="99", "Google Chrome";v="145", "Chromium";v="145"',
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": '"macOS"',
 }
 
 
@@ -213,6 +218,9 @@ def main() -> None:
 
     session = requests.Session()
     session.headers.update(SESSION_HEADERS)
+
+    # Visit homepage to acquire initial cookies (e.g. fpg fingerprint cookie)
+    session.get(BASE_URL + "/", timeout=TIMEOUT)
 
     login(session, email, password)
     bookable_item_id = find_session_uuid(session, target_tuesday, target_time)
