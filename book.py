@@ -109,10 +109,9 @@ def find_session_uuid(session: requests.Session, target_tuesday: date, target_ti
         timeout=TIMEOUT,
     )
     resp.raise_for_status()
-    print(f"Calendar HTTP {resp.status_code}, body length {len(resp.text)}")
-    print(f"Calendar HTML (first 2000 chars):\n{resp.text[:2000]}")
+    calendar_html = resp.json()["data"]["html"]
 
-    soup = BeautifulSoup(resp.text, "html.parser")
+    soup = BeautifulSoup(calendar_html, "html.parser")
     target_iso = target_tuesday.isoformat()
 
     matches = []
