@@ -1,0 +1,29 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: eversports-booking
+spec:
+  schedule: "0 18 * * 5"
+  timeZone: "Europe/Berlin"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: booking
+              image: ghcr.io/gerrited/automate-eversports-bookings:latest
+              env:
+                - name: EVERSPORTS_EMAIL
+                  valueFrom:
+                    secretKeyRef:
+                      name: eversports-credentials
+                      key: email
+                - name: EVERSPORTS_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: eversports-credentials
+                      key: password
