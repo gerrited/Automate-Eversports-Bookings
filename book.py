@@ -82,7 +82,7 @@ def login(session: requests.Session, email: str, password: str) -> None:
     print(f"Logged in as user {result['user']['id']}")
 
 
-def find_session_uuid(session: requests.Session, target_tuesday: date) -> str:
+def find_session_uuid(session: requests.Session, target_tuesday: date, target_time: str) -> str:
     start_date = get_week_start(target_tuesday).isoformat()
     resp = session.get(
         CALENDAR_URL,
@@ -103,11 +103,11 @@ def find_session_uuid(session: requests.Session, target_tuesday: date) -> str:
             time_div = li.find(class_="session-time")
             name_div = li.find(class_="session-name")
             if time_div and name_div:
-                if time_div.get_text(strip=True).startswith("18:00") and name_div.get_text(strip=True) == "CrossFit":
+                if time_div.get_text(strip=True).startswith(target_time) and name_div.get_text(strip=True) == "CrossFit":
                     matches.append(li["data-uuid"])
 
     if not matches:
-        raise RuntimeError(f"CrossFit 18:00 not found for {target_tuesday}")
+        raise RuntimeError(f"CrossFit {target_time} not found for {target_tuesday}")
     if len(matches) > 1:
         print(f"Warning: {len(matches)} matching slots found, using the first")
     print(f"Found session UUID: {matches[0]}")
@@ -198,12 +198,13 @@ def main() -> None:
         raise RuntimeError("EVERSPORTS_EMAIL and EVERSPORTS_PASSWORD must be set")
 
     target_tuesday = get_target_tuesday()
-    print(f"Target Tuesday: {target_tuesday}")
+    target_time = os.environ.get("TARGET_TIME", "18:00")
+    print(f"Target Tuesday: {target_tuesday}, time: {target_time}")
 
     session = requests.Session()
 
     login(session, email, password)
-    bookable_item_id = find_session_uuid(session, target_tuesday)
+    bookable_item_id = find_session_uuid(session, target_tuesday, target_time)
     cart_id = create_cart(session, bookable_item_id)
     confirm_booking(session, cart_id)
 

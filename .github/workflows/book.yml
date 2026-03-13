@@ -8,6 +8,10 @@ on:
       target_date:
         description: 'Target Tuesday date (YYYY-MM-DD). Defaults to today+4.'
         required: false
+      target_time:
+        description: 'CrossFit class start time (HH:MM). Defaults to 18:00.'
+        required: false
+        default: '18:00'
 
 jobs:
   book:
@@ -20,6 +24,7 @@ jobs:
           python-version: '3.12'
 
       - name: Wait until 18:00 Europe/Berlin
+        if: github.event_name == 'schedule'
         run: |
           BERLIN_HOUR=$(TZ="Europe/Berlin" date +%H)
           BERLIN_MIN=$(TZ="Europe/Berlin" date +%M)
@@ -41,3 +46,4 @@ jobs:
           EVERSPORTS_EMAIL: ${{ secrets.EVERSPORTS_EMAIL }}
           EVERSPORTS_PASSWORD: ${{ secrets.EVERSPORTS_PASSWORD }}
           TARGET_DATE: ${{ inputs.target_date }}
+          TARGET_TIME: ${{ inputs.target_time }}
