@@ -29,16 +29,13 @@ SESSION_HEADERS = {
 }
 
 
-def get_target_tuesday() -> date:
+def get_target_date() -> date:
     override = os.environ.get("TARGET_DATE")
     if override:
         d = date.fromisoformat(override)
-        if d.weekday() != 1:
-            raise ValueError(f"TARGET_DATE {override} is not a Tuesday")
         if d <= datetime.now(timezone.utc).date():
             raise ValueError(f"TARGET_DATE {override} is not in the future")
         return d
-    # Cron fires Friday 16:00 UTC — still Friday in UTC
     return datetime.now(timezone.utc).date() + timedelta(days=4)
 
 
@@ -101,8 +98,8 @@ def login(session: requests.Session, email: str, password: str) -> None:
     print(f"Logged in as user {result['user']['id']}")
 
 
-def find_session_uuid(session: requests.Session, target_tuesday: date, target_time: str) -> str:
-    start_date = get_week_start(target_tuesday).isoformat()
+def find_session_uuid(session: requests.Session, target_date: date, target_time: str) -> str:
+    start_date = get_week_start(target_date).isoformat()
     resp = session.get(
         CALENDAR_URL,
         params={"facilityId": FACILITY_ID, "startDate": start_date, "activeEventType": "class"},
@@ -112,7 +109,7 @@ def find_session_uuid(session: requests.Session, target_tuesday: date, target_ti
     calendar_html = resp.json()["data"]["html"]
 
     soup = BeautifulSoup(calendar_html, "html.parser")
-    target_iso = target_tuesday.isoformat()
+    target_iso = target_date.isoformat()
 
     matches = []
     for ul in soup.find_all("ul"):
@@ -127,7 +124,7 @@ def find_session_uuid(session: requests.Session, target_tuesday: date, target_ti
                     matches.append(li["data-uuid"])
 
     if not matches:
-        raise RuntimeError(f"CrossFit {target_time} not found for {target_tuesday}")
+        raise RuntimeError(f"CrossFit {target_time} not found for {target_date}")
     if len(matches) > 1:
         print(f"Warning: {len(matches)} matching slots found, using the first")
     print(f"Found session UUID: {matches[0]}")
@@ -217,9 +214,9 @@ def main() -> None:
     if not email or not password:
         raise RuntimeError("EVERSPORTS_EMAIL and EVERSPORTS_PASSWORD must be set")
 
-    target_tuesday = get_target_tuesday()
+    target_date = get_target_date()
     target_time = os.environ.get("TARGET_TIME", "18:00")
-    print(f"Target Tuesday: {target_tuesday}, time: {target_time}")
+    print(f"Target date: {target_date}, time: {target_time}")
 
     session = requests.Session()
     session.headers.update(SESSION_HEADERS)
@@ -228,7 +225,7 @@ def main() -> None:
     session.get(BASE_URL + "/", timeout=TIMEOUT)
 
     login(session, email, password)
-    bookable_item_id = find_session_uuid(session, target_tuesday, target_time)
+    bookable_item_id = find_session_uuid(session, target_date, target_time)
     cart_id = create_cart(session, bookable_item_id)
     confirm_booking(session, cart_id)
 

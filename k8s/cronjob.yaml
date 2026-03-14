@@ -1,7 +1,8 @@
+# Booking 1: Tuesday 18:00 — script runs Friday 18:00 Berlin (today+4=Tuesday)
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: eversports-booking
+  name: eversports-booking-tuesday-1800
 spec:
   schedule: "0 18 * * 5"
   timeZone: "Europe/Berlin"
@@ -12,6 +13,8 @@ spec:
     spec:
       template:
         spec:
+          imagePullSecrets:
+            - name: ghcr-secret
           restartPolicy: Never
           containers:
             - name: booking
@@ -27,3 +30,40 @@ spec:
                     secretKeyRef:
                       name: eversports-credentials
                       key: password
+                - name: TARGET_TIME
+                  value: "18:00"
+---
+# Booking 2: Sunday 10:00 — script runs Wednesday 10:00 Berlin (today+4=Sunday)
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: eversports-booking-sunday-1000
+spec:
+  schedule: "0 10 * * 3"
+  timeZone: "Europe/Berlin"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          imagePullSecrets:
+            - name: ghcr-secret
+          restartPolicy: Never
+          containers:
+            - name: booking
+              image: ghcr.io/gerrited/automate-eversports-bookings:latest
+              env:
+                - name: EVERSPORTS_EMAIL
+                  valueFrom:
+                    secretKeyRef:
+                      name: eversports-credentials
+                      key: email
+                - name: EVERSPORTS_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: eversports-credentials
+                      key: password
+                - name: TARGET_TIME
+                  value: "10:00"
