@@ -1,13 +1,20 @@
 # Automate Eversports Bookings
 
-Automatically books the CrossFit 18:00 class at CrossFit Rabbit Hole every Tuesday by running a weekly cron job on Kubernetes.
+Automatically books CrossFit classes at CrossFit Rabbit Hole by running weekly cron jobs on Kubernetes.
+
+Currently scheduled bookings:
+
+| Target class | Runs |
+|---|---|
+| Tuesday 18:00 | Friday 18:00 Europe/Berlin |
+| Sunday 10:00 | Wednesday 10:00 Europe/Berlin |
 
 ## How it works
 
 `book.py` calls the Eversports internal GraphQL API directly (no browser required) in four steps:
 
 1. **Login** — authenticates with email and password, receives a session cookie
-2. **Find session** — fetches the weekly class calendar and locates the CrossFit slot for the target Tuesday
+2. **Find session** — fetches the weekly class calendar and locates the CrossFit slot for the target date and time
 3. **Create cart** — creates a booking cart for the session (existing membership is auto-selected)
 4. **Confirm order** — places the order and exits
 
@@ -46,29 +53,43 @@ Apply it:
 kubectl apply -f k8s/secret.yaml
 ```
 
-### 3. Deploy the CronJob
+### 3. Deploy the CronJobs
 
 ```bash
 kubectl apply -f k8s/cronjob.yaml
 ```
 
-The CronJob runs every **Friday at 18:00 Europe/Berlin** (DST-aware via `timeZone: "Europe/Berlin"`) and books the CrossFit class for the following Tuesday.
+This creates two CronJobs (both DST-aware via `timeZone: "Europe/Berlin"`):
+
+- `eversports-booking-tuesday-1800` — runs **Friday 18:00**, books the **Tuesday 18:00** class
+- `eversports-booking-sunday-1000` — runs **Wednesday 10:00**, books the **Sunday 10:00** class
+
+Both use `today + 4 days` to compute the target date, so no configuration is needed as long as the run day is exactly 4 days before the target class day.
+
+If you previously deployed the old single CronJob, delete it:
+```bash
+kubectl delete cronjob eversports-booking
+```
 
 ### 4. Manual test run
 
 To trigger an immediate run with a specific date and time:
 
 ```bash
-kubectl create job --from=cronjob/eversports-booking test-run \
+kubectl create job --from=cronjob/eversports-booking-tuesday-1800 test-tuesday \
   --dry-run=client -o yaml \
-  | kubectl set env --local -f - TARGET_DATE=2026-03-18 TARGET_TIME=18:00 -o yaml \
+  | kubectl set env --local -f - TARGET_DATE=2026-03-17 -o yaml \
   | kubectl apply -f -
 
-kubectl logs -f job/test-run
-kubectl delete job test-run
+kubectl logs -f job/test-tuesday
+kubectl delete job test-tuesday
 ```
 
-`TARGET_DATE` must be a future Tuesday in `YYYY-MM-DD` format. `TARGET_TIME` defaults to `18:00`.
+`TARGET_DATE` accepts any future date in `YYYY-MM-DD` format. `TARGET_TIME` is set per CronJob and defaults to `18:00` if unset.
+
+### 5. Adding a new booking slot
+
+Any class where the target day is exactly 4 days after the desired run day works with just a new CronJob block in `k8s/cronjob.yaml` — no changes to `book.py` needed. Set `TARGET_TIME` to the class start time.
 
 ## Requirements
 
