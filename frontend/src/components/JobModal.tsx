@@ -1,4 +1,5 @@
-import { useState, FormEvent } from 'react'
+import { useState } from 'react'
+import type { FormEvent } from 'react'
 import type { Job, JobFormData } from '../types'
 import { WEEKDAY_NAMES } from '../types'
 
