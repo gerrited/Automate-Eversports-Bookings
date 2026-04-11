@@ -11,10 +11,12 @@ export function setToken(token: string): void {
 export function clearToken(): void {
   localStorage.removeItem('token')
   localStorage.removeItem('email')
+  window.dispatchEvent(new Event('auth-changed'))
 }
 
 export function setEmail(email: string): void {
   localStorage.setItem('email', email)
+  window.dispatchEvent(new Event('auth-changed'))
 }
 
 export function getEmail(): string | null {
