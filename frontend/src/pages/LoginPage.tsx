@@ -28,7 +28,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <h1 className="text-2xl font-bold text-white mb-8 text-center">
-          Eversports Bookings
+          E̶v̶e̶r̶ALWAYSsports Management
         </h1>
         <form onSubmit={handleSubmit} className="bg-slate-900 rounded-xl p-8 flex flex-col gap-4">
           <input

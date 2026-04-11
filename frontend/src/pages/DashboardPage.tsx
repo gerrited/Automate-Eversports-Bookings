@@ -70,7 +70,7 @@ export default function DashboardPage() {
     <div className="px-4 py-8 max-w-2xl mx-auto">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-white text-xl font-bold">Meine Buchungen</h1>
+        <h1 className="text-white text-xl font-bold">E̶v̶e̶r̶ALWAYSsports Buchungen</h1>
         <button
           onClick={handleLogout}
           className="text-slate-400 hover:text-white text-sm transition-colors"
