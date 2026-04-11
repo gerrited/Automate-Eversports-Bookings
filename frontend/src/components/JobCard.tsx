@@ -48,7 +48,7 @@ export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect }: P
       </div>
 
       {/* Action bar */}
-      <div className="flex gap-2 px-4 pb-3">
+      <div className="flex items-center gap-2 px-4 pb-3">
         <button
           aria-label="Bearbeiten"
           onClick={() => onEdit(job)}
