@@ -73,15 +73,15 @@ export default function JobModal({ job, onSave, onClose }: Props) {
           </label>
 
           <label className="flex flex-col gap-1">
-            <span className="text-slate-400 text-sm">Facility ID</span>
-            <input
-              aria-label="Facility ID"
-              type="text"
+            <span className="text-slate-400 text-sm">Facility</span>
+            <select
+              aria-label="Facility"
               value={facilityId}
               onChange={e => setFacilityId(e.target.value)}
-              required
               className="bg-slate-800 text-white rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
-            />
+            >
+              <option value="73041">CrossFit Rabbithole</option>
+            </select>
           </label>
 
           <label className="flex flex-col gap-1">
