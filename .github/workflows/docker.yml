@@ -124,3 +124,6 @@ jobs:
           push: true
           platforms: linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
+          build-args: |
+            COMMIT_SHA=${{ github.sha }}
+            GITHUB_REPO=${{ github.repository }}

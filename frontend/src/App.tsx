@@ -2,6 +2,7 @@ import type { ReactElement } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
+import Footer from './components/Footer'
 
 function RequireAuth({ children }: { children: ReactElement }) {
   const token = localStorage.getItem('token')
@@ -19,6 +20,7 @@ export default function App() {
         />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
+      <Footer />
     </BrowserRouter>
   )
 }

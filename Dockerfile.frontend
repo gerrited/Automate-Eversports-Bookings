@@ -4,6 +4,10 @@ WORKDIR /app
 COPY frontend/package*.json ./
 RUN npm install
 COPY frontend/ .
+ARG COMMIT_SHA
+ARG GITHUB_REPO
+ENV VITE_COMMIT_SHA=$COMMIT_SHA
+ENV VITE_GITHUB_REPO=$GITHUB_REPO
 RUN npm run build
 
 # Stage 2: serve
