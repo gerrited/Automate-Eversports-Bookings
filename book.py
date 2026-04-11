@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup
 
 GRAPHQL_URL = "https://www.eversports.de/api/checkout"
 CALENDAR_URL = "https://www.eversports.de/api/eventsession/calendar"
-FACILITY_ID = "73041"
+FACILITY_ID = os.environ.get("FACILITY_ID", "73041")
 TIMEOUT = 30
 BASE_URL = "https://www.eversports.de"
 SESSION_HEADERS = {

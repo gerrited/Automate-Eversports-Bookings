@@ -32,14 +32,16 @@ spec:
                       key: password
                 - name: TARGET_TIME
                   value: "18:00"
+                - name: FACILITY_ID
+                  value: "73041"
 ---
 # Booking 2: Sunday 10:00 — script runs Wednesday 10:00 Berlin (today+4=Sunday)
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: eversports-booking-sunday-1000
+  name: eversports-booking-sunday-0900
 spec:
-  schedule: "0 10 * * 3"
+  schedule: "0 9 * * 3"
   timeZone: "Europe/Berlin"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
@@ -66,4 +68,6 @@ spec:
                       name: eversports-credentials
                       key: password
                 - name: TARGET_TIME
-                  value: "10:00"
+                  value: "09:00"
+                - name: FACILITY_ID
+                  value: "73041"
