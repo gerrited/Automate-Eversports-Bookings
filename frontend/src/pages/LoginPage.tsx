@@ -30,9 +30,6 @@ export default function LoginPage() {
         <div className="flex justify-center mb-6">
           <img src="/logo.png" alt="Logo" className="h-16 w-auto" />
         </div>
-        <h1 className="text-2xl font-bold text-white mb-8 text-center">
-          E̶v̶e̶r̶ALWAYSsports Management
-        </h1>
         <form onSubmit={handleSubmit} className="bg-surface-card rounded-xl p-8 flex flex-col gap-4">
           <p className="text-slate-400 text-sm text-center">Nutze deine Eversports Anmeldedaten, um fortzufahren.</p>
           <input

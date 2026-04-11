@@ -72,7 +72,6 @@ export default function DashboardPage() {
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
           <img src="/logo.png" alt="Logo" className="h-8 w-auto" />
-          <h1 className="text-white text-xl font-bold">E̶v̶e̶r̶ALWAYSsports Buchungen</h1>
         </div>
         <button
           onClick={handleLogout}
