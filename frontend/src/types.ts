@@ -27,3 +27,8 @@ export interface BookingLog {
 }
 
 export const WEEKDAY_NAMES = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
+
+export const FACILITIES: { id: string; name: string }[] = [
+  { id: '73041', name: 'CrossFit Rabbithole' },
+  { id: '76012', name: 'Sport-Club Hundsmühlen e.V.' },
+]
