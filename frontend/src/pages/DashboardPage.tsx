@@ -66,7 +66,8 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 px-4 py-8 max-w-2xl mx-auto">
+    <div className="min-h-screen bg-slate-950">
+    <div className="px-4 py-8 max-w-2xl mx-auto">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-white text-xl font-bold">Meine Buchungen</h1>
@@ -124,6 +125,7 @@ export default function DashboardPage() {
           onClose={() => setSelectedJob(null)}
         />
       )}
+    </div>
     </div>
   )
 }
