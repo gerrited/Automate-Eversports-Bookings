@@ -4,6 +4,6 @@ WORKDIR /app
 
 RUN pip install --no-cache-dir requests beautifulsoup4
 
-COPY book.py .
+COPY cronjob/book.py .
 
 CMD ["python", "book.py"]
