@@ -1,6 +1,11 @@
 import type { Job } from '../types'
 import { WEEKDAY_NAMES } from '../types'
 
+const FACILITY_NAMES: Record<string, string> = {
+  '73041': 'CrossFit Rabbithole',
+  '76012': 'Sport-Club Hundsmühlen e.V.',
+}
+
 interface Props {
   job: Job
   onToggle: (id: string) => void
@@ -26,7 +31,7 @@ export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect }: P
               {WEEKDAY_NAMES[job.weekday]} · {time} · <span>{job.class_name}</span>
             </p>
             <p className="text-slate-400 text-sm mt-1">
-              Facility {job.facility_id} · {job.days_in_advance} Tage vorher
+              {FACILITY_NAMES[job.facility_id] ?? job.facility_id} · {job.days_in_advance} Tage vorher
             </p>
           </div>
           {/* Toggle */}
