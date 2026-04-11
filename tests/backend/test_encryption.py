@@ -18,5 +18,6 @@ def test_encrypt_produces_different_tokens_each_time():
 
 def test_decrypt_wrong_value_raises():
     import pytest
-    with pytest.raises(Exception):
+    from cryptography.fernet import InvalidToken
+    with pytest.raises(InvalidToken):
         decrypt("not-valid-ciphertext")
