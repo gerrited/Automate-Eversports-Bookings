@@ -95,7 +95,7 @@ Any class where the target day is exactly 4 days after the desired run day works
 
 - Kubernetes 1.27+ (for `timeZone` support in CronJob)
 - An image pull secret named `ghcr-secret` if your cluster needs credentials to pull from GHCR
-- Eversports account with an active membership at CrossFit Rabbit Hole
+- Eversports account with an active membership (e.g. at CrossFit Rabbit Hole)
 
 ## Secrets
 
