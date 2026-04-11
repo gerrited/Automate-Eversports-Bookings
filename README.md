@@ -84,7 +84,7 @@ nginx serves the React SPA and proxies `/api/` to the backend service.
 
 ### 6. Register the first user
 
-Open the frontend URL in your browser, click **Einloggen**, and sign in with your Eversports credentials. The backend validates them against Eversports and creates your account on first login.
+Open the frontend URL in your browser, click **Anmelden**, and sign in with your Eversports credentials. The backend validates them against Eversports and creates your account on first login.
 
 ---
 

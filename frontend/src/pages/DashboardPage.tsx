@@ -77,7 +77,7 @@ export default function DashboardPage() {
           onClick={handleLogout}
           className="px-3 py-1 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm transition-colors"
         >
-          Logout
+          Abmelden
         </button>
       </div>
 

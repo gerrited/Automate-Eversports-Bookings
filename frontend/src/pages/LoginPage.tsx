@@ -56,7 +56,7 @@ export default function LoginPage() {
             disabled={loading}
             className="bg-brand hover:bg-brand-hover disabled:opacity-50 text-white font-semibold rounded-lg py-3 transition-colors"
           >
-            {loading ? 'Einloggen…' : 'Einloggen'}
+            {loading ? 'Anmelden…' : 'Anmelden'}
           </button>
         </form>
       </div>

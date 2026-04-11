@@ -22,7 +22,7 @@ describe('LoginPage', () => {
     render(<MemoryRouter><LoginPage /></MemoryRouter>)
     fireEvent.change(screen.getByPlaceholderText(/e-mail/i), { target: { value: 'a@b.com' } })
     fireEvent.change(screen.getByPlaceholderText(/passwort/i), { target: { value: 'pass' } })
-    fireEvent.click(screen.getByRole('button', { name: /einloggen/i }))
+    fireEvent.click(screen.getByRole('button', { name: /anmelden/i }))
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/dashboard'))
   })
 
@@ -31,7 +31,7 @@ describe('LoginPage', () => {
     render(<MemoryRouter><LoginPage /></MemoryRouter>)
     fireEvent.change(screen.getByPlaceholderText(/e-mail/i), { target: { value: 'bad@b.com' } })
     fireEvent.change(screen.getByPlaceholderText(/passwort/i), { target: { value: 'wrong' } })
-    fireEvent.click(screen.getByRole('button', { name: /einloggen/i }))
+    fireEvent.click(screen.getByRole('button', { name: /anmelden/i }))
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument())
   })
 })
