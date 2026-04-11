@@ -10,6 +10,15 @@ export function setToken(token: string): void {
 
 export function clearToken(): void {
   localStorage.removeItem('token')
+  localStorage.removeItem('email')
+}
+
+export function setEmail(email: string): void {
+  localStorage.setItem('email', email)
+}
+
+export function getEmail(): string | null {
+  return localStorage.getItem('email')
 }
 
 export async function apiFetch<T>(
