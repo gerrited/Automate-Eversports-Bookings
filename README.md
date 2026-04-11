@@ -1,6 +1,6 @@
 # Automate Eversports Bookings
 
-Automatically books CrossFit classes at CrossFit Rabbit Hole by running weekly cron jobs on Kubernetes.
+Automatically books CrossFit classes (e.g. at CrossFit Rabbit Hole) by running weekly cron jobs on Kubernetes.
 
 Currently scheduled bookings:
 
