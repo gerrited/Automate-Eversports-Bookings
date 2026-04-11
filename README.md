@@ -12,7 +12,7 @@ Three containers run on Kubernetes:
 | `worker` | `…-worker:latest` | Hourly CronJob — runs due booking jobs for all users |
 | `frontend` | `…-frontend:latest` | React SPA served by nginx — booking management UI |
 
-A fourth image (`…:latest`, the original `book.py`) still works standalone via CronJob for single-user setups.
+A fourth image (`…-cronjob:latest`, the original `book.py`) still works standalone via CronJob for single-user setups.
 
 ## How it works
 
@@ -32,7 +32,7 @@ Cloudflare protects the Eversports API and blocks requests from GitHub Actions r
 The GitHub Actions workflow (`.github/workflows/docker.yml`) builds and pushes all four images to GHCR on every push to `main`:
 
 ```
-ghcr.io/gerrited/automate-eversports-bookings:latest          # standalone book.py
+ghcr.io/gerrited/automate-eversports-bookings-cronjob:latest          # standalone book.py
 ghcr.io/gerrited/automate-eversports-bookings-backend:latest
 ghcr.io/gerrited/automate-eversports-bookings-worker:latest
 ghcr.io/gerrited/automate-eversports-bookings-frontend:latest

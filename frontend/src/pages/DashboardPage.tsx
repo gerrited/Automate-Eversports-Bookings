@@ -73,7 +73,7 @@ export default function DashboardPage() {
         <h1 className="text-white text-xl font-bold">E̶v̶e̶r̶ALWAYSsports Buchungen</h1>
         <button
           onClick={handleLogout}
-          className="text-slate-400 hover:text-white text-sm transition-colors"
+          className="px-3 py-1 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm transition-colors"
         >
           Logout
         </button>

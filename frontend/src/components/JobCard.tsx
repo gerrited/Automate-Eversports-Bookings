@@ -26,7 +26,7 @@ export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect }: P
               {WEEKDAY_NAMES[job.weekday]} · {time} · <span>{job.class_name}</span>
             </p>
             <p className="text-slate-400 text-sm mt-1">
-              {FACILITIES.find(f => f.id === job.facility_id)?.name ?? job.facility_id} · {job.days_in_advance} Tage vorher
+              {FACILITIES.find(f => f.id === job.facility_id)?.name ?? job.facility_id} · {job.days_in_advance} Tage im Voraus
             </p>
           </div>
           {/* Toggle */}
@@ -52,16 +52,16 @@ export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect }: P
         <button
           aria-label="Bearbeiten"
           onClick={() => onEdit(job)}
-          className="text-slate-400 hover:text-indigo-400 text-sm transition-colors"
+          className="px-3 py-1 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm transition-colors"
         >
-          ✏ Bearbeiten
+          Bearbeiten
         </button>
         <button
           aria-label="Löschen"
           onClick={() => onDelete(job.id)}
-          className="text-slate-400 hover:text-red-400 text-sm transition-colors ml-auto"
+          className="px-3 py-1 rounded-md bg-red-900 hover:bg-red-700 text-red-300 text-sm transition-colors ml-auto"
         >
-          🗑 Löschen
+          Löschen
         </button>
       </div>
     </div>
