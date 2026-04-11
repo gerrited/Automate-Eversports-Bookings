@@ -38,7 +38,7 @@ export default function LoginPage() {
             value={email}
             onChange={e => setEmail(e.target.value)}
             required
-            className="bg-surface-input text-white rounded-lg px-4 py-3 outline-hidden focus:ring-2 focus:ring-brand"
+            className="bg-surface-input text-white rounded-lg px-4 py-3 outline-hidden focus:ring-2 focus:ring-brand [&:-webkit-autofill]:[-webkit-box-shadow:0_0_0_1000px_var(--color-surface-input)_inset] [&:-webkit-autofill]:[-webkit-text-fill-color:white]"
           />
           <input
             type="password"
@@ -46,7 +46,7 @@ export default function LoginPage() {
             value={password}
             onChange={e => setPassword(e.target.value)}
             required
-            className="bg-surface-input text-white rounded-lg px-4 py-3 outline-hidden focus:ring-2 focus:ring-brand"
+            className="bg-surface-input text-white rounded-lg px-4 py-3 outline-hidden focus:ring-2 focus:ring-brand [&:-webkit-autofill]:[-webkit-box-shadow:0_0_0_1000px_var(--color-surface-input)_inset] [&:-webkit-autofill]:[-webkit-text-fill-color:white]"
           />
           {error && (
             <p role="alert" className="text-red-400 text-sm">{error}</p>
