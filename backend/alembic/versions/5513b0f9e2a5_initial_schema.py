@@ -25,7 +25,7 @@ def upgrade() -> None:
     sa.Column('eversports_user_id', sa.String(), nullable=False),
     sa.Column('email', sa.String(), nullable=False),
     sa.Column('encrypted_password', sa.String(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email'),
     sa.UniqueConstraint('eversports_user_id')
@@ -39,14 +39,14 @@ def upgrade() -> None:
     sa.Column('class_name', sa.String(), nullable=False),
     sa.Column('days_in_advance', sa.Integer(), nullable=False),
     sa.Column('enabled', sa.Boolean(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('booking_logs',
     sa.Column('id', sa.String(), nullable=False),
     sa.Column('job_id', sa.String(), nullable=False),
-    sa.Column('executed_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('executed_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('target_date', sa.Date(), nullable=False),
     sa.Column('status', sa.String(), nullable=False),
     sa.Column('message', sa.String(), nullable=True),
