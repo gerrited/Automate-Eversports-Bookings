@@ -50,18 +50,18 @@ export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect }: P
       {/* Action bar */}
       <div className="flex items-center gap-2 px-4 pb-3 pt-3">
         <button
-          aria-label="Bearbeiten"
-          onClick={() => onEdit(job)}
-          className="px-3 py-1 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm transition-colors"
-        >
-          Bearbeiten
-        </button>
-        <button
           aria-label="Löschen"
           onClick={() => onDelete(job.id)}
           className="px-3 py-1 rounded-md bg-red-900 hover:bg-red-700 text-red-300 text-sm transition-colors ml-auto"
         >
           Löschen
+        </button>
+        <button
+          aria-label="Bearbeiten"
+          onClick={() => onEdit(job)}
+          className="px-3 py-1 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm transition-colors"
+        >
+          Bearbeiten
         </button>
       </div>
     </div>

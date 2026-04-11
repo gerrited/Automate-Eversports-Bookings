@@ -71,7 +71,7 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
-          <img src="/logo.png" alt="Logo" className="h-8 w-auto" />
+          <img src="/logo.png" alt="Logo" className="h-16 w-auto" />
         </div>
         <button
           onClick={handleLogout}

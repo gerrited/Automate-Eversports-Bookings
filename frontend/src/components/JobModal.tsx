@@ -102,17 +102,17 @@ export default function JobModal({ job, onSave, onClose }: Props) {
 
           <div className="flex gap-3 justify-end mt-2">
             <button
+              type="submit"
+              className="px-4 py-2 bg-brand hover:bg-brand-hover text-white rounded-lg font-semibold transition-colors"
+            >
+              Speichern
+            </button>
+            <button
               type="button"
               onClick={onClose}
               className="px-4 py-2 text-slate-400 hover:text-white transition-colors"
             >
               Abbrechen
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-brand hover:bg-brand-hover text-white rounded-lg font-semibold transition-colors"
-            >
-              Speichern
             </button>
           </div>
         </form>
