@@ -27,6 +27,9 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-surface-page flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
+        <div className="flex justify-center mb-6">
+          <img src="/logo.png" alt="Logo" className="h-16 w-auto" />
+        </div>
         <h1 className="text-2xl font-bold text-white mb-8 text-center">
           E̶v̶e̶r̶ALWAYSsports Management
         </h1>
