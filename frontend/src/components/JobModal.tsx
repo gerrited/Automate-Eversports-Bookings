@@ -73,9 +73,9 @@ export default function JobModal({ job, onSave, onClose }: Props) {
           </label>
 
           <label className="flex flex-col gap-1">
-            <span className="text-slate-400 text-sm">Facility</span>
+            <span className="text-slate-400 text-sm">Einrichtung</span>
             <select
-              aria-label="Facility"
+              aria-label="Einrichtung"
               value={facilityId}
               onChange={e => setFacilityId(e.target.value)}
               className="bg-slate-800 text-white rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-brand"
