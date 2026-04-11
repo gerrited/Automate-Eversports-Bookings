@@ -82,7 +82,7 @@ export default function DashboardPage() {
       {/* Add button */}
       <button
         onClick={() => { setEditingJob('new'); setShowModal(true) }}
-        className="w-full mb-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl transition-colors"
+        className="w-full mb-6 py-3 bg-brand hover:bg-brand-hover text-white font-semibold rounded-xl transition-colors"
       >
         + Buchung hinzufügen
       </button>

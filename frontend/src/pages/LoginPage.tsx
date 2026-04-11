@@ -37,7 +37,7 @@ export default function LoginPage() {
             value={email}
             onChange={e => setEmail(e.target.value)}
             required
-            className="bg-slate-800 text-white rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500"
+            className="bg-slate-800 text-white rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-brand"
           />
           <input
             type="password"
@@ -45,7 +45,7 @@ export default function LoginPage() {
             value={password}
             onChange={e => setPassword(e.target.value)}
             required
-            className="bg-slate-800 text-white rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500"
+            className="bg-slate-800 text-white rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-brand"
           />
           {error && (
             <p role="alert" className="text-red-400 text-sm">{error}</p>
@@ -53,7 +53,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold rounded-lg py-3 transition-colors"
+            className="bg-brand hover:bg-brand-hover disabled:opacity-50 text-white font-semibold rounded-lg py-3 transition-colors"
           >
             {loading ? 'Einloggen…' : 'Einloggen'}
           </button>
