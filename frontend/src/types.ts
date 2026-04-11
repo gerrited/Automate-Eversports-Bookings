@@ -26,7 +26,7 @@ export interface BookingLog {
   message: string | null
 }
 
-export const WEEKDAY_NAMES = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
+export const WEEKDAY_NAMES = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag']
 
 export const FACILITIES: { id: string; name: string }[] = [
   { id: '73041', name: 'CrossFit Rabbithole' },
