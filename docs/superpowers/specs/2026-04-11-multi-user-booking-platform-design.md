@@ -157,7 +157,7 @@ Der Worker bricht bei einem Fehler in einem Job nicht ab — er loggt den Fehler
 | Route | Beschreibung |
 |-------|--------------|
 | `/login` | E-Mail + Passwort Formular, leitet nach Login zu `/dashboard` |
-| `/dashboard` | Job-Cards, "+ Job hinzufügen"-Button, Logout |
+| `/dashboard` | Job-Cards, "+ Buchung hinzufügen"-Button, Logout |
 
 **Komponenten:**
 
