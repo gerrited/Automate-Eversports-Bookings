@@ -31,6 +31,7 @@ export default function LoginPage() {
           E̶v̶e̶r̶ALWAYSsports Management
         </h1>
         <form onSubmit={handleSubmit} className="bg-slate-900 rounded-xl p-8 flex flex-col gap-4">
+          <p className="text-slate-400 text-sm text-center">Nutze deine Eversports Anmeldedaten, um fortzufahren.</p>
           <input
             type="email"
             placeholder="E-Mail"
