@@ -1,10 +1,12 @@
 import os
 from datetime import datetime, timedelta, timezone
 
-from jose import jwt, JWTError  # noqa: F401 — re-exported for callers
+import jwt
 
 _ALGORITHM = "HS256"
 _EXPIRE_HOURS = 24
+
+JWTError = jwt.PyJWTError  # re-exported for callers
 
 
 def _secret() -> str:
@@ -17,9 +19,9 @@ def create_access_token(user_id: str) -> str:
 
 
 def verify_token(token: str) -> str:
-    """Returns user_id. Raises jose.JWTError on invalid/expired token."""
+    """Returns user_id. Raises jwt.PyJWTError on invalid/expired token."""
     payload = jwt.decode(token, _secret(), algorithms=[_ALGORITHM])
     user_id: str | None = payload.get("sub")
     if not user_id:
-        raise JWTError("Token missing subject")
+        raise jwt.PyJWTError("Token missing subject")
     return user_id

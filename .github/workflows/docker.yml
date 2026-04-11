@@ -9,8 +9,22 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  test:
+    name: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install -r requirements-backend.txt
+      - run: pytest tests/ -v
+        env:
+          JWT_SECRET: test-secret
+
   build-cronjob:
     name: cronjob (book.py)
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -40,6 +54,7 @@ jobs:
 
   build-backend:
     name: backend
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -69,6 +84,7 @@ jobs:
 
   build-worker:
     name: worker
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -98,6 +114,7 @@ jobs:
 
   build-frontend:
     name: frontend
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read

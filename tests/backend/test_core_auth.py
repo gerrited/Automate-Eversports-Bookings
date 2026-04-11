@@ -1,5 +1,4 @@
-from backend.core.auth import create_access_token, verify_token
-from jose import JWTError
+from backend.core.auth import create_access_token, verify_token, JWTError
 import pytest
 
 
