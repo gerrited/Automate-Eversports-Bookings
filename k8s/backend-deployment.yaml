@@ -37,6 +37,13 @@ spec:
                   key: jwt_secret
             - name: FRONTEND_URL
               value: "https://your-frontend-domain.example.com"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
 ---
 apiVersion: v1
 kind: Service
