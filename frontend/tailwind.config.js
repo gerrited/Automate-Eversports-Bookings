@@ -5,8 +5,13 @@ export default {
     extend: {
       colors: {
         brand: {
-          DEFAULT: '#437C72',
-          hover: '#528B81',
+          DEFAULT: '#004349',
+          hover: '#005a62',
+        },
+        surface: {
+          page: '#021214',
+          card: '#03191b',
+          input: '#052528',
         },
       },
     },

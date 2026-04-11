@@ -25,12 +25,12 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#021214] flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <h1 className="text-2xl font-bold text-white mb-8 text-center">
           E̶v̶e̶r̶ALWAYSsports Management
         </h1>
-        <form onSubmit={handleSubmit} className="bg-slate-900 rounded-xl p-8 flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="bg-[#03191b] rounded-xl p-8 flex flex-col gap-4">
           <p className="text-slate-400 text-sm text-center">Nutze deine Eversports Anmeldedaten, um fortzufahren.</p>
           <input
             type="email"
@@ -38,7 +38,7 @@ export default function LoginPage() {
             value={email}
             onChange={e => setEmail(e.target.value)}
             required
-            className="bg-slate-800 text-white rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-brand"
+            className="bg-[#052528] text-white rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-[#004349]"
           />
           <input
             type="password"
@@ -46,7 +46,7 @@ export default function LoginPage() {
             value={password}
             onChange={e => setPassword(e.target.value)}
             required
-            className="bg-slate-800 text-white rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-brand"
+            className="bg-[#052528] text-white rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-[#004349]"
           />
           {error && (
             <p role="alert" className="text-red-400 text-sm">{error}</p>
@@ -54,7 +54,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="bg-brand hover:bg-brand-hover disabled:opacity-50 text-white font-semibold rounded-lg py-3 transition-colors"
+            className="bg-[#004349] hover:bg-[#005a62] disabled:opacity-50 text-white font-semibold rounded-lg py-3 transition-colors"
           >
             {loading ? 'Einloggen…' : 'Einloggen'}
           </button>

@@ -13,11 +13,11 @@ export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect }: P
   const time = job.target_time.slice(0, 5)  // "18:00"
 
   return (
-    <div className="bg-slate-900 rounded-xl overflow-hidden">
+    <div className="bg-[#03191b] rounded-xl overflow-hidden">
       {/* Clickable body */}
       <div
         data-testid="job-card-body"
-        className="p-4 cursor-pointer hover:bg-slate-800 transition-colors"
+        className="p-4 cursor-pointer hover:bg-[#052528] transition-colors"
         onClick={() => onSelect(job)}
       >
         <div className="flex justify-between items-start">

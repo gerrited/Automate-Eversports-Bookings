@@ -29,7 +29,7 @@ export default function JobModal({ job, onSave, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4">
-      <div className="bg-slate-900 rounded-xl w-full max-w-md p-6">
+      <div className="bg-[#03191b] rounded-xl w-full max-w-md p-6">
         <h2 className="text-white font-bold text-lg mb-5">
           {job ? 'Buchung bearbeiten' : 'Neue Buchung anlegen'}
         </h2>
@@ -40,7 +40,7 @@ export default function JobModal({ job, onSave, onClose }: Props) {
               aria-label="Wochentag"
               value={weekday}
               onChange={e => setWeekday(Number(e.target.value))}
-              className="bg-slate-800 text-white rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-brand"
+              className="bg-[#052528] text-white rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-[#004349]"
             >
               {WEEKDAY_NAMES.map((name, i) => (
                 <option key={i} value={i}>{name}</option>
@@ -56,7 +56,7 @@ export default function JobModal({ job, onSave, onClose }: Props) {
               value={targetTime}
               onChange={e => setTargetTime(e.target.value)}
               required
-              className="bg-slate-800 text-white rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-brand"
+              className="bg-[#052528] text-white rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-[#004349]"
             />
           </label>
 
@@ -68,7 +68,7 @@ export default function JobModal({ job, onSave, onClose }: Props) {
               value={className}
               onChange={e => setClassName(e.target.value)}
               required
-              className="bg-slate-800 text-white rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-brand"
+              className="bg-[#052528] text-white rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-[#004349]"
             />
           </label>
 
@@ -78,7 +78,7 @@ export default function JobModal({ job, onSave, onClose }: Props) {
               aria-label="Einrichtung"
               value={facilityId}
               onChange={e => setFacilityId(e.target.value)}
-              className="bg-slate-800 text-white rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-brand"
+              className="bg-[#052528] text-white rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-[#004349]"
             >
               {FACILITIES.map(f => (
                 <option key={f.id} value={f.id}>{f.name}</option>
@@ -96,7 +96,7 @@ export default function JobModal({ job, onSave, onClose }: Props) {
               value={daysInAdvance}
               onChange={e => setDaysInAdvance(Number(e.target.value))}
               required
-              className="bg-slate-800 text-white rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-brand"
+              className="bg-[#052528] text-white rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-[#004349]"
             />
           </label>
 
@@ -110,7 +110,7 @@ export default function JobModal({ job, onSave, onClose }: Props) {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-brand hover:bg-brand-hover text-white rounded-lg font-semibold transition-colors"
+              className="px-4 py-2 bg-[#004349] hover:bg-[#005a62] text-white rounded-lg font-semibold transition-colors"
             >
               Speichern
             </button>
