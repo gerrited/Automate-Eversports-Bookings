@@ -9,8 +9,8 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  build-standalone:
-    name: standalone (book.py)
+  build-cronjob:
+    name: cronjob (book.py)
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -26,13 +26,14 @@ jobs:
       - uses: docker/metadata-action@v5
         id: meta
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: ghcr.io/${{ github.repository }}-cronjob
           tags: |
             type=sha,prefix=
             type=raw,value=latest
       - uses: docker/build-push-action@v6
         with:
           context: .
+          file: Dockerfile.cronjob
           push: true
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}

@@ -18,7 +18,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: booking
-              image: ghcr.io/gerrited/automate-eversports-bookings:latest
+              image: ghcr.io/gerrited/automate-eversports-bookings-cronjob:latest
               env:
                 - name: EVERSPORTS_EMAIL
                   valueFrom:
@@ -55,7 +55,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: booking
-              image: ghcr.io/gerrited/automate-eversports-bookings:latest
+              image: ghcr.io/gerrited/automate-eversports-bookings-cronjob:latest
               env:
                 - name: EVERSPORTS_EMAIL
                   valueFrom:
