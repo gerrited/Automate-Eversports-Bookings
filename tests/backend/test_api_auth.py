@@ -1,0 +1,31 @@
+def test_login_success_creates_user(client, mocker):
+    mocker.patch(
+        "backend.api.auth.eversports_login",
+        return_value={"user_id": "ev-user-42", "session": None},
+    )
+    resp = client.post("/api/auth/login", json={"email": "user@example.com", "password": "pass123"})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "access_token" in body
+    assert body["token_type"] == "bearer"
+
+
+def test_login_invalid_credentials_returns_401(client, mocker):
+    mocker.patch("backend.api.auth.eversports_login", return_value=None)
+    resp = client.post("/api/auth/login", json={"email": "bad@example.com", "password": "wrong"})
+    assert resp.status_code == 401
+
+
+def test_login_twice_updates_password(client, mocker):
+    mocker.patch(
+        "backend.api.auth.eversports_login",
+        return_value={"user_id": "ev-user-99", "session": None},
+    )
+    client.post("/api/auth/login", json={"email": "user@example.com", "password": "oldpass"})
+    resp = client.post("/api/auth/login", json={"email": "user@example.com", "password": "newpass"})
+    assert resp.status_code == 200  # no duplicate-user error
+
+
+def test_protected_route_without_token_returns_403(client):
+    resp = client.get("/api/jobs")
+    assert resp.status_code == 403
