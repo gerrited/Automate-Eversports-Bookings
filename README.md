@@ -85,11 +85,11 @@ kubectl logs -f job/test-tuesday
 kubectl delete job test-tuesday
 ```
 
-`TARGET_DATE` accepts any future date in `YYYY-MM-DD` format. `TARGET_TIME` is set per CronJob and defaults to `18:00` if unset.
+`TARGET_DATE` accepts any future date in `YYYY-MM-DD` format. `TARGET_TIME` is set per CronJob and defaults to `18:00` if unset. `FACILITY_ID` identifies the gym/facility and defaults to `73041` (CrossFit Rabbit Hole) if unset.
 
 ### 5. Adding a new booking slot
 
-Any class where the target day is exactly 4 days after the desired run day works with just a new CronJob block in `k8s/cronjob.yaml` — no changes to `book.py` needed. Set `TARGET_TIME` to the class start time.
+Any class where the target day is exactly 4 days after the desired run day works with just a new CronJob block in `k8s/cronjob.yaml` — no changes to `book.py` needed. Set `TARGET_TIME` to the class start time and `FACILITY_ID` if the class is at a different facility.
 
 ## Requirements
 
@@ -103,3 +103,13 @@ Any class where the target day is exactly 4 days after the desired run day works
 |------------|-------------|
 | `email`    | Eversports account email |
 | `password` | Eversports account password |
+
+## Environment variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `EVERSPORTS_EMAIL` | yes | — | Eversports account email (from secret) |
+| `EVERSPORTS_PASSWORD` | yes | — | Eversports account password (from secret) |
+| `FACILITY_ID` | no | `73041` | Eversports facility ID of the gym to book at |
+| `TARGET_TIME` | no | `18:00` | Class start time to book (`HH:MM`) |
+| `TARGET_DATE` | no | today + 4 days | Target class date (`YYYY-MM-DD`); useful for manual test runs |
