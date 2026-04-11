@@ -1,41 +1,96 @@
 # Automate Eversports Bookings
 
-Automatically books CrossFit classes (e.g. at CrossFit Rabbit Hole) by running weekly cron jobs on Kubernetes.
+Automatically books Eversports classes for multiple users via a web-based management UI. Booking jobs are configured through a React frontend, stored in a PostgreSQL database, and executed by an hourly Kubernetes worker that uses the Eversports GraphQL API directly (no browser required).
 
-Currently scheduled bookings:
+## Architecture
 
-| Target class | Runs |
-|---|---|
-| Tuesday 18:00 | Friday 18:00 Europe/Berlin |
-| Sunday 10:00 | Wednesday 10:00 Europe/Berlin |
+Three containers run on Kubernetes:
+
+| Container | Image | Purpose |
+|-----------|-------|---------|
+| `backend` | `…-backend:latest` | FastAPI REST API — manages users, jobs, and booking logs |
+| `worker` | `…-worker:latest` | Hourly CronJob — runs due booking jobs for all users |
+| `frontend` | `…-frontend:latest` | React SPA served by nginx — booking management UI |
+
+A fourth image (`…:latest`, the original `book.py`) still works standalone via CronJob for single-user setups.
 
 ## How it works
 
-`book.py` calls the Eversports internal GraphQL API directly (no browser required) in four steps:
-
-1. **Login** — authenticates with email and password, receives a session cookie
-2. **Find session** — fetches the weekly class calendar and locates the CrossFit slot for the target date and time
-3. **Create cart** — creates a booking cart for the session (existing membership is auto-selected)
-4. **Confirm order** — places the order and exits
+1. **Login** — users sign in with their Eversports credentials; the backend verifies them against the Eversports API and issues a JWT
+2. **Job management** — authenticated users create booking jobs (weekday, time, facility, class name, days-in-advance) via the frontend
+3. **Hourly worker** — every hour, the worker checks whether any job is due today (`target_date = today + days_in_advance`), skips jobs that were already booked successfully, decrypts stored credentials, and calls the Eversports API
+4. **Booking flow** — for each job the worker authenticates, finds the class slot on the calendar, creates a cart, and confirms the order
 
 ## Why Kubernetes and not GitHub Actions?
 
-Cloudflare protects the Eversports API and appears to block outgoing requests from GitHub Actions runner IPs (returning a 403 managed challenge). The Python script works fine from a non-datacenter IP. The solution is to run the script as a Kubernetes CronJob on your own cluster, which uses a residential or non-flagged IP that Cloudflare allows through.
+Cloudflare protects the Eversports API and blocks requests from GitHub Actions runner IPs (returning a 403 managed challenge). The booking script works fine from a non-datacenter IP. Running on your own Kubernetes cluster uses a residential or otherwise non-flagged IP that Cloudflare allows through.
 
 ## Deployment
 
-### 1. Build and push the image
+### 1. Container images
 
-The GitHub Actions workflow in `.github/workflows/docker.yml` builds a multi-platform image (`linux/amd64`, `linux/arm64`) and pushes it to GHCR on every push to `main` that touches `book.py` or `Dockerfile`.
+The GitHub Actions workflow (`.github/workflows/docker.yml`) builds and pushes all four images to GHCR on every push to `main`:
 
-The image is published at:
 ```
-ghcr.io/gerrited/automate-eversports-bookings:latest
+ghcr.io/gerrited/automate-eversports-bookings:latest          # standalone book.py
+ghcr.io/gerrited/automate-eversports-bookings-backend:latest
+ghcr.io/gerrited/automate-eversports-bookings-worker:latest
+ghcr.io/gerrited/automate-eversports-bookings-frontend:latest
 ```
 
 ### 2. Create the Kubernetes secret
 
-Fill in your credentials in `k8s/secret.yaml` (this file is gitignored):
+```yaml
+# k8s/backend-secret.yaml  (gitignored — fill in your values)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: eversports-backend-secrets
+type: Opaque
+stringData:
+  database_url: "postgresql://user:pass@host:5432/eversports"
+  encryption_key: "<32-byte Fernet key — generate with: python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())'>"
+  jwt_secret: "<random string>"
+  FRONTEND_URL: "https://your-frontend-domain"
+```
+
+```bash
+kubectl apply -f k8s/backend-secret.yaml
+```
+
+### 3. Deploy the backend
+
+```bash
+kubectl apply -f k8s/backend-deployment.yaml
+```
+
+Runs database migrations automatically on startup (`alembic upgrade head`).
+
+### 4. Deploy the worker
+
+```bash
+kubectl apply -f k8s/worker-cronjob.yaml
+```
+
+Runs hourly (`0 * * * *`, `timeZone: Europe/Berlin`, `concurrencyPolicy: Forbid`). Reads `DATABASE_URL` and `ENCRYPTION_KEY` from the same secret.
+
+### 5. Deploy the frontend
+
+```bash
+kubectl apply -f k8s/frontend-deployment.yaml
+```
+
+nginx serves the React SPA and proxies `/api/` to the backend service.
+
+### 6. Register the first user
+
+Open the frontend URL in your browser, click **Einloggen**, and sign in with your Eversports credentials. The backend validates them against Eversports and creates your account on first login.
+
+---
+
+### Legacy: standalone CronJob (single-user)
+
+The original `book.py`-based CronJob still works if you only need a single user and no UI. See `k8s/cronjob.yaml` and create `k8s/secret.yaml`:
 
 ```yaml
 apiVersion: v1
@@ -48,32 +103,12 @@ stringData:
   password: "yourpassword"
 ```
 
-Apply it:
 ```bash
 kubectl apply -f k8s/secret.yaml
-```
-
-### 3. Deploy the CronJobs
-
-```bash
 kubectl apply -f k8s/cronjob.yaml
 ```
 
-This creates two CronJobs (both DST-aware via `timeZone: "Europe/Berlin"`):
-
-- `eversports-booking-tuesday-1800` — runs **Friday 18:00**, books the **Tuesday 18:00** class
-- `eversports-booking-sunday-1000` — runs **Wednesday 10:00**, books the **Sunday 10:00** class
-
-Both use `today + 4 days` to compute the target date, so no configuration is needed as long as the run day is exactly 4 days before the target class day.
-
-If you previously deployed the old single CronJob, delete it:
-```bash
-kubectl delete cronjob eversports-booking
-```
-
-### 4. Manual test run
-
-To trigger an immediate run with a specific date and time:
+Manual test run:
 
 ```bash
 kubectl create job --from=cronjob/eversports-booking-tuesday-1800 test-tuesday \
@@ -85,31 +120,34 @@ kubectl logs -f job/test-tuesday
 kubectl delete job test-tuesday
 ```
 
-`TARGET_DATE` accepts any future date in `YYYY-MM-DD` format. `TARGET_TIME` is set per CronJob and defaults to `18:00` if unset. `FACILITY_ID` identifies the gym/facility and defaults to `73041` (CrossFit Rabbit Hole) if unset.
-
-### 5. Adding a new booking slot
-
-Any class where the target day is exactly 4 days after the desired run day works with just a new CronJob block in `k8s/cronjob.yaml` — no changes to `book.py` needed. Set `TARGET_TIME` to the class start time and `FACILITY_ID` if the class is at a different facility.
-
 ## Requirements
 
 - Kubernetes 1.27+ (for `timeZone` support in CronJob)
+- PostgreSQL database accessible from the cluster
 - An image pull secret named `ghcr-secret` if your cluster needs credentials to pull from GHCR
-- Eversports account with an active membership (e.g. at CrossFit Rabbit Hole)
 
-## Secrets
-
-| Secret key | Description |
-|------------|-------------|
-| `email`    | Eversports account email |
-| `password` | Eversports account password |
-
-## Environment variables
+## Backend environment variables
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `EVERSPORTS_EMAIL` | yes | — | Eversports account email (from secret) |
-| `EVERSPORTS_PASSWORD` | yes | — | Eversports account password (from secret) |
-| `FACILITY_ID` | no | `73041` | Eversports facility ID of the gym to book at |
-| `TARGET_TIME` | no | `18:00` | Class start time to book (`HH:MM`) |
-| `TARGET_DATE` | no | today + 4 days | Target class date (`YYYY-MM-DD`); useful for manual test runs |
+| `DATABASE_URL` | yes | — | PostgreSQL connection string |
+| `ENCRYPTION_KEY` | yes | — | Fernet key for encrypting stored Eversports passwords |
+| `JWT_SECRET` | yes | — | Secret for signing JWTs |
+| `FRONTEND_URL` | yes | — | Allowed CORS origin |
+
+## Worker environment variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DATABASE_URL` | yes | PostgreSQL connection string (same as backend) |
+| `ENCRYPTION_KEY` | yes | Fernet key for decrypting stored passwords |
+
+## Standalone CronJob environment variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `EVERSPORTS_EMAIL` | yes | — | Eversports account email |
+| `EVERSPORTS_PASSWORD` | yes | — | Eversports account password |
+| `FACILITY_ID` | no | `73041` | Eversports facility ID |
+| `TARGET_TIME` | no | `18:00` | Class start time (`HH:MM`) |
+| `TARGET_DATE` | no | today + 4 days | Target class date (`YYYY-MM-DD`) |

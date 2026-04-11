@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eversports-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: eversports-backend
+  template:
+    metadata:
+      labels:
+        app: eversports-backend
+    spec:
+      imagePullSecrets:
+        - name: ghcr-secret
+      containers:
+        - name: backend
+          image: ghcr.io/gerrited/automate-eversports-bookings-backend:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: eversports-backend-secrets
+                  key: database_url
+            - name: ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: eversports-backend-secrets
+                  key: encryption_key
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: eversports-backend-secrets
+                  key: jwt_secret
+            - name: FRONTEND_URL
+              value: "https://your-frontend-domain.example.com"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: eversports-backend
+spec:
+  selector:
+    app: eversports-backend
+  ports:
+    - port: 8000
+      targetPort: 8000
