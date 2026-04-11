@@ -66,7 +66,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#021214]">
+    <div className="min-h-screen bg-surface-page">
     <div className="px-4 py-8 max-w-2xl mx-auto">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
@@ -82,7 +82,7 @@ export default function DashboardPage() {
       {/* Add button */}
       <button
         onClick={() => { setEditingJob('new'); setShowModal(true) }}
-        className="w-full mb-6 py-3 bg-[#004349] hover:bg-[#005a62] text-white font-semibold rounded-xl transition-colors"
+        className="w-full mb-6 py-3 bg-brand hover:bg-brand-hover text-white font-semibold rounded-xl transition-colors"
       >
         + Buchung hinzufügen
       </button>

@@ -13,11 +13,11 @@ export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect }: P
   const time = job.target_time.slice(0, 5)  // "18:00"
 
   return (
-    <div className="bg-[#03191b] rounded-xl overflow-hidden">
+    <div className="bg-surface-card rounded-xl overflow-hidden">
       {/* Clickable body */}
       <div
         data-testid="job-card-body"
-        className="p-4 cursor-pointer hover:bg-[#052528] transition-colors"
+        className="p-4 cursor-pointer hover:bg-surface-input transition-colors"
         onClick={() => onSelect(job)}
       >
         <div className="flex justify-between items-start">
@@ -34,7 +34,7 @@ export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect }: P
             role="switch"
             aria-checked={job.enabled}
             onClick={e => { e.stopPropagation(); onToggle(job.id) }}
-            className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors ${
+            className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${
               job.enabled ? 'bg-green-500' : 'bg-slate-600'
             }`}
           >

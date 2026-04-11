@@ -29,7 +29,7 @@ export default function LogDrawer({ job, logs, loading, onClose }: Props) {
         onClick={onClose}
       />
       {/* Drawer */}
-      <div className="fixed right-0 top-0 h-full w-full max-w-sm bg-[#03191b] z-50 shadow-2xl flex flex-col">
+      <div className="fixed right-0 top-0 h-full w-full max-w-sm bg-surface-card z-50 shadow-2xl flex flex-col">
         <div className="flex justify-between items-center px-5 py-4 border-b border-slate-800">
           <div>
             <p className="text-white font-semibold">
