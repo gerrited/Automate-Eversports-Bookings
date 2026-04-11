@@ -26,6 +26,6 @@ def test_login_twice_updates_password(client, mocker):
     assert resp.status_code == 200  # no duplicate-user error
 
 
-def test_protected_route_without_token_returns_403(client):
+def test_protected_route_without_token_returns_401(client):
     resp = client.get("/api/jobs")
-    assert resp.status_code == 403
+    assert resp.status_code == 401
