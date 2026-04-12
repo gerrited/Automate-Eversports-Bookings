@@ -17,10 +17,3 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     jobs = relationship("BookingJob", back_populates="user", cascade="all, delete-orphan")
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        if self.active is None:
-            self.active = False
-        if self.role is None:
-            self.role = "user"

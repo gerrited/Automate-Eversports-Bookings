@@ -1,10 +1,13 @@
-def test_user_model_has_active_and_role_fields():
+def test_user_model_has_active_and_role_defaults(db_session):
     from backend.models.user import User
     user = User(
-        eversports_user_id="ev-1",
-        email="x@x.com",
+        eversports_user_id="ev-defaults",
+        email="defaults@x.com",
         encrypted_password="x",
     )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
     assert user.active == False
     assert user.role == "user"
 
