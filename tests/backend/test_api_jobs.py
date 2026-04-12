@@ -7,7 +7,7 @@ def _auth_header(user_id: str) -> dict:
 
 
 def _create_user(db_session) -> User:
-    user = User(eversports_user_id="ev-1", email="a@b.com", encrypted_password="x")
+    user = User(eversports_user_id="ev-1", email="a@b.com", encrypted_password="x", active=True)
     db_session.add(user)
     db_session.commit()
     db_session.refresh(user)

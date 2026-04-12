@@ -128,3 +128,22 @@ def test_active_user_login_returns_role(client, mocker, db_session):
     resp = client.post("/api/auth/login", json={"email": "active@x.com", "password": "pw"})
     assert resp.status_code == 200
     assert resp.json()["role"] == "user"
+
+
+def test_inactive_user_cannot_access_protected_route(client, db_session):
+    from backend.core.auth import create_access_token
+    from backend.models.user import User
+    inactive = User(
+        eversports_user_id="ev-blocked",
+        email="blocked@x.com",
+        encrypted_password="x",
+        active=False,
+        role="user",
+    )
+    db_session.add(inactive)
+    db_session.commit()
+    db_session.refresh(inactive)
+
+    headers = {"Authorization": f"Bearer {create_access_token(inactive.id)}"}
+    resp = client.get("/api/jobs", headers=headers)
+    assert resp.status_code == 403
