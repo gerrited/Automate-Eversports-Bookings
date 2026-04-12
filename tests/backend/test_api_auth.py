@@ -1,3 +1,14 @@
+def test_user_model_has_active_and_role_fields():
+    from backend.models.user import User
+    user = User(
+        eversports_user_id="ev-1",
+        email="x@x.com",
+        encrypted_password="x",
+    )
+    assert user.active == False
+    assert user.role == "user"
+
+
 def test_login_success_creates_user(client, mocker):
     mocker.patch(
         "backend.api.auth.eversports_login",
