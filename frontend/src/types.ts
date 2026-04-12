@@ -38,5 +38,6 @@ export interface UserRecord {
   email: string
   active: boolean
   role: string
+  job_count: number
   created_at: string
 }

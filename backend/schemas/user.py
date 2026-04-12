@@ -7,6 +7,7 @@ class UserResponse(BaseModel):
     email: str
     active: bool
     role: str
+    job_count: int
     created_at: datetime
 
     model_config = {"from_attributes": True}

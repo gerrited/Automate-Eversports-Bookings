@@ -1,10 +1,12 @@
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from backend.api.deps import require_admin
 from backend.db import get_db
+from backend.models.booking_job import BookingJob
 from backend.models.user import User
 from backend.schemas.user import UserResponse, SetActiveRequest
 
@@ -16,7 +18,19 @@ def list_users(
     current_user: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
-    return db.query(User).order_by(User.created_at).all()
+    rows = (
+        db.query(User, func.count(BookingJob.id).label("job_count"))
+        .outerjoin(BookingJob, BookingJob.user_id == User.id)
+        .group_by(User.id)
+        .order_by(User.created_at)
+        .all()
+    )
+    results = []
+    for user, job_count in rows:
+        data = UserResponse.model_validate(user)
+        data.job_count = job_count
+        results.append(data)
+    return results
 
 
 @router.patch("/admin/users/{user_id}/active", response_model=UserResponse)

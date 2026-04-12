@@ -43,7 +43,8 @@ export default function UserManagementSection() {
                   <p className="text-white text-sm">{user.email}</p>
                   <p className="text-slate-400 text-xs">
                     {user.role === 'admin' ? 'Admin' : 'User'} ·{' '}
-                    {user.active ? 'Aktiv' : 'Inaktiv'}
+                    {user.active ? 'Aktiv' : 'Inaktiv'} ·{' '}
+                    {user.job_count} {user.job_count === 1 ? 'Job' : 'Jobs'}
                   </p>
                 </div>
                 <button
