@@ -44,7 +44,7 @@ def _make_user(db_session, ev_id="ev-user", email="user@x.com", active=True) -> 
 
 def test_list_users_requires_auth(client):
     resp = client.get("/api/admin/users")
-    assert resp.status_code == 403
+    assert resp.status_code == 401
 
 
 def test_list_users_requires_admin_role(client, db_session):

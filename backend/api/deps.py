@@ -1,5 +1,3 @@
-from typing import Optional
-
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
@@ -8,15 +6,13 @@ from backend.core.auth import verify_token, JWTError
 from backend.db import get_db
 from backend.models.user import User
 
-_bearer = HTTPBearer(auto_error=False)
+_bearer = HTTPBearer()
 
 
 def get_current_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(_bearer),
+    credentials: HTTPAuthorizationCredentials = Depends(_bearer),
     db: Session = Depends(get_db),
 ) -> User:
-    if credentials is None:
-        raise HTTPException(status_code=403, detail="Not authenticated")
     try:
         user_id = verify_token(credentials.credentials)
     except JWTError:
