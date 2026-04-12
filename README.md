@@ -1,6 +1,10 @@
 # Automate Eversports Bookings
 
-Automatically books Eversports classes for multiple users via a web-based management UI. Booking jobs are configured through a React frontend, stored in a PostgreSQL database, and executed by an hourly Kubernetes worker that uses the Eversports GraphQL API directly (no browser required).
+Automatically books Eversports classes for multiple users via a web-based management UI called FOReversports. FOR stands for "Fastest On-time Reservation".
+
+## Process
+
+Booking jobs are configured through a React frontend, stored in a PostgreSQL database, and executed by an hourly Kubernetes worker that uses the Eversports GraphQL API directly (no browser required).
 
 ## Architecture
 
