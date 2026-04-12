@@ -25,12 +25,17 @@ def list_users(
         .order_by(User.created_at)
         .all()
     )
-    results = []
-    for user, job_count in rows:
-        data = UserResponse.model_validate(user)
-        data.job_count = job_count
-        results.append(data)
-    return results
+    return [
+        UserResponse(
+            id=user.id,
+            email=user.email,
+            active=user.active,
+            role=user.role,
+            job_count=job_count,
+            created_at=user.created_at,
+        )
+        for user, job_count in rows
+    ]
 
 
 @router.patch("/admin/users/{user_id}/active", response_model=UserResponse)
@@ -48,4 +53,12 @@ def set_user_active(
     user.active = body.active
     db.commit()
     db.refresh(user)
-    return user
+    job_count = db.query(func.count(BookingJob.id)).filter(BookingJob.user_id == user.id).scalar()
+    return UserResponse(
+        id=user.id,
+        email=user.email,
+        active=user.active,
+        role=user.role,
+        job_count=job_count,
+        created_at=user.created_at,
+    )
