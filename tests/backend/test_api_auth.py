@@ -43,3 +43,13 @@ def test_login_twice_updates_password(client, mocker):
 def test_protected_route_without_token_returns_401(client):
     resp = client.get("/api/jobs")
     assert resp.status_code == 401
+
+
+def test_token_response_includes_role(client, mocker):
+    mocker.patch(
+        "backend.api.auth.eversports_login",
+        return_value={"user_id": "ev-schema-1", "session": None},
+    )
+    resp = client.post("/api/auth/login", json={"email": "schema@x.com", "password": "pw"})
+    assert resp.status_code == 200
+    assert "role" in resp.json()
