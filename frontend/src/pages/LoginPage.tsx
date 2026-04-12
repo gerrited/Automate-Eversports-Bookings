@@ -18,7 +18,12 @@ export default function LoginPage() {
       await login(email, password)
       navigate('/dashboard')
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Login fehlgeschlagen')
+      const msg = err instanceof Error ? err.message : ''
+      setError(
+        msg === 'Account nicht freigegeben'
+          ? 'Dein Account wartet auf Freigabe'
+          : msg || 'Login fehlgeschlagen'
+      )
     } finally {
       setLoading(false)
     }

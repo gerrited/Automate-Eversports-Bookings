@@ -26,11 +26,11 @@ def set_user_active(
     current_user: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
-    if user_id == current_user.id and not body.active:
-        raise HTTPException(status_code=400, detail="Cannot deactivate your own account")
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
+    if user_id == current_user.id and not body.active:
+        raise HTTPException(status_code=400, detail="Cannot deactivate your own account")
     user.active = body.active
     db.commit()
     db.refresh(user)
