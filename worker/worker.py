@@ -49,7 +49,12 @@ def already_booked(db: Session, job: BookingJob, target_date: date) -> bool:
 
 
 def run(db: Session, today: date) -> None:
-    jobs = db.query(BookingJob).filter(BookingJob.enabled.is_(True)).all()
+    jobs = (
+        db.query(BookingJob)
+        .join(User, BookingJob.user_id == User.id)
+        .filter(BookingJob.enabled.is_(True), User.active.is_(True))
+        .all()
+    )
     log.info("Found %d active jobs", len(jobs))
 
     for job in jobs:

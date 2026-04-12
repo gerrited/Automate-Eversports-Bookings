@@ -6,8 +6,8 @@ from backend.models.user import User
 from worker.worker import already_booked, is_due, run
 
 
-def _user(db, uid="u1", ev="ev1", email="a@b.com"):
-    u = User(id=uid, eversports_user_id=ev, email=email, encrypted_password="enc")
+def _user(db, uid="u1", ev="ev1", email="a@b.com", active=True):
+    u = User(id=uid, eversports_user_id=ev, email=email, encrypted_password="enc", active=active)
     db.add(u)
     db.commit()
     return u
@@ -143,4 +143,15 @@ def test_run_skips_disabled_job(db_session, mocker):
 
     mock_book = mocker.patch("worker.worker.book_session")
     run(db_session, date(2026, 4, 10))
+    mock_book.assert_not_called()
+
+
+def test_run_skips_inactive_user_job(db_session, mocker):
+    _user(db_session, uid="u8", ev="ev8", email="h@b.com", active=False)
+    _job(db_session, jid="j8", uid="u8", weekday=1, days=4)
+    friday = date(2026, 4, 10)  # Friday+4=Tuesday(weekday=1) → job is due
+
+    mocker.patch("worker.worker.decrypt", return_value="plainpass")
+    mock_book = mocker.patch("worker.worker.book_session")
+    run(db_session, friday)
     mock_book.assert_not_called()
