@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { clearToken } from '../api/client'
+import { clearToken, isAdmin } from '../api/client'
 import { listJobs, createJob, updateJob, toggleJob, deleteJob, getJobLogs } from '../api/jobs'
 import type { Job, BookingLog, JobFormData } from '../types'
 import JobCard from '../components/JobCard'
 import JobModal from '../components/JobModal'
 import LogDrawer from '../components/LogDrawer'
+import UserManagementSection from '../components/UserManagementSection'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
@@ -108,6 +109,9 @@ export default function DashboardPage() {
           />
         ))}
       </div>
+
+      {/* Admin: user management */}
+      {isAdmin() && <UserManagementSection />}
 
       {/* Modal */}
       {showModal && (

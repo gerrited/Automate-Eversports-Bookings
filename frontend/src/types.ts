@@ -32,3 +32,11 @@ export const FACILITIES: { id: string; name: string }[] = [
   { id: '73041', name: 'CrossFit Rabbit Hole' },
   { id: '76012', name: 'Sport-Club Hundsmühlen e.V.' },
 ]
+
+export interface UserRecord {
+  id: string
+  email: string
+  active: boolean
+  role: string
+  created_at: string
+}

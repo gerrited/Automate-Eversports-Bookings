@@ -8,9 +8,22 @@ export function setToken(token: string): void {
   localStorage.setItem('token', token)
 }
 
+export function setRole(role: string): void {
+  localStorage.setItem('role', role)
+}
+
+export function getRole(): string | null {
+  return localStorage.getItem('role')
+}
+
+export function isAdmin(): boolean {
+  return localStorage.getItem('role') === 'admin'
+}
+
 export function clearToken(): void {
   localStorage.removeItem('token')
   localStorage.removeItem('email')
+  localStorage.removeItem('role')
   window.dispatchEvent(new Event('auth-changed'))
 }
 

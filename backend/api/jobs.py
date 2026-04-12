@@ -5,7 +5,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from backend.api.deps import get_current_user
+from backend.api.deps import get_current_active_user
 from backend.db import get_db
 from backend.models.booking_job import BookingJob
 from backend.models.booking_log import BookingLog
@@ -27,7 +27,7 @@ def _get_owned_job(job_id: str, current_user: User, db: Session) -> BookingJob:
 
 @router.get("/jobs", response_model=List[JobResponse])
 def list_jobs(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
     return db.query(BookingJob).filter(BookingJob.user_id == current_user.id).all()
@@ -36,7 +36,7 @@ def list_jobs(
 @router.post("/jobs", response_model=JobResponse, status_code=201)
 def create_job(
     body: JobCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
     job = BookingJob(**body.model_dump(), user_id=current_user.id)
@@ -50,7 +50,7 @@ def create_job(
 def update_job(
     job_id: str,
     body: JobUpdate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
     job = _get_owned_job(job_id, current_user, db)
@@ -64,7 +64,7 @@ def update_job(
 @router.patch("/jobs/{job_id}/toggle", response_model=JobResponse)
 def toggle_job(
     job_id: str,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
     job = _get_owned_job(job_id, current_user, db)
@@ -77,7 +77,7 @@ def toggle_job(
 @router.delete("/jobs/{job_id}", status_code=204)
 def delete_job(
     job_id: str,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
     job = _get_owned_job(job_id, current_user, db)
@@ -88,7 +88,7 @@ def delete_job(
 @router.get("/jobs/{job_id}/logs", response_model=List[LogResponse])
 def get_job_logs(
     job_id: str,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
     job = _get_owned_job(job_id, current_user, db)

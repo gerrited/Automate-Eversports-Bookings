@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 import backend.models  # noqa: F401 — ensures all models are registered with Base.metadata
-from backend.api import auth, jobs
+from backend.api import auth, jobs, admin
 
 app = FastAPI(title="Eversports Booking API", version="1.0.0")
 
@@ -17,3 +17,4 @@ app.add_middleware(
 
 app.include_router(auth.router, prefix="/api")
 app.include_router(jobs.router, prefix="/api")
+app.include_router(admin.router, prefix="/api")

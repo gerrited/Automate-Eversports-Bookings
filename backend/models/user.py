@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Column, String, DateTime
+from sqlalchemy import Column, String, DateTime, Boolean
 from sqlalchemy.orm import relationship
 from backend.db import Base
 
@@ -12,6 +12,8 @@ class User(Base):
     eversports_user_id = Column(String, unique=True, nullable=False)
     email = Column(String, unique=True, nullable=False)
     encrypted_password = Column(String, nullable=False)
+    active = Column(Boolean, default=False, nullable=False)
+    role = Column(String, default="user", nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     jobs = relationship("BookingJob", back_populates="user", cascade="all, delete-orphan")
