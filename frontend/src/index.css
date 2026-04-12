@@ -18,6 +18,14 @@
   color utility to any element that depends on these defaults.
 */
 @layer base {
+  html,
+  body,
+  #root {
+    background-color: var(--color-surface-page);
+    color: white;
+    min-height: 100%;
+  }
+
   *,
   ::after,
   ::before,
