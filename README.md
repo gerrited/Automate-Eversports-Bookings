@@ -2,6 +2,9 @@
 
 Automatically books Eversports classes for multiple users. Managed via a web-based UI called FOReversports. FOR stands for "Fastest On-time Reservation".
 
+## Demo
+[![Watch the video](https://img.youtube.com/vi/spngnOZDBQo/0.jpg)](https://www.youtube.com/watch?v=spngnOZDBQo)
+
 ## Process
 
 Booking jobs are configured through a React frontend, stored in a PostgreSQL database, and executed by an hourly Kubernetes worker that uses the Eversports GraphQL API directly (no browser required).
