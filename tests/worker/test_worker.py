@@ -1,4 +1,4 @@
-from datetime import date, time
+from datetime import date, datetime, time
 
 from backend.models.booking_job import BookingJob
 from backend.models.booking_log import BookingLog
@@ -26,17 +26,24 @@ def _job(db, jid="j1", uid="u1", weekday=1, days=4):
 
 # --- is_due ---
 
-def test_is_due_when_today_plus_advance_matches_weekday():
-    # Friday 2026-04-10 + 4 days = Tuesday 2026-04-14 (weekday=1)
-    friday = date(2026, 4, 10)
-    job = BookingJob(weekday=1, days_in_advance=4)
-    assert is_due(job, friday) is True
+def test_is_due_when_today_plus_advance_matches_weekday_and_hour():
+    # Friday 2026-04-10 18:00 + 4 days = Tuesday 2026-04-14 (weekday=1), hour matches
+    friday_18 = datetime(2026, 4, 10, 18, 0)
+    job = BookingJob(weekday=1, days_in_advance=4, target_time=time(18, 0))
+    assert is_due(job, friday_18) is True
 
 
 def test_is_not_due_when_weekday_doesnt_match():
-    thursday = date(2026, 4, 9)
-    job = BookingJob(weekday=1, days_in_advance=4)
-    assert is_due(job, thursday) is False
+    thursday_18 = datetime(2026, 4, 9, 18, 0)
+    job = BookingJob(weekday=1, days_in_advance=4, target_time=time(18, 0))
+    assert is_due(job, thursday_18) is False
+
+
+def test_is_not_due_when_hour_doesnt_match():
+    # Richtige Datum-Kombination, aber falsche Stunde (07:00 statt 18:00)
+    friday_07 = datetime(2026, 4, 10, 7, 0)
+    job = BookingJob(weekday=1, days_in_advance=4, target_time=time(18, 0))
+    assert is_due(job, friday_07) is False
 
 
 # --- already_booked ---
@@ -72,12 +79,12 @@ def test_already_booked_false_when_only_failed_log(db_session):
 def test_run_books_due_job_and_writes_success_log(db_session, mocker):
     _user(db_session, uid="u2", ev="ev2", email="b@b.com")
     _job(db_session, jid="j2", uid="u2", weekday=1, days=4)
-    friday = date(2026, 4, 10)
+    friday_18 = datetime(2026, 4, 10, 18, 0)  # Friday 18:00 + 4 days = Tuesday
 
     mocker.patch("worker.worker.decrypt", return_value="plainpass")
     mocker.patch("worker.worker.book_session", return_value={"status": "success", "order_id": "ord-42"})
 
-    run(db_session, friday)
+    run(db_session, friday_18)
 
     log = db_session.query(BookingLog).filter(BookingLog.job_id == "j2").first()
     assert log is not None
@@ -89,10 +96,20 @@ def test_run_books_due_job_and_writes_success_log(db_session, mocker):
 def test_run_skips_not_due_job(db_session, mocker):
     _user(db_session, uid="u3", ev="ev3", email="c@b.com")
     _job(db_session, jid="j3", uid="u3", weekday=3, days=4)  # Wednesday
-    friday = date(2026, 4, 10)  # Friday+4=Tuesday≠Wednesday
+    friday_18 = datetime(2026, 4, 10, 18, 0)  # Friday+4=Tuesday≠Wednesday
 
     mock_book = mocker.patch("worker.worker.book_session")
-    run(db_session, friday)
+    run(db_session, friday_18)
+    mock_book.assert_not_called()
+
+
+def test_run_skips_wrong_hour(db_session, mocker):
+    _user(db_session, uid="u3b", ev="ev3b", email="c2@b.com")
+    _job(db_session, jid="j3b", uid="u3b", weekday=1, days=4)  # target 18:00
+    friday_07 = datetime(2026, 4, 10, 7, 0)  # richtige Datum-Kombo, falsche Stunde
+
+    mock_book = mocker.patch("worker.worker.book_session")
+    run(db_session, friday_07)
     mock_book.assert_not_called()
 
 
@@ -105,7 +122,7 @@ def test_run_skips_already_booked(db_session, mocker):
     db_session.commit()
 
     mock_book = mocker.patch("worker.worker.book_session")
-    run(db_session, date(2026, 4, 10))
+    run(db_session, datetime(2026, 4, 10, 18, 0))
     mock_book.assert_not_called()
 
 
@@ -114,7 +131,7 @@ def test_run_logs_failure_and_continues(db_session, mocker):
     _user(db_session, uid="u6", ev="ev6", email="f@b.com")
     _job(db_session, jid="j5", uid="u5", weekday=1, days=4)
     _job(db_session, jid="j6", uid="u6", weekday=1, days=4)
-    friday = date(2026, 4, 10)
+    friday_18 = datetime(2026, 4, 10, 18, 0)
 
     mocker.patch("worker.worker.decrypt", return_value="pass")
     mocker.patch("worker.worker.book_session", side_effect=[
@@ -122,7 +139,7 @@ def test_run_logs_failure_and_continues(db_session, mocker):
         {"status": "success", "order_id": "ord-99"},
     ])
 
-    run(db_session, friday)
+    run(db_session, friday_18)
 
     log5 = db_session.query(BookingLog).filter(BookingLog.job_id == "j5").first()
     log6 = db_session.query(BookingLog).filter(BookingLog.job_id == "j6").first()
@@ -142,16 +159,16 @@ def test_run_skips_disabled_job(db_session, mocker):
     db_session.commit()
 
     mock_book = mocker.patch("worker.worker.book_session")
-    run(db_session, date(2026, 4, 10))
+    run(db_session, datetime(2026, 4, 10, 18, 0))
     mock_book.assert_not_called()
 
 
 def test_run_skips_inactive_user_job(db_session, mocker):
     _user(db_session, uid="u8", ev="ev8", email="h@b.com", active=False)
     _job(db_session, jid="j8", uid="u8", weekday=1, days=4)
-    friday = date(2026, 4, 10)  # Friday+4=Tuesday(weekday=1) → job is due
+    friday_18 = datetime(2026, 4, 10, 18, 0)  # Friday+4=Tuesday(weekday=1) → job is due
 
     mocker.patch("worker.worker.decrypt", return_value="plainpass")
     mock_book = mocker.patch("worker.worker.book_session")
-    run(db_session, friday)
+    run(db_session, friday_18)
     mock_book.assert_not_called()

@@ -7,7 +7,8 @@ from __future__ import annotations
 import logging
 import sys
 import os
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from sqlalchemy.orm import Session
 
@@ -27,11 +28,17 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
+BERLIN = ZoneInfo("Europe/Berlin")
 
-def is_due(job: BookingJob, today: date) -> bool:
-    """True if today + days_in_advance lands on job.weekday."""
-    target_date = today + timedelta(days=job.days_in_advance)
-    return target_date.weekday() == job.weekday
+
+def is_due(job: BookingJob, now: datetime) -> bool:
+    """True if today + days_in_advance lands on job.weekday AND the current
+    Berlin-local hour matches the job's target_time hour."""
+    target_date = now.date() + timedelta(days=job.days_in_advance)
+    return (
+        target_date.weekday() == job.weekday
+        and now.hour == job.target_time.hour
+    )
 
 
 def already_booked(db: Session, job: BookingJob, target_date: date) -> bool:
@@ -48,7 +55,7 @@ def already_booked(db: Session, job: BookingJob, target_date: date) -> bool:
     )
 
 
-def run(db: Session, today: date) -> None:
+def run(db: Session, now: datetime) -> None:
     jobs = (
         db.query(BookingJob)
         .join(User, BookingJob.user_id == User.id)
@@ -58,10 +65,10 @@ def run(db: Session, today: date) -> None:
     log.info("Found %d active jobs", len(jobs))
 
     for job in jobs:
-        if not is_due(job, today):
+        if not is_due(job, now):
             continue
 
-        target_date = today + timedelta(days=job.days_in_advance)
+        target_date = now.date() + timedelta(days=job.days_in_advance)
         log.info("Job %s: due for %s", job.id, target_date)
 
         if already_booked(db, job, target_date):
@@ -106,7 +113,7 @@ def run(db: Session, today: date) -> None:
 def main() -> None:
     db = SessionLocal()
     try:
-        run(db, date.today())
+        run(db, datetime.now(BERLIN))
     finally:
         db.close()
 
