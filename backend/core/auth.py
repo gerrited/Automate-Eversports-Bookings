@@ -14,8 +14,12 @@ def _secret() -> str:
 
 
 def create_access_token(user_id: str) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(hours=_EXPIRE_HOURS)
-    return jwt.encode({"sub": user_id, "exp": expire}, _secret(), algorithm=_ALGORITHM)
+    now = datetime.now(timezone.utc)
+    return jwt.encode(
+        {"sub": user_id, "iat": now, "exp": now + timedelta(hours=_EXPIRE_HOURS)},
+        _secret(),
+        algorithm=_ALGORITHM,
+    )
 
 
 def verify_token(token: str) -> str:
