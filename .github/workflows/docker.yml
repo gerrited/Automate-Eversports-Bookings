@@ -51,6 +51,8 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository }}-cronjob:buildcache
+          cache-to: type=registry,ref=ghcr.io/${{ github.repository }}-cronjob:buildcache,mode=max
 
   build-backend:
     name: backend
@@ -81,6 +83,8 @@ jobs:
           push: true
           platforms: linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository }}-backend:buildcache
+          cache-to: type=registry,ref=ghcr.io/${{ github.repository }}-backend:buildcache,mode=max
 
   build-worker:
     name: worker
@@ -111,6 +115,8 @@ jobs:
           push: true
           platforms: linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository }}-worker:buildcache
+          cache-to: type=registry,ref=ghcr.io/${{ github.repository }}-worker:buildcache,mode=max
 
   build-frontend:
     name: frontend
