@@ -160,7 +160,8 @@ def get_facility_courses(
     except RuntimeError:
         return []
 
-    week_start = date.today() - timedelta(days=date.today().weekday())
+    today = date.today()
+    week_start = today - timedelta(days=today.weekday())
     try:
         resp = requests.get(
             _CALENDAR_URL,
