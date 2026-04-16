@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { clearToken, isAdmin } from '../api/client'
 import { listJobs, createJob, updateJob, toggleJob, deleteJob, getJobLogs } from '../api/jobs'
 import type { Job, BookingLog, JobFormData } from '../types'
@@ -10,6 +10,13 @@ import UserManagementSection from '../components/UserManagementSection'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
+  const { hash } = useLocation()
+  const activeTab: 'buchungen' | 'benutzer' = hash === '#users' ? 'benutzer' : 'buchungen'
+
+  function setActiveTab(tab: 'buchungen' | 'benutzer') {
+    navigate(tab === 'benutzer' ? '#users' : '#bookings', { replace: true })
+  }
+
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
   const [editingJob, setEditingJob] = useState<Job | 'new' | null>(null)
@@ -18,7 +25,6 @@ export default function DashboardPage() {
   const [logs, setLogs] = useState<BookingLog[]>([])
   const [logsLoading, setLogsLoading] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'buchungen' | 'benutzer'>('buchungen')
 
   const loadJobs = useCallback(async () => {
     try {
