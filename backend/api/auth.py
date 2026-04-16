@@ -1,12 +1,17 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from backend.core.booking import eversports_login
-from backend.core.encryption import encrypt
 from backend.core.auth import create_access_token
+from backend.core.booking import eversports_login
+from backend.core.email import send_new_user_notification
+from backend.core.encryption import encrypt
 from backend.db import get_db
 from backend.models.user import User
 from backend.schemas.auth import LoginRequest, TokenResponse
+
+log = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -33,6 +38,12 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
         db.add(user)
         db.commit()
         db.refresh(user)
+        if not is_first_user:
+            admins = db.query(User).filter(User.role == "admin", User.active == True).all()
+            try:
+                send_new_user_notification([a.email for a in admins], req.email)
+            except Exception as exc:
+                log.error("Failed to send new user notification: %s", exc)
         if not user.active:
             raise HTTPException(status_code=403, detail="Account nicht freigegeben")
     else:
