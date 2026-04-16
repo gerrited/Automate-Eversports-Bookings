@@ -13,6 +13,7 @@ class BookingJob(Base):
     weekday = Column(Integer, nullable=False)   # 0=Mon … 6=Sun
     target_time = Column(Time, nullable=False)
     facility_id = Column(String, nullable=False)
+    facility_name = Column(String, nullable=False, server_default='')
     class_name = Column(String, nullable=False)
     days_in_advance = Column(Integer, nullable=False)
     enabled = Column(Boolean, default=True, nullable=False)
