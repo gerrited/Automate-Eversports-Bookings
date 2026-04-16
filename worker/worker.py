@@ -1,5 +1,5 @@
 """
-Hourly booking worker — runs as a Kubernetes CronJob.
+Booking worker — runs as a Kubernetes CronJob every 15 minutes.
 Checks all enabled jobs and executes due bookings via Eversports API.
 """
 from __future__ import annotations
@@ -33,11 +33,12 @@ BERLIN = ZoneInfo("Europe/Berlin")
 
 def is_due(job: BookingJob, now: datetime) -> bool:
     """True if today + days_in_advance lands on job.weekday AND the current
-    Berlin-local hour matches the job's target_time hour."""
+    Berlin-local time falls within the same 15-minute slot as target_time."""
     target_date = now.date() + timedelta(days=job.days_in_advance)
     return (
         target_date.weekday() == job.weekday
         and now.hour == job.target_time.hour
+        and (now.minute // 15) == (job.target_time.minute // 15)
     )
 
 

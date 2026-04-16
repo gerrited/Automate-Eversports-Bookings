@@ -3,7 +3,7 @@ kind: CronJob
 metadata:
   name: eversports-worker
 spec:
-  schedule: "0 * * * *"
+  schedule: "*/15 * * * *"
   timeZone: "Europe/Berlin"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
