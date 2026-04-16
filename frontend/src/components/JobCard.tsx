@@ -36,7 +36,7 @@ export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect }: P
             aria-checked={job.enabled}
             onClick={e => { e.stopPropagation(); onToggle(job.id) }}
             className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${
-              job.enabled ? 'bg-green-500' : 'bg-slate-600'
+              job.enabled ? 'bg-green-700' : 'bg-slate-600'
             }`}
           >
             <span
