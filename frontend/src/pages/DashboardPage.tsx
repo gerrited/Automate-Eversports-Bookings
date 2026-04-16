@@ -18,6 +18,7 @@ export default function DashboardPage() {
   const [logs, setLogs] = useState<BookingLog[]>([])
   const [logsLoading, setLogsLoading] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<'buchungen' | 'benutzer'>('buchungen')
 
   const loadJobs = useCallback(async () => {
     try {
@@ -56,7 +57,7 @@ export default function DashboardPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!window.confirm('Job wirklich löschen?')) return
+    if (!window.confirm('Buchung wirklich löschen?')) return
     await deleteJob(id)
     loadJobs()
   }
@@ -88,41 +89,66 @@ export default function DashboardPage() {
         </button>
       </div>
 
-      {/* Add button */}
-      <button
-        onClick={() => { setEditingJob('new'); setShowModal(true) }}
-        className="w-full mb-6 py-3 bg-brand hover:bg-brand-hover text-white font-semibold rounded-xl transition-colors"
-      >
-        + Buchung hinzufügen
-      </button>
-
-      {/* Job list */}
-      {loading && <p className="text-slate-400 text-sm">Lädt…</p>}
-      {!loading && jobs.length === 0 && (
-        <p className="text-slate-400 text-sm text-center mt-12">
-          Noch keine Jobs. Leg einen an!
-        </p>
+      {/* Tab-Navigation – nur für Admins */}
+      {isAdmin() && (
+        <div className="flex gap-1 mb-6 border-b border-slate-700">
+          {(['buchungen', 'benutzer'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 text-sm font-medium rounded-t-md transition-colors focus:outline-none
+                ${activeTab === tab
+                  ? 'bg-brand text-white border-b-2 border-brand -mb-px'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-surface-card'
+                }`}
+            >
+              {tab === 'buchungen' ? 'Buchungen' : 'Benutzer'}
+            </button>
+          ))}
+        </div>
       )}
-      <div className="flex flex-col gap-3">
-        {[...jobs].sort((a, b) =>
-          a.weekday - b.weekday ||
-          a.target_time.localeCompare(b.target_time) ||
-          a.facility_name.localeCompare(b.facility_name, 'de') ||
-          a.class_name.localeCompare(b.class_name, 'de')
-        ).map(job => (
-          <JobCard
-            key={job.id}
-            job={job}
-            onToggle={handleToggle}
-            onEdit={j => { setEditingJob(j); setShowModal(true) }}
-            onDelete={handleDelete}
-            onSelect={handleSelect}
-          />
-        ))}
-      </div>
 
-      {/* Admin: user management */}
-      {isAdmin() && <UserManagementSection />}
+      {/* Add button – nur auf Buchungen-Tab (oder für Nicht-Admins immer) */}
+      {(!isAdmin() || activeTab === 'buchungen') && (
+        <button
+          onClick={() => { setEditingJob('new'); setShowModal(true) }}
+          className="w-full mb-6 py-3 bg-brand hover:bg-brand-hover text-white font-semibold rounded-xl transition-colors"
+        >
+          + Buchung hinzufügen
+        </button>
+      )}
+
+      {/* Job list – nur auf Buchungen-Tab (oder für Nicht-Admins immer) */}
+      {(!isAdmin() || activeTab === 'buchungen') && (
+        <>
+          {loading && <p className="text-slate-400 text-sm">Lädt…</p>}
+          {!loading && jobs.length === 0 && (
+            <p className="text-slate-400 text-sm text-center mt-12">
+              Noch keine Buchungen. Leg eine an!
+            </p>
+          )}
+          <div className="flex flex-col gap-3">
+            {[...jobs].sort((a, b) =>
+              a.weekday - b.weekday ||
+              a.target_time.localeCompare(b.target_time) ||
+              a.facility_name.localeCompare(b.facility_name, 'de') ||
+              a.class_name.localeCompare(b.class_name, 'de')
+            ).map(job => (
+              <JobCard
+                key={job.id}
+                job={job}
+                onToggle={handleToggle}
+                onEdit={j => { setEditingJob(j); setShowModal(true) }}
+                onDelete={handleDelete}
+                onSelect={handleSelect}
+              />
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Admin: Benutzer-Tab */}
+      {isAdmin() && activeTab === 'benutzer' && <UserManagementSection />}
 
       {/* Modal */}
       {showModal && (
