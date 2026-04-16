@@ -26,16 +26,20 @@ export default function DashboardPage() {
   const [logsLoading, setLogsLoading] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const touchStartX = useRef<number | null>(null)
+  const touchStartY = useRef<number | null>(null)
 
   function handleTouchStart(e: React.TouchEvent) {
     touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
   }
 
   function handleTouchEnd(e: React.TouchEvent) {
-    if (touchStartX.current === null || !isAdmin()) return
+    if (touchStartX.current === null || touchStartY.current === null || !isAdmin()) return
     const dx = e.changedTouches[0].clientX - touchStartX.current
+    const dy = e.changedTouches[0].clientY - touchStartY.current
     touchStartX.current = null
-    if (Math.abs(dx) < 50) return
+    touchStartY.current = null
+    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return
     setActiveTab(dx < 0 ? 'benutzer' : 'buchungen')
   }
 

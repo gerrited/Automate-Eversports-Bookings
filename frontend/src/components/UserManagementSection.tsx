@@ -51,8 +51,8 @@ export default function UserManagementSection() {
                     isSelf
                       ? 'opacity-40 cursor-not-allowed bg-slate-700 text-slate-400'
                       : user.active
-                      ? 'bg-slate-700 hover:bg-slate-600 text-slate-200'
-                      : 'bg-brand hover:bg-brand-hover text-white'
+                      ? 'bg-red-700 hover:bg-red-600 text-white'
+                      : 'bg-green-700 hover:bg-green-600 text-white'
                   }`}
                 >
                   {user.active ? 'Deaktivieren' : 'Aktivieren'}
