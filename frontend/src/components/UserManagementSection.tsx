@@ -26,9 +26,6 @@ export default function UserManagementSection() {
 
   return (
     <div className="mt-10">
-      <h2 className="text-slate-300 font-semibold text-sm uppercase tracking-wide mb-3">
-        Benutzerverwaltung
-      </h2>
       {loading && <p className="text-slate-400 text-sm">Lädt…</p>}
       {!loading && (
         <div className="flex flex-col gap-2">
