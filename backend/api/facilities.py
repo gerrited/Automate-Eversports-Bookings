@@ -12,11 +12,17 @@
 # /scl/<slug> page and extracting data-id from the HTML.
 # Legacy numeric IDs (e.g. "73041") continue to work unchanged.
 
+import logging
 import re
+from datetime import date, timedelta
 from typing import List
+
+from bs4 import BeautifulSoup
 
 import requests
 from fastapi import APIRouter, Depends, HTTPException, Query
+
+logger = logging.getLogger(__name__)
 
 _CLASSES_URL = "https://www.eversports.de/scl/"
 _DATA_ID_RE = re.compile(r"data-id='(\d+)'")
@@ -45,6 +51,7 @@ _EVERSPORTS_QUERY      = (
 # but the searchTerm is the primary filter for finding specific venues.
 _DEFAULT_COORDINATE = {"latitude": 50.1109, "longitude": 8.6821}
 _SEARCH_LIMIT = 20
+_CALENDAR_URL = "https://www.eversports.de/api/eventsession/calendar"
 
 _HEADERS = {
     "Content-Type": "application/json",
@@ -144,3 +151,40 @@ def search_facilities(
         return _eversports_search(q)
     except RuntimeError:
         raise HTTPException(status_code=502, detail="Eversports search unavailable")
+
+
+@router.get("/facilities/{facility_id}/courses")
+def get_facility_courses(
+    facility_id: str,
+    current_user: User = Depends(get_current_active_user),
+) -> List[str]:
+    try:
+        numeric_id = resolve_facility_id(facility_id)
+    except RuntimeError:
+        return []
+
+    today = date.today()
+    week_start = today - timedelta(days=today.weekday())
+    try:
+        resp = requests.get(
+            _CALENDAR_URL,
+            params={
+                "facilityId": numeric_id,
+                "startDate": week_start.isoformat(),
+                "activeEventType": "class",
+            },
+            headers=_HEADERS,
+            timeout=8,
+        )
+        resp.raise_for_status()
+        html = resp.json()["data"]["html"]
+    except Exception:
+        logger.warning("Failed to fetch courses for facility %s", numeric_id, exc_info=True)
+        return []
+
+    soup = BeautifulSoup(html, "html.parser")
+    return sorted({
+        el.get_text(strip=True)
+        for el in soup.find_all(class_="session-name")
+        if el.get_text(strip=True)
+    })

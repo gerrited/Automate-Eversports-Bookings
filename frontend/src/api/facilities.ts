@@ -6,3 +6,6 @@ export const getRecentFacilities = (): Promise<Facility[]> =>
 
 export const searchFacilities = (q: string): Promise<Facility[]> =>
   apiFetch(`/api/facilities/search?q=${encodeURIComponent(q)}`)
+
+export const getCourses = (facilityId: string): Promise<string[]> =>
+  apiFetch(`/api/facilities/${encodeURIComponent(facilityId)}/courses`)
