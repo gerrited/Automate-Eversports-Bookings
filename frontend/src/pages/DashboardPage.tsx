@@ -115,7 +115,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-    <div className={`px-4 pb-8 max-w-2xl mx-auto ${isAdmin() ? 'pt-44' : 'pt-32'}`}>
+    <div className={`px-4 pb-8 max-w-2xl mx-auto ${isAdmin() ? 'pt-28 sm:pt-44' : 'pt-20 sm:pt-32'}`}>
 
       {/* Add button – nur auf Buchungen-Tab (oder für Nicht-Admins immer) */}
       {(!isAdmin() || activeTab === 'buchungen') && (
