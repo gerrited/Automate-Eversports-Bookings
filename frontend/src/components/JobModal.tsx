@@ -40,6 +40,23 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
           {job ? 'Buchung bearbeiten' : 'Neue Buchung anlegen'}
         </h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <span className="text-slate-400 text-sm">Einrichtung</span>
+            <FacilityCombobox value={facility} onChange={setFacility} />
+          </div>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-slate-400 text-sm">Kursname</span>
+            <input
+              aria-label="Kursname"
+              type="text"
+              value={className}
+              onChange={e => setClassName(e.target.value)}
+              required
+              className="bg-surface-input text-white rounded-lg px-3 py-2 outline-hidden focus:ring-2 focus:ring-brand"
+            />
+          </label>
+
           <label className="flex flex-col gap-1">
             <span className="text-slate-400 text-sm">Wochentag</span>
             <select
@@ -65,23 +82,6 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
               className="bg-surface-input text-white rounded-lg px-3 py-2 outline-hidden focus:ring-2 focus:ring-brand"
             />
           </label>
-
-          <label className="flex flex-col gap-1">
-            <span className="text-slate-400 text-sm">Kursname</span>
-            <input
-              aria-label="Kursname"
-              type="text"
-              value={className}
-              onChange={e => setClassName(e.target.value)}
-              required
-              className="bg-surface-input text-white rounded-lg px-3 py-2 outline-hidden focus:ring-2 focus:ring-brand"
-            />
-          </label>
-
-          <div className="flex flex-col gap-1">
-            <span className="text-slate-400 text-sm">Einrichtung</span>
-            <FacilityCombobox value={facility} onChange={setFacility} />
-          </div>
 
           <label className="flex flex-col gap-1">
             <span className="text-slate-400 text-sm">Tage im Voraus</span>
