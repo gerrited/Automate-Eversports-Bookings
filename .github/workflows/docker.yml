@@ -7,6 +7,7 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  REPO_LC: ghcr.io/gerrited/automate-eversports-bookings
 
 jobs:
   test:
@@ -40,7 +41,7 @@ jobs:
       - uses: docker/metadata-action@v5
         id: meta
         with:
-          images: ghcr.io/${{ github.repository }}-cronjob
+          images: ${{ env.REPO_LC }}-cronjob
           tags: |
             type=sha,prefix=
             type=raw,value=latest
@@ -70,7 +71,7 @@ jobs:
       - uses: docker/metadata-action@v5
         id: meta
         with:
-          images: ghcr.io/${{ github.repository }}-backend
+          images: ${{ env.REPO_LC }}-backend
           tags: |
             type=sha,prefix=
             type=raw,value=latest
@@ -81,6 +82,8 @@ jobs:
           push: true
           platforms: linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=registry,ref=${{ env.REPO_LC }}-backend:buildcache
+          cache-to: type=registry,ref=${{ env.REPO_LC }}-backend:buildcache,mode=max
 
   build-worker:
     name: worker
@@ -100,7 +103,7 @@ jobs:
       - uses: docker/metadata-action@v5
         id: meta
         with:
-          images: ghcr.io/${{ github.repository }}-worker
+          images: ${{ env.REPO_LC }}-worker
           tags: |
             type=sha,prefix=
             type=raw,value=latest
@@ -111,6 +114,8 @@ jobs:
           push: true
           platforms: linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=registry,ref=${{ env.REPO_LC }}-worker:buildcache
+          cache-to: type=registry,ref=${{ env.REPO_LC }}-worker:buildcache,mode=max
 
   build-frontend:
     name: frontend
@@ -130,7 +135,7 @@ jobs:
       - uses: docker/metadata-action@v5
         id: meta
         with:
-          images: ghcr.io/${{ github.repository }}-frontend
+          images: ${{ env.REPO_LC }}-frontend
           tags: |
             type=sha,prefix=
             type=raw,value=latest
@@ -143,4 +148,4 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           build-args: |
             COMMIT_SHA=${{ github.sha }}
-            GITHUB_REPO=${{ github.repository }}
+            GITHUB_REPO=${{ env.REPO_LC }}
