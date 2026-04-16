@@ -22,6 +22,9 @@ from bs4 import BeautifulSoup
 import requests
 from fastapi import APIRouter, Depends, HTTPException, Query
 
+from backend.core.booking import eversports_login, _resolve_facility_id as _booking_resolve_facility_id
+from backend.core.encryption import decrypt
+
 logger = logging.getLogger(__name__)
 
 _CLASSES_URL = "https://www.eversports.de/scl/"
@@ -159,21 +162,26 @@ def get_facility_courses(
     current_user: User = Depends(get_current_active_user),
 ) -> List[str]:
     try:
-        numeric_id = resolve_facility_id(facility_id)
-    except RuntimeError:
+        password = decrypt(current_user.encrypted_password)
+        login_result = eversports_login(current_user.email, password)
+        if login_result is None:
+            return []
+        session = login_result["session"]
+        numeric_id = _booking_resolve_facility_id(facility_id, session)
+    except Exception:
+        logger.warning("Failed to authenticate or resolve facility %s", facility_id, exc_info=True)
         return []
 
     today = date.today()
     week_start = today - timedelta(days=today.weekday())
     try:
-        resp = requests.get(
+        resp = session.get(
             _CALENDAR_URL,
             params={
                 "facilityId": numeric_id,
                 "startDate": week_start.isoformat(),
                 "activeEventType": "class",
             },
-            headers=_HEADERS,
             timeout=8,
         )
         resp.raise_for_status()
