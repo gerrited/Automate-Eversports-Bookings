@@ -27,21 +27,32 @@ export default function DashboardPage() {
   const [saveError, setSaveError] = useState<string | null>(null)
   const touchStartX = useRef<number | null>(null)
   const touchStartY = useRef<number | null>(null)
+useEffect(() => {
+    if (!isAdmin()) return
 
-  function handleTouchStart(e: React.TouchEvent) {
-    touchStartX.current = e.touches[0].clientX
-    touchStartY.current = e.touches[0].clientY
-  }
+    function onTouchStart(e: TouchEvent) {
+      touchStartX.current = e.touches[0].clientX
+      touchStartY.current = e.touches[0].clientY
+    }
 
-  function handleTouchEnd(e: React.TouchEvent) {
-    if (touchStartX.current === null || touchStartY.current === null || !isAdmin()) return
-    const dx = e.changedTouches[0].clientX - touchStartX.current
-    const dy = e.changedTouches[0].clientY - touchStartY.current
-    touchStartX.current = null
-    touchStartY.current = null
-    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return
-    setActiveTab(dx < 0 ? 'benutzer' : 'buchungen')
-  }
+    function onTouchEnd(e: TouchEvent) {
+      if (touchStartX.current === null || touchStartY.current === null) return
+      const dx = e.changedTouches[0].clientX - touchStartX.current
+      const dy = e.changedTouches[0].clientY - touchStartY.current
+      touchStartX.current = null
+      touchStartY.current = null
+      if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return
+      const next = dx < 0 ? '#users' : '#bookings'
+      window.location.hash = next
+    }
+
+    document.addEventListener('touchstart', onTouchStart)
+    document.addEventListener('touchend', onTouchEnd)
+    return () => {
+      document.removeEventListener('touchstart', onTouchStart)
+      document.removeEventListener('touchend', onTouchEnd)
+    }
+  }, [])
 
   const loadJobs = useCallback(async () => {
     try {
@@ -132,11 +143,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-    <div
-      className={`px-4 pb-8 max-w-2xl mx-auto ${isAdmin() ? 'pt-32 sm:pt-44' : 'pt-24 sm:pt-32'}`}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-    >
+    <div className={`px-4 pb-8 max-w-2xl mx-auto ${isAdmin() ? 'pt-32 sm:pt-44' : 'pt-24 sm:pt-32'}`}>
 
       {/* Add button – nur auf Buchungen-Tab (oder für Nicht-Admins immer) */}
       {(!isAdmin() || activeTab === 'buchungen') && (
