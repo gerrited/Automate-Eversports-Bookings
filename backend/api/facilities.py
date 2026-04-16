@@ -1,10 +1,18 @@
 # Eversports facility search
-# Endpoint: to be filled in from Task 1 research
-# Operation: to be filled in from Task 1 research
-# Variable for search term: to be filled in from Task 1 research
-# Result path: to be filled in from Task 1 research
-# Result item shape: { id: str, name: str }
+# Endpoint: https://www.eversports.de/api/checkout
+# Operation: SearchInventorySearch
+# Variable for search term: searchTerm
+# Result path: data.inventorySearch (filter __typename == "VenueSearchResult")
+# Result item shape: { slug: str (used as id), name: str }
+#
+# Note on IDs: The Eversports marketplace search returns venue UUIDs, but the
+# booking calendar API (/api/eventsession/calendar) requires a numeric facilityId.
+# We use the venue *slug* as the facility_id (e.g. "crossfit-rabbit-hole").
+# At booking time, booking.py resolves the slug to a numeric ID by fetching the
+# /scl/<slug> page and extracting data-id from the HTML.
+# Legacy numeric IDs (e.g. "73041") continue to work unchanged.
 
+import re
 from typing import List
 
 import requests
@@ -19,13 +27,31 @@ from backend.models.user import User
 
 router = APIRouter()
 
-# ── Filled in from Task 1 research ──────────────────────────────────────────
-_EVERSPORTS_SEARCH_URL = ""           # e.g. "https://www.eversports.de/api/graphql"
-_EVERSPORTS_OPERATION  = ""           # e.g. "SearchFacilities"
-_EVERSPORTS_QUERY      = ""           # full GraphQL query string
-_EVERSPORTS_TERM_VAR   = ""           # e.g. "term" or "query"
-_EVERSPORTS_RESULT_PATH: list[str] = []  # e.g. ["data", "searchVendors", "vendors"]
-# ────────────────────────────────────────────────────────────────────────────
+_EVERSPORTS_SEARCH_URL = "https://www.eversports.de/api/checkout"
+_EVERSPORTS_OPERATION  = "SearchInventorySearch"
+_EVERSPORTS_QUERY      = (
+    "query SearchInventorySearch($coordinate: CoordinateArgs!, $searchTerm: String, $limit: Int) {\n"
+    "  inventorySearch(coordinate: $coordinate, searchTerm: $searchTerm, limit: $limit) {\n"
+    "    ... on VenueSearchResult { id slug name __typename }\n"
+    "    __typename\n"
+    "  }\n"
+    "}"
+)
+# Default coordinate: central Germany (Frankfurt).
+# The coordinate is required by the API and influences result ranking,
+# but the searchTerm is the primary filter for finding specific venues.
+_DEFAULT_COORDINATE = {"latitude": 50.1109, "longitude": 8.6821}
+_SEARCH_LIMIT = 20
+
+_HEADERS = {
+    "Content-Type": "application/json",
+    "User-Agent": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
+    ),
+    "Origin": "https://www.eversports.de",
+    "Referer": "https://www.eversports.de/",
+}
 
 
 @router.get("/facilities/recent")
@@ -49,29 +75,36 @@ def get_recent_facilities(
 
 
 def _eversports_search(term: str) -> List[dict]:
-    """Call Eversports marketplace search. Raises RuntimeError on failure."""
+    """
+    Query the Eversports marketplace search GraphQL endpoint.
+    Returns a list of venues as {"id": slug, "name": name}.
+    Raises RuntimeError on network or API failure.
+    """
     payload = {
         "operationName": _EVERSPORTS_OPERATION,
         "query": _EVERSPORTS_QUERY,
-        "variables": {_EVERSPORTS_TERM_VAR: term},
-    }
-    headers = {
-        "Content-Type": "application/json",
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-        "Origin": "https://www.eversports.de",
-        "Referer": "https://www.eversports.de/",
+        "variables": {
+            "coordinate": _DEFAULT_COORDINATE,
+            "searchTerm": term,
+            "limit": _SEARCH_LIMIT,
+        },
     }
     try:
-        resp = requests.post(_EVERSPORTS_SEARCH_URL, json=payload, headers=headers, timeout=8)
+        resp = requests.post(_EVERSPORTS_SEARCH_URL, json=payload, headers=_HEADERS, timeout=8)
         resp.raise_for_status()
     except requests.RequestException as exc:
         raise RuntimeError(str(exc)) from exc
 
     data = resp.json()
-    node = data
-    for key in _EVERSPORTS_RESULT_PATH:
-        node = node[key]
-    return [{"id": str(item["id"]), "name": item["name"]} for item in node]
+    if "errors" in data:
+        raise RuntimeError(f"GraphQL errors: {data['errors']}")
+
+    items = data.get("data", {}).get("inventorySearch", [])
+    return [
+        {"id": item["slug"], "name": item["name"]}
+        for item in items
+        if item.get("__typename") == "VenueSearchResult"
+    ]
 
 
 @router.get("/facilities/search")
