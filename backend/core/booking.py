@@ -1,11 +1,15 @@
 """
 Eversports booking logic — adapted from book.py for multi-user use.
 Functions accept explicit parameters instead of reading from os.environ.
-facility_id is always a numeric string (e.g. "73041") — slug resolution
-happens at job-creation time in backend/api/jobs.py.
+
+facility_id kann sein:
+  - numerische ID (z.B. "73041") — direkt verwendbar
+  - Venue-Slug (z.B. "crossfit-rabbit-hole") — wird beim Buchen mit der
+    eingeloggten Session aufgelöst (Cloudflare lässt auth. Sessions durch)
 """
 from __future__ import annotations
 
+import re
 from datetime import date, timedelta
 from typing import Optional
 
@@ -15,6 +19,7 @@ from bs4 import BeautifulSoup
 GRAPHQL_URL = "https://www.eversports.de/api/checkout"
 CALENDAR_URL = "https://www.eversports.de/api/eventsession/calendar"
 BASE_URL = "https://www.eversports.de"
+_DATA_ID_RE = re.compile(r"data-id='(\d+)'")
 TIMEOUT = 30
 _SESSION_HEADERS = {
     "User-Agent": (
@@ -44,6 +49,22 @@ def _gql(session: requests.Session, operation: str, query: str, variables: dict)
     if "errors" in body:
         raise RuntimeError(f"GraphQL error: {body['errors']}")
     return body["data"]
+
+
+def _resolve_facility_id(facility_id: str, session: requests.Session) -> str:
+    """Numerische facilityId für die Calendar-API ermitteln.
+    Ist facility_id bereits numerisch, wird sie direkt zurückgegeben.
+    Sonst wird /scl/<slug> mit der eingeloggten Session abgerufen
+    (Cloudflare lässt auth. Sessions durch).
+    """
+    if facility_id.isdigit():
+        return facility_id
+    resp = session.get(BASE_URL + "/scl/" + facility_id, timeout=TIMEOUT)
+    resp.raise_for_status()
+    match = _DATA_ID_RE.search(resp.text)
+    if not match:
+        raise RuntimeError(f"Numeric facility ID not found for slug '{facility_id}'")
+    return match.group(1)
 
 
 def eversports_login(email: str, password: str) -> Optional[dict]:
@@ -100,12 +121,15 @@ def book_session(
         raise RuntimeError("Eversports login failed")
     session: requests.Session = login_result["session"]
 
+    # Slug → numerische ID (mit auth. Session, Cloudflare-kompatibel)
+    numeric_facility_id = _resolve_facility_id(facility_id, session)
+
     # Fetch calendar for the week containing target_date
     week_start = target_date - timedelta(days=target_date.weekday())
     resp = session.get(
         CALENDAR_URL,
         params={
-            "facilityId": facility_id,
+            "facilityId": numeric_facility_id,
             "startDate": week_start.isoformat(),
             "activeEventType": "class",
         },
