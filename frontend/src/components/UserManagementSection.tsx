@@ -25,7 +25,7 @@ export default function UserManagementSection() {
   }
 
   return (
-    <div className="mt-10">
+    <div>
       {loading && <p className="text-slate-400 text-sm">Lädt…</p>}
       {!loading && (
         <div className="flex flex-col gap-2">
