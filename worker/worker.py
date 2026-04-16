@@ -20,6 +20,7 @@ from backend.models.booking_log import BookingLog
 from backend.models.user import User
 from backend.core.encryption import decrypt
 from backend.core.booking import book_session
+from worker.email import send_booking_failure_email
 
 logging.basicConfig(
     level=logging.INFO,
@@ -106,6 +107,10 @@ def run(db: Session, now: datetime) -> None:
                 message=str(exc),
             )
             log.error("Job %s: failed — %s", job.id, exc)
+            try:
+                send_booking_failure_email(user.email, job, str(exc), target_date)
+            except Exception as email_exc:
+                log.error("Job %s: could not send failure email — %s", job.id, email_exc)
 
         db.add(log_entry)
         db.commit()

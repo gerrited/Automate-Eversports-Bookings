@@ -172,3 +172,72 @@ def test_run_skips_inactive_user_job(db_session, mocker):
     mock_book = mocker.patch("worker.worker.book_session")
     run(db_session, friday_18)
     mock_book.assert_not_called()
+
+
+# --- email notifications ---
+
+def test_run_sends_failure_email_on_booking_error(db_session, mocker):
+    _user(db_session, uid="u9", ev="ev9", email="i@b.com")
+    _job(db_session, jid="j9", uid="u9", weekday=1, days=4)
+    friday_18 = datetime(2026, 4, 10, 18, 0)
+
+    mocker.patch("worker.worker.decrypt", return_value="pass")
+    mocker.patch("worker.worker.book_session", side_effect=RuntimeError("Class full"))
+    mock_email = mocker.patch("worker.worker.send_booking_failure_email")
+
+    run(db_session, friday_18)
+
+    mock_email.assert_called_once()
+    call_args = mock_email.call_args
+    assert call_args[0][0] == "i@b.com"
+    assert "Class full" in call_args[0][2]
+
+
+def test_run_does_not_send_email_on_success(db_session, mocker):
+    _user(db_session, uid="u10", ev="ev10", email="j@b.com")
+    _job(db_session, jid="j10", uid="u10", weekday=1, days=4)
+    friday_18 = datetime(2026, 4, 10, 18, 0)
+
+    mocker.patch("worker.worker.decrypt", return_value="pass")
+    mocker.patch("worker.worker.book_session", return_value={"status": "success", "order_id": "ord-1"})
+    mock_email = mocker.patch("worker.worker.send_booking_failure_email")
+
+    run(db_session, friday_18)
+
+    mock_email.assert_not_called()
+
+
+def test_run_does_not_send_email_on_already_booked(db_session, mocker):
+    _user(db_session, uid="u11", ev="ev11", email="k@b.com")
+    _job(db_session, jid="j11", uid="u11", weekday=1, days=4)
+    friday_18 = datetime(2026, 4, 10, 18, 0)
+
+    mocker.patch("worker.worker.decrypt", return_value="pass")
+    mocker.patch("worker.worker.book_session", return_value={"status": "already_booked"})
+    mock_email = mocker.patch("worker.worker.send_booking_failure_email")
+
+    run(db_session, friday_18)
+
+    mock_email.assert_not_called()
+
+
+def test_run_continues_when_email_sending_fails(db_session, mocker):
+    _user(db_session, uid="u12", ev="ev12", email="l@b.com")
+    _user(db_session, uid="u13", ev="ev13", email="m@b.com")
+    _job(db_session, jid="j12", uid="u12", weekday=1, days=4)
+    _job(db_session, jid="j13", uid="u13", weekday=1, days=4)
+    friday_18 = datetime(2026, 4, 10, 18, 0)
+
+    mocker.patch("worker.worker.decrypt", return_value="pass")
+    mocker.patch("worker.worker.book_session", side_effect=[
+        RuntimeError("Class full"),
+        {"status": "success", "order_id": "ord-99"},
+    ])
+    mocker.patch("worker.worker.send_booking_failure_email", side_effect=Exception("Resend down"))
+
+    run(db_session, friday_18)
+
+    log12 = db_session.query(BookingLog).filter(BookingLog.job_id == "j12").first()
+    log13 = db_session.query(BookingLog).filter(BookingLog.job_id == "j13").first()
+    assert log12.status == "failed"
+    assert log13.status == "success"

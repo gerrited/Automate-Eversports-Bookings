@@ -29,3 +29,13 @@ spec:
                     secretKeyRef:
                       name: eversports-backend-secrets
                       key: encryption_key
+                - name: RESEND_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: eversports-backend-secrets
+                      key: resend_api_key
+                - name: FROM_EMAIL
+                  valueFrom:
+                    secretKeyRef:
+                      name: eversports-backend-secrets
+                      key: from_email
