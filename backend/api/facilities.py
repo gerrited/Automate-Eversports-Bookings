@@ -191,7 +191,7 @@ def get_facility_courses(
     today = date.today()
     week_start = today - timedelta(days=today.weekday())
     names: set[str] = set()
-    for event_type in ("class", "course"):
+    for event_type in ("class", "course", "training"):
         try:
             resp = session.get(
                 _CALENDAR_URL,
