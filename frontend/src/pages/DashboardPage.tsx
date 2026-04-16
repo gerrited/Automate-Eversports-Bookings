@@ -98,7 +98,12 @@ export default function DashboardPage() {
         </p>
       )}
       <div className="flex flex-col gap-3">
-        {jobs.map(job => (
+        {[...jobs].sort((a, b) =>
+          a.weekday - b.weekday ||
+          a.target_time.localeCompare(b.target_time) ||
+          a.facility_name.localeCompare(b.facility_name, 'de') ||
+          a.class_name.localeCompare(b.class_name, 'de')
+        ).map(job => (
           <JobCard
             key={job.id}
             job={job}
