@@ -112,6 +112,22 @@ def get_recent_facilities(
     return [{"id": row.facility_id, "name": row.facility_name} for row in rows]
 
 
+@router.get("/courses/recent")
+def get_recent_courses(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+) -> List[str]:
+    rows = (
+        db.query(BookingJob.class_name)
+        .filter(BookingJob.user_id == current_user.id)
+        .group_by(BookingJob.class_name)
+        .order_by(func.max(BookingJob.created_at).desc())
+        .limit(10)
+        .all()
+    )
+    return [row.class_name for row in rows]
+
+
 def _eversports_search(term: str) -> List[dict]:
     """
     Query the Eversports marketplace search GraphQL endpoint.

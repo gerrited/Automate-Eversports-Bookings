@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import type { Job, JobFormData, Facility } from '../types'
 import { WEEKDAY_NAMES } from '../types'
 import FacilityCombobox from './FacilityCombobox'
+import CourseCombobox from './CourseCombobox'
 import { getCourses } from '../api/facilities'
 
 interface Props {
@@ -21,7 +22,6 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
   const [className, setClassName] = useState(job?.class_name ?? 'CrossFit')
   const [daysInAdvance, setDaysInAdvance] = useState(job?.days_in_advance ?? 4)
   const [courses, setCourses] = useState<string[]>([])
-  const [loadingCourses, setLoadingCourses] = useState(false)
 
   useEffect(() => {
     if (!facility) {
@@ -29,11 +29,9 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
       return
     }
     let cancelled = false
-    setLoadingCourses(true)
     getCourses(facility.id)
       .then(data => { if (!cancelled) setCourses(data) })
       .catch(() => { if (!cancelled) setCourses([]) })
-      .finally(() => { if (!cancelled) setLoadingCourses(false) })
     return () => { cancelled = true }
   }, [facility?.id])
 
@@ -62,26 +60,14 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
             <FacilityCombobox value={facility} onChange={setFacility} />
           </div>
 
-          <label htmlFor="class-name-input" className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1">
             <span className="text-slate-400 text-sm">Kursname</span>
-            <input
-              id="class-name-input"
-              aria-label="Kursname"
-              type="text"
-              list={courses.length > 0 ? 'course-suggestions' : undefined}
+            <CourseCombobox
               value={className}
-              onChange={e => setClassName(e.target.value)}
-              disabled={loadingCourses}
-              placeholder={loadingCourses ? 'Kurse werden geladen…' : ''}
-              required
-              className="bg-surface-input text-white rounded-lg px-3 py-2 outline-hidden focus:ring-2 focus:ring-brand disabled:opacity-50"
+              onChange={setClassName}
+              facilityCourses={courses}
             />
-            {courses.length > 0 && (
-              <datalist id="course-suggestions">
-                {courses.map(c => <option key={c} value={c} />)}
-              </datalist>
-            )}
-          </label>
+          </div>
 
           <label className="flex flex-col gap-1">
             <span className="text-slate-400 text-sm">Wochentag</span>
