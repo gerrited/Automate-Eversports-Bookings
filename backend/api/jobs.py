@@ -16,6 +16,27 @@ from backend.schemas.log import LogResponse
 router = APIRouter()
 
 
+def _find_duplicate(
+    user_id: str,
+    weekday: int,
+    target_time,
+    facility_id: str,
+    class_name: str,
+    db: Session,
+    exclude_id: str | None = None,
+) -> BookingJob | None:
+    q = db.query(BookingJob).filter(
+        BookingJob.user_id == user_id,
+        BookingJob.weekday == weekday,
+        BookingJob.target_time == target_time,
+        BookingJob.facility_id == facility_id,
+        BookingJob.class_name == class_name,
+    )
+    if exclude_id:
+        q = q.filter(BookingJob.id != exclude_id)
+    return q.first()
+
+
 def _get_owned_job(job_id: str, current_user: User, db: Session) -> BookingJob:
     job = db.query(BookingJob).filter(BookingJob.id == job_id).first()
     if job is None:
@@ -39,6 +60,8 @@ def create_job(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
+    if _find_duplicate(current_user.id, body.weekday, body.target_time, body.facility_id, body.class_name, db):
+        raise HTTPException(status_code=409, detail="Ein identischer Job existiert bereits.")
     job = BookingJob(**body.model_dump(), user_id=current_user.id)
     db.add(job)
     db.commit()
@@ -54,6 +77,9 @@ def update_job(
     db: Session = Depends(get_db),
 ):
     job = _get_owned_job(job_id, current_user, db)
+    updated = {**{f: getattr(job, f) for f in ("weekday", "target_time", "facility_id", "class_name")}, **body.model_dump(exclude_unset=True)}
+    if _find_duplicate(current_user.id, updated["weekday"], updated["target_time"], updated["facility_id"], updated["class_name"], db, exclude_id=job_id):
+        raise HTTPException(status_code=409, detail="Ein identischer Job existiert bereits.")
     for field, value in body.model_dump(exclude_unset=True).items():
         setattr(job, field, value)
     db.commit()

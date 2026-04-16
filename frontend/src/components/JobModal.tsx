@@ -6,11 +6,12 @@ import FacilityCombobox from './FacilityCombobox'
 
 interface Props {
   job?: Job
-  onSave: (data: JobFormData) => void
+  onSave: (data: JobFormData) => Promise<void>
   onClose: () => void
+  error?: string | null
 }
 
-export default function JobModal({ job, onSave, onClose }: Props) {
+export default function JobModal({ job, onSave, onClose, error }: Props) {
   const [weekday, setWeekday] = useState(job?.weekday ?? 0)
   const [targetTime, setTargetTime] = useState(job?.target_time.slice(0, 5) ?? '18:00')
   const [facility, setFacility] = useState<Facility | null>(
@@ -19,10 +20,10 @@ export default function JobModal({ job, onSave, onClose }: Props) {
   const [className, setClassName] = useState(job?.class_name ?? 'CrossFit')
   const [daysInAdvance, setDaysInAdvance] = useState(job?.days_in_advance ?? 4)
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     if (!facility) return
-    onSave({
+    await onSave({
       weekday,
       target_time: targetTime,
       facility_id: facility.id,
@@ -95,6 +96,10 @@ export default function JobModal({ job, onSave, onClose }: Props) {
               className="bg-surface-input text-white rounded-lg px-3 py-2 outline-hidden focus:ring-2 focus:ring-brand"
             />
           </label>
+
+          {error && (
+            <p className="text-red-400 text-sm">{error}</p>
+          )}
 
           <div className="flex gap-3 justify-end mt-2">
             <button

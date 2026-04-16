@@ -17,6 +17,7 @@ export default function DashboardPage() {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [logs, setLogs] = useState<BookingLog[]>([])
   const [logsLoading, setLogsLoading] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   const loadJobs = useCallback(async () => {
     try {
@@ -34,14 +35,19 @@ export default function DashboardPage() {
   }
 
   async function handleSave(data: JobFormData) {
-    if (editingJob === 'new' || editingJob === null) {
-      await createJob(data)
-    } else {
-      await updateJob(editingJob.id, data)
+    setSaveError(null)
+    try {
+      if (editingJob === 'new' || editingJob === null) {
+        await createJob(data)
+      } else {
+        await updateJob(editingJob.id, data)
+      }
+      setShowModal(false)
+      setEditingJob(null)
+      loadJobs()
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Fehler beim Speichern.')
     }
-    setShowModal(false)
-    setEditingJob(null)
-    loadJobs()
   }
 
   async function handleToggle(id: string) {
@@ -123,7 +129,8 @@ export default function DashboardPage() {
         <JobModal
           job={editingJob !== 'new' && editingJob !== null ? editingJob : undefined}
           onSave={handleSave}
-          onClose={() => { setShowModal(false); setEditingJob(null) }}
+          onClose={() => { setShowModal(false); setEditingJob(null); setSaveError(null) }}
+          error={saveError}
         />
       )}
 
