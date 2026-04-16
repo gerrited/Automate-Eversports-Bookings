@@ -25,6 +25,7 @@ def send_booking_failure_email(user_email: str, job, error_message: str, target_
         weekday_str = WEEKDAYS_DE[target_date.weekday()]
 
         frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:5173")
+        sender = f"FOReversports <{from_email}>"
 
         subject = f"Buchung fehlgeschlagen: {job.class_name} am {date_str}"
         html = f"""
@@ -40,7 +41,7 @@ def send_booking_failure_email(user_email: str, job, error_message: str, target_
 """
 
         resend.Emails.send({
-            "from": from_email,
+            "from": sender,
             "to": [user_email],
             "subject": subject,
             "html": html,

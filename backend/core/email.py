@@ -22,6 +22,7 @@ def send_new_user_notification(admin_emails: list[str], new_user_email: str) -> 
     try:
         resend.api_key = os.environ["RESEND_API_KEY"]
         from_email = os.environ["FROM_EMAIL"]
+        sender = f"FOReversports <{from_email}>"
 
         frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:5173")
         users_url = f"{frontend_url}/#users"
@@ -37,7 +38,7 @@ def send_new_user_notification(admin_emails: list[str], new_user_email: str) -> 
 <p><a href="{users_url}">Zur Benutzerverwaltung</a></p>
 """
         resend.Emails.send({
-            "from": from_email,
+            "from": sender,
             "to": admin_emails,
             "subject": subject,
             "html": html,
@@ -52,6 +53,7 @@ def send_account_status_email(user_email: str, is_active: bool) -> None:
     try:
         resend.api_key = os.environ["RESEND_API_KEY"]
         from_email = os.environ["FROM_EMAIL"]
+        sender = f"FOReversports <{from_email}>"
         frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:5173")
 
         if is_active:
@@ -62,7 +64,7 @@ def send_account_status_email(user_email: str, is_active: bool) -> None:
             html = "<p>Dein Konto für FOReversports wurde deaktiviert. Wende dich an einen Admin, falls du Fragen hast.</p>"
 
         resend.Emails.send({
-            "from": from_email,
+            "from": sender,
             "to": [user_email],
             "subject": subject,
             "html": html,
