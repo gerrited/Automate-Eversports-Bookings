@@ -147,3 +147,91 @@ def test_inactive_user_cannot_access_protected_route(client, db_session):
     headers = {"Authorization": f"Bearer {create_access_token(inactive.id)}"}
     resp = client.get("/api/jobs", headers=headers)
     assert resp.status_code == 403
+
+
+# --- email notifications ---
+
+def test_new_user_registration_sends_admin_notification(client, mocker, db_session):
+    from backend.models.user import User
+    # Pre-create an active admin
+    admin = User(
+        eversports_user_id="ev-admin",
+        email="admin@x.com",
+        encrypted_password="x",
+        active=True,
+        role="admin",
+    )
+    db_session.add(admin)
+    db_session.commit()
+
+    mocker.patch(
+        "backend.api.auth.eversports_login",
+        return_value={"user_id": "ev-newuser", "session": None},
+    )
+    mock_notify = mocker.patch("backend.api.auth.send_new_user_notification")
+
+    client.post("/api/auth/login", json={"email": "newuser@x.com", "password": "pw"})
+
+    mock_notify.assert_called_once_with(["admin@x.com"], "newuser@x.com")
+
+
+def test_first_user_registration_does_not_send_notification(client, mocker):
+    mocker.patch(
+        "backend.api.auth.eversports_login",
+        return_value={"user_id": "ev-first2", "session": None},
+    )
+    mock_notify = mocker.patch("backend.api.auth.send_new_user_notification")
+
+    client.post("/api/auth/login", json={"email": "first@x.com", "password": "pw"})
+
+    mock_notify.assert_not_called()
+
+
+def test_existing_user_login_does_not_send_notification(client, mocker, db_session):
+    from backend.models.user import User
+    existing = User(
+        eversports_user_id="ev-exists",
+        email="exists@x.com",
+        encrypted_password="x",
+        active=True,
+        role="user",
+    )
+    db_session.add(existing)
+    db_session.commit()
+
+    mocker.patch(
+        "backend.api.auth.eversports_login",
+        return_value={"user_id": "ev-exists", "session": None},
+    )
+    mock_notify = mocker.patch("backend.api.auth.send_new_user_notification")
+
+    client.post("/api/auth/login", json={"email": "exists@x.com", "password": "pw"})
+
+    mock_notify.assert_not_called()
+
+
+def test_login_succeeds_even_if_notification_fails(client, mocker, db_session):
+    from backend.models.user import User
+    admin = User(
+        eversports_user_id="ev-admin2",
+        email="admin2@x.com",
+        encrypted_password="x",
+        active=True,
+        role="admin",
+    )
+    db_session.add(admin)
+    db_session.commit()
+
+    mocker.patch(
+        "backend.api.auth.eversports_login",
+        return_value={"user_id": "ev-failmail", "session": None},
+    )
+    mocker.patch(
+        "backend.api.auth.send_new_user_notification",
+        side_effect=Exception("Resend down"),
+    )
+
+    # Should still return 403 (inactive), not 500
+    resp = client.post("/api/auth/login", json={"email": "failmail@x.com", "password": "pw"})
+    assert resp.status_code == 403
+    assert resp.json()["detail"] == "Account nicht freigegeben"
