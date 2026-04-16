@@ -9,6 +9,7 @@ class JobCreate(BaseModel):
     weekday: int       # 0=Mon … 6=Sun
     target_time: time
     facility_id: str
+    facility_name: str
     class_name: str
     days_in_advance: int
 
@@ -17,6 +18,7 @@ class JobUpdate(BaseModel):
     weekday: Optional[int] = None
     target_time: Optional[time] = None
     facility_id: Optional[str] = None
+    facility_name: Optional[str] = None
     class_name: Optional[str] = None
     days_in_advance: Optional[int] = None
 
@@ -26,6 +28,7 @@ class JobResponse(BaseModel):
     weekday: int
     target_time: time
     facility_id: str
+    facility_name: str
     class_name: str
     days_in_advance: int
     enabled: bool
