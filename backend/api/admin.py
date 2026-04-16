@@ -1,3 +1,4 @@
+import logging
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -5,10 +6,13 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from backend.api.deps import require_admin
+from backend.core.email import send_account_status_email
 from backend.db import get_db
 from backend.models.booking_job import BookingJob
 from backend.models.user import User
 from backend.schemas.user import UserResponse, SetActiveRequest
+
+log = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -53,6 +57,10 @@ def set_user_active(
     user.active = body.active
     db.commit()
     db.refresh(user)
+    try:
+        send_account_status_email(user.email, user.active)
+    except Exception as exc:
+        log.error("Failed to send account status email: %s", exc)
     job_count = db.query(func.count(BookingJob.id)).filter(BookingJob.user_id == user.id).scalar()
     return UserResponse(
         id=user.id,
