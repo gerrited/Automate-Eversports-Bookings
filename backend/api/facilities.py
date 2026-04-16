@@ -17,6 +17,9 @@ from typing import List
 
 import requests
 from fastapi import APIRouter, Depends, HTTPException, Query
+
+_CLASSES_URL = "https://www.eversports.de/scl/"
+_DATA_ID_RE = re.compile(r"data-id='(\d+)'")
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -52,6 +55,31 @@ _HEADERS = {
     "Origin": "https://www.eversports.de",
     "Referer": "https://www.eversports.de/",
 }
+
+
+def resolve_facility_id(slug_or_id: str) -> str:
+    """
+    Return the numeric facility ID required by the Eversports calendar API.
+    If slug_or_id is already numeric, it is returned unchanged.
+    Otherwise it is treated as a venue slug and the numeric ID is extracted
+    from the /scl/<slug> page HTML (data-id attribute).
+    Raises RuntimeError if the slug cannot be resolved.
+    """
+    if slug_or_id.isdigit():
+        return slug_or_id
+    try:
+        resp = requests.get(
+            _CLASSES_URL + slug_or_id,
+            headers={"User-Agent": "Mozilla/5.0"},
+            timeout=8,
+        )
+        resp.raise_for_status()
+    except requests.RequestException as exc:
+        raise RuntimeError(f"Could not fetch facility page for slug '{slug_or_id}': {exc}") from exc
+    match = _DATA_ID_RE.search(resp.text)
+    if not match:
+        raise RuntimeError(f"Could not find numeric facility ID for slug '{slug_or_id}'")
+    return match.group(1)
 
 
 @router.get("/facilities/recent")
