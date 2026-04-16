@@ -85,7 +85,7 @@ export default function DashboardPage() {
       <div className="fixed top-0 left-0 right-0 z-20 bg-surface-page border-b border-slate-700/60">
         <div className="px-4 max-w-2xl mx-auto">
           <div className="flex justify-between items-center py-4">
-            <img src="/logo.png" alt="Logo" className="h-16 w-auto" />
+            <img src="/logo.png" alt="Logo" className="h-10 w-auto sm:h-16" />
             <button
               onClick={handleLogout}
               className="px-3 py-1 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm transition-colors"
