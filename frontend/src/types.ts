@@ -3,6 +3,7 @@ export interface Job {
   weekday: number        // 0=Mon … 6=Sun
   target_time: string   // "HH:MM:SS"
   facility_id: string
+  facility_name: string
   class_name: string
   days_in_advance: number
   enabled: boolean
@@ -13,8 +14,14 @@ export interface JobFormData {
   weekday: number
   target_time: string   // "HH:MM"
   facility_id: string
+  facility_name: string
   class_name: string
   days_in_advance: number
+}
+
+export interface Facility {
+  id: string
+  name: string
 }
 
 export interface BookingLog {
@@ -27,11 +34,6 @@ export interface BookingLog {
 }
 
 export const WEEKDAY_NAMES = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag']
-
-export const FACILITIES: { id: string; name: string }[] = [
-  { id: '73041', name: 'CrossFit Rabbit Hole' },
-  { id: '76012', name: 'Sport-Club Hundsmühlen e.V.' },
-]
 
 export interface UserRecord {
   id: string

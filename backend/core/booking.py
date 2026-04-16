@@ -1,6 +1,8 @@
 """
 Eversports booking logic — adapted from book.py for multi-user use.
 Functions accept explicit parameters instead of reading from os.environ.
+facility_id is always a numeric string (e.g. "73041") — slug resolution
+happens at job-creation time in backend/api/jobs.py.
 """
 from __future__ import annotations
 

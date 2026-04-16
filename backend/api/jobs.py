@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from backend.api.deps import get_current_active_user
+from backend.api.facilities import resolve_facility_id
 from backend.db import get_db
 from backend.models.booking_job import BookingJob
 from backend.models.booking_log import BookingLog
@@ -39,7 +40,12 @@ def create_job(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
-    job = BookingJob(**body.model_dump(), user_id=current_user.id)
+    data = body.model_dump()
+    try:
+        data["facility_id"] = resolve_facility_id(data["facility_id"])
+    except RuntimeError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    job = BookingJob(**data, user_id=current_user.id)
     db.add(job)
     db.commit()
     db.refresh(job)
@@ -54,7 +60,13 @@ def update_job(
     db: Session = Depends(get_db),
 ):
     job = _get_owned_job(job_id, current_user, db)
-    for field, value in body.model_dump(exclude_unset=True).items():
+    updates = body.model_dump(exclude_unset=True)
+    if "facility_id" in updates:
+        try:
+            updates["facility_id"] = resolve_facility_id(updates["facility_id"])
+        except RuntimeError as exc:
+            raise HTTPException(status_code=422, detail=str(exc))
+    for field, value in updates.items():
         setattr(job, field, value)
     db.commit()
     db.refresh(job)

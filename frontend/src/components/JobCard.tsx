@@ -1,5 +1,5 @@
 import type { Job } from '../types'
-import { WEEKDAY_NAMES, FACILITIES } from '../types'
+import { WEEKDAY_NAMES } from '../types'
 
 interface Props {
   job: Job
@@ -11,6 +11,7 @@ interface Props {
 
 export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect }: Props) {
   const time = job.target_time.slice(0, 5)  // "18:00"
+  const facilityLabel = job.facility_name || job.facility_id
 
   return (
     <div className="bg-surface-card rounded-xl overflow-hidden">
@@ -26,7 +27,7 @@ export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect }: P
               {WEEKDAY_NAMES[job.weekday]} · {time} · <span>{job.class_name}</span>
             </p>
             <p className="text-slate-400 text-sm mt-1">
-              {FACILITIES.find(f => f.id === job.facility_id)?.name ?? job.facility_id} · {job.days_in_advance} Tage im Voraus
+              {facilityLabel} · {job.days_in_advance} Tage im Voraus
             </p>
           </div>
           {/* Toggle */}

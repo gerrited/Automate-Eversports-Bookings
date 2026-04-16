@@ -27,6 +27,7 @@ def test_create_job(client, db_session):
         "weekday": 1,
         "target_time": "18:00:00",
         "facility_id": "73041",
+        "facility_name": "CrossFit Rabbit Hole",
         "class_name": "CrossFit",
         "days_in_advance": 4,
     }
@@ -42,7 +43,7 @@ def test_update_job(client, db_session):
     user = _create_user(db_session)
     create_resp = client.post(
         "/api/jobs",
-        json={"weekday": 1, "target_time": "18:00:00", "facility_id": "73041", "class_name": "CrossFit", "days_in_advance": 4},
+        json={"weekday": 1, "target_time": "18:00:00", "facility_id": "73041", "facility_name": "CrossFit Rabbit Hole", "class_name": "CrossFit", "days_in_advance": 4},
         headers=_auth_header(user.id),
     )
     job_id = create_resp.json()["id"]
@@ -55,7 +56,7 @@ def test_toggle_job(client, db_session):
     user = _create_user(db_session)
     create_resp = client.post(
         "/api/jobs",
-        json={"weekday": 1, "target_time": "18:00:00", "facility_id": "73041", "class_name": "CrossFit", "days_in_advance": 4},
+        json={"weekday": 1, "target_time": "18:00:00", "facility_id": "73041", "facility_name": "CrossFit Rabbit Hole", "class_name": "CrossFit", "days_in_advance": 4},
         headers=_auth_header(user.id),
     )
     job_id = create_resp.json()["id"]
@@ -68,7 +69,7 @@ def test_delete_job(client, db_session):
     user = _create_user(db_session)
     create_resp = client.post(
         "/api/jobs",
-        json={"weekday": 1, "target_time": "18:00:00", "facility_id": "73041", "class_name": "CrossFit", "days_in_advance": 4},
+        json={"weekday": 1, "target_time": "18:00:00", "facility_id": "73041", "facility_name": "CrossFit Rabbit Hole", "class_name": "CrossFit", "days_in_advance": 4},
         headers=_auth_header(user.id),
     )
     job_id = create_resp.json()["id"]
@@ -86,7 +87,7 @@ def test_cannot_access_other_users_job(client, db_session):
 
     create_resp = client.post(
         "/api/jobs",
-        json={"weekday": 1, "target_time": "18:00:00", "facility_id": "73041", "class_name": "CrossFit", "days_in_advance": 4},
+        json={"weekday": 1, "target_time": "18:00:00", "facility_id": "73041", "facility_name": "CrossFit Rabbit Hole", "class_name": "CrossFit", "days_in_advance": 4},
         headers=_auth_header(user_a.id),
     )
     job_id = create_resp.json()["id"]
@@ -98,7 +99,7 @@ def test_get_logs_empty(client, db_session):
     user = _create_user(db_session)
     create_resp = client.post(
         "/api/jobs",
-        json={"weekday": 1, "target_time": "18:00:00", "facility_id": "73041", "class_name": "CrossFit", "days_in_advance": 4},
+        json={"weekday": 1, "target_time": "18:00:00", "facility_id": "73041", "facility_name": "CrossFit Rabbit Hole", "class_name": "CrossFit", "days_in_advance": 4},
         headers=_auth_header(user.id),
     )
     job_id = create_resp.json()["id"]

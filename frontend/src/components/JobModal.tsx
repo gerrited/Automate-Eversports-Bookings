@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import type { Job, JobFormData } from '../types'
-import { WEEKDAY_NAMES, FACILITIES } from '../types'
+import type { Job, JobFormData, Facility } from '../types'
+import { WEEKDAY_NAMES } from '../types'
+import FacilityCombobox from './FacilityCombobox'
 
 interface Props {
   job?: Job
@@ -12,16 +13,20 @@ interface Props {
 export default function JobModal({ job, onSave, onClose }: Props) {
   const [weekday, setWeekday] = useState(job?.weekday ?? 0)
   const [targetTime, setTargetTime] = useState(job?.target_time.slice(0, 5) ?? '18:00')
-  const [facilityId, setFacilityId] = useState(job?.facility_id ?? '73041')
+  const [facility, setFacility] = useState<Facility | null>(
+    job ? { id: job.facility_id, name: job.facility_name } : null
+  )
   const [className, setClassName] = useState(job?.class_name ?? 'CrossFit')
   const [daysInAdvance, setDaysInAdvance] = useState(job?.days_in_advance ?? 4)
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
+    if (!facility) return
     onSave({
       weekday,
       target_time: targetTime,
-      facility_id: facilityId,
+      facility_id: facility.id,
+      facility_name: facility.name,
       class_name: className,
       days_in_advance: Number(daysInAdvance),
     })
@@ -72,19 +77,10 @@ export default function JobModal({ job, onSave, onClose }: Props) {
             />
           </label>
 
-          <label className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1">
             <span className="text-slate-400 text-sm">Einrichtung</span>
-            <select
-              aria-label="Einrichtung"
-              value={facilityId}
-              onChange={e => setFacilityId(e.target.value)}
-              className="bg-surface-input text-white rounded-lg px-3 py-2 outline-hidden focus:ring-2 focus:ring-brand"
-            >
-              {FACILITIES.map(f => (
-                <option key={f.id} value={f.id}>{f.name}</option>
-              ))}
-            </select>
-          </label>
+            <FacilityCombobox value={facility} onChange={setFacility} />
+          </div>
 
           <label className="flex flex-col gap-1">
             <span className="text-slate-400 text-sm">Tage im Voraus</span>
@@ -103,7 +99,8 @@ export default function JobModal({ job, onSave, onClose }: Props) {
           <div className="flex gap-3 justify-end mt-2">
             <button
               type="submit"
-              className="px-4 py-2 bg-brand hover:bg-brand-hover text-white rounded-lg font-semibold transition-colors"
+              disabled={!facility}
+              className="px-4 py-2 bg-brand hover:bg-brand-hover text-white rounded-lg font-semibold transition-colors disabled:opacity-50"
             >
               Speichern
             </button>
