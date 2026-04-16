@@ -12,6 +12,7 @@
 # /scl/<slug> page and extracting data-id from the HTML.
 # Legacy numeric IDs (e.g. "73041") continue to work unchanged.
 
+import logging
 import re
 from datetime import date, timedelta
 from typing import List
@@ -20,6 +21,8 @@ from bs4 import BeautifulSoup
 
 import requests
 from fastapi import APIRouter, Depends, HTTPException, Query
+
+logger = logging.getLogger(__name__)
 
 _CLASSES_URL = "https://www.eversports.de/scl/"
 _DATA_ID_RE = re.compile(r"data-id='(\d+)'")
@@ -170,12 +173,13 @@ def get_facility_courses(
                 "startDate": week_start.isoformat(),
                 "activeEventType": "class",
             },
-            headers={"User-Agent": _HEADERS["User-Agent"]},
+            headers=_HEADERS,
             timeout=8,
         )
         resp.raise_for_status()
         html = resp.json()["data"]["html"]
     except Exception:
+        logger.warning("Failed to fetch courses for facility %s", numeric_id, exc_info=True)
         return []
 
     soup = BeautifulSoup(html, "html.parser")

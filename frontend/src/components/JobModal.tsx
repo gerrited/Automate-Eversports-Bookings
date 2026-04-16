@@ -28,11 +28,13 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
       setCourses([])
       return
     }
+    let cancelled = false
     setLoadingCourses(true)
     getCourses(facility.id)
-      .then(setCourses)
-      .catch(() => setCourses([]))
-      .finally(() => setLoadingCourses(false))
+      .then(data => { if (!cancelled) setCourses(data) })
+      .catch(() => { if (!cancelled) setCourses([]) })
+      .finally(() => { if (!cancelled) setLoadingCourses(false) })
+    return () => { cancelled = true }
   }, [facility?.id])
 
   async function handleSubmit(e: FormEvent) {
@@ -60,12 +62,13 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
             <FacilityCombobox value={facility} onChange={setFacility} />
           </div>
 
-          <div className="flex flex-col gap-1">
+          <label htmlFor="class-name-input" className="flex flex-col gap-1">
             <span className="text-slate-400 text-sm">Kursname</span>
             <input
+              id="class-name-input"
               aria-label="Kursname"
               type="text"
-              list="course-suggestions"
+              list={courses.length > 0 ? 'course-suggestions' : undefined}
               value={className}
               onChange={e => setClassName(e.target.value)}
               disabled={loadingCourses}
@@ -78,7 +81,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
                 {courses.map(c => <option key={c} value={c} />)}
               </datalist>
             )}
-          </div>
+          </label>
 
           <label className="flex flex-col gap-1">
             <span className="text-slate-400 text-sm">Wochentag</span>
