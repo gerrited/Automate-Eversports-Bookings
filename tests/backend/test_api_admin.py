@@ -106,3 +106,67 @@ def test_set_active_user_not_found(client, db_session):
         headers=_auth_header(admin.id),
     )
     assert resp.status_code == 404
+
+
+# --- email notifications ---
+
+def test_activation_sends_status_email(client, db_session, mocker):
+    admin = _make_admin(db_session)
+    user = _make_user(db_session, ev_id="ev-notify1", email="notify1@x.com", active=False)
+    mock_email = mocker.patch("backend.api.admin.send_account_status_email")
+
+    resp = client.patch(
+        f"/api/admin/users/{user.id}/active",
+        json={"active": True},
+        headers=_auth_header(admin.id),
+    )
+
+    assert resp.status_code == 200
+    mock_email.assert_called_once_with("notify1@x.com", True)
+
+
+def test_deactivation_sends_status_email(client, db_session, mocker):
+    admin = _make_admin(db_session)
+    user = _make_user(db_session, ev_id="ev-notify2", email="notify2@x.com", active=True)
+    mock_email = mocker.patch("backend.api.admin.send_account_status_email")
+
+    resp = client.patch(
+        f"/api/admin/users/{user.id}/active",
+        json={"active": False},
+        headers=_auth_header(admin.id),
+    )
+
+    assert resp.status_code == 200
+    mock_email.assert_called_once_with("notify2@x.com", False)
+
+
+def test_status_email_failure_does_not_affect_response(client, db_session, mocker):
+    admin = _make_admin(db_session)
+    user = _make_user(db_session, ev_id="ev-notify3", email="notify3@x.com", active=False)
+    mocker.patch(
+        "backend.api.admin.send_account_status_email",
+        side_effect=Exception("Resend down"),
+    )
+
+    resp = client.patch(
+        f"/api/admin/users/{user.id}/active",
+        json={"active": True},
+        headers=_auth_header(admin.id),
+    )
+
+    assert resp.status_code == 200
+    assert resp.json()["active"] is True
+
+
+def test_no_email_when_user_not_found(client, db_session, mocker):
+    admin = _make_admin(db_session)
+    mock_email = mocker.patch("backend.api.admin.send_account_status_email")
+
+    resp = client.patch(
+        "/api/admin/users/nonexistent-id/active",
+        json={"active": True},
+        headers=_auth_header(admin.id),
+    )
+
+    assert resp.status_code == 404
+    mock_email.assert_not_called()
