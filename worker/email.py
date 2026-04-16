@@ -24,6 +24,8 @@ def send_booking_failure_email(user_email: str, job, error_message: str, target_
         date_str = target_date.strftime("%d.%m.%Y")
         weekday_str = WEEKDAYS_DE[target_date.weekday()]
 
+        frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:5173")
+
         subject = f"Buchung fehlgeschlagen: {job.class_name} am {date_str}"
         html = f"""
 <p><strong>Deine Buchung für {job.class_name} ist fehlgeschlagen.</strong></p>
@@ -34,6 +36,7 @@ def send_booking_failure_email(user_email: str, job, error_message: str, target_
 </ul>
 <p><strong>Fehler:</strong> <code>{error_message}</code></p>
 <p>Der Job ist weiterhin aktiv und wird beim nächsten Versuch erneut ausgeführt.</p>
+<p><a href="{frontend_url}">Zur App</a></p>
 """
 
         resend.Emails.send({

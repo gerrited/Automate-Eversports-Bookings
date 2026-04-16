@@ -52,10 +52,11 @@ def send_account_status_email(user_email: str, is_active: bool) -> None:
     try:
         resend.api_key = os.environ["RESEND_API_KEY"]
         from_email = os.environ["FROM_EMAIL"]
+        frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:5173")
 
         if is_active:
             subject = "Dein Konto wurde freigeschaltet"
-            html = "<p>Dein Konto für FOReversports wurde freigeschaltet. Du kannst dich ab sofort anmelden.</p>"
+            html = f'<p>Dein Konto für FOReversports wurde freigeschaltet. Du kannst dich ab sofort <a href="{frontend_url}">anmelden</a>.</p>'
         else:
             subject = "Dein Konto wurde deaktiviert"
             html = "<p>Dein Konto für FOReversports wurde deaktiviert. Wende dich an einen Admin, falls du Fragen hast.</p>"
