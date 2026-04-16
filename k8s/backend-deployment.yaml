@@ -37,6 +37,16 @@ spec:
                   key: jwt_secret
             - name: FRONTEND_URL
               value: "https://your-frontend-domain.example.com"
+            - name: RESEND_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: eversports-backend-secrets
+                  key: resend_api_key
+            - name: FROM_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: eversports-backend-secrets
+                  key: from_email
           resources:
             requests:
               memory: "256Mi"
