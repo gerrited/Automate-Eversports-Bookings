@@ -75,38 +75,41 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-surface-page">
-    <div className="px-4 py-8 max-w-2xl mx-auto">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-3">
-          <img src="/logo.png" alt="Logo" className="h-16 w-auto" />
+      {/* Fixed Header */}
+      <div className="fixed top-0 left-0 right-0 z-20 bg-surface-page border-b border-slate-700/60">
+        <div className="px-4 max-w-2xl mx-auto">
+          <div className="flex justify-between items-center py-4">
+            <img src="/logo.png" alt="Logo" className="h-16 w-auto" />
+            <button
+              onClick={handleLogout}
+              className="px-3 py-1 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm transition-colors"
+            >
+              Abmelden
+            </button>
+          </div>
+
+          {/* Tab-Navigation – nur für Admins */}
+          {isAdmin() && (
+            <div className="flex gap-1 border-b border-slate-700">
+              {(['buchungen', 'benutzer'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-4 py-2 text-sm font-medium rounded-t-md transition-colors focus:outline-none
+                    ${activeTab === tab
+                      ? 'bg-brand text-white border-b-2 border-brand -mb-px'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-surface-card'
+                    }`}
+                >
+                  {tab === 'buchungen' ? 'Buchungen' : 'Benutzer'}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-        <button
-          onClick={handleLogout}
-          className="px-3 py-1 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm transition-colors"
-        >
-          Abmelden
-        </button>
       </div>
 
-      {/* Tab-Navigation – nur für Admins */}
-      {isAdmin() && (
-        <div className="flex gap-1 mb-6 border-b border-slate-700">
-          {(['buchungen', 'benutzer'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 text-sm font-medium rounded-t-md transition-colors focus:outline-none
-                ${activeTab === tab
-                  ? 'bg-brand text-white border-b-2 border-brand -mb-px'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-surface-card'
-                }`}
-            >
-              {tab === 'buchungen' ? 'Buchungen' : 'Benutzer'}
-            </button>
-          ))}
-        </div>
-      )}
+    <div className={`px-4 pb-8 max-w-2xl mx-auto ${isAdmin() ? 'pt-44' : 'pt-32'}`}>
 
       {/* Add button – nur auf Buchungen-Tab (oder für Nicht-Admins immer) */}
       {(!isAdmin() || activeTab === 'buchungen') && (
