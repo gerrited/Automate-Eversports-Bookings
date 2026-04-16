@@ -190,25 +190,32 @@ def get_facility_courses(
 
     today = date.today()
     week_start = today - timedelta(days=today.weekday())
-    try:
-        resp = session.get(
-            _CALENDAR_URL,
-            params={
-                "facilityId": numeric_id,
-                "startDate": week_start.isoformat(),
-                "activeEventType": "class",
-            },
-            timeout=8,
-        )
-        resp.raise_for_status()
-        html = resp.json()["data"]["html"]
-    except Exception:
-        logger.warning("Failed to fetch courses for facility %s", numeric_id, exc_info=True)
-        return []
+    names: set[str] = set()
+    for event_type in ("class", "course"):
+        try:
+            resp = session.get(
+                _CALENDAR_URL,
+                params={
+                    "facilityId": numeric_id,
+                    "startDate": week_start.isoformat(),
+                    "activeEventType": event_type,
+                },
+                timeout=8,
+            )
+            resp.raise_for_status()
+            html = resp.json()["data"]["html"]
+        except Exception:
+            logger.warning(
+                "Failed to fetch courses (eventType=%s) for facility %s",
+                event_type, numeric_id, exc_info=True,
+            )
+            continue
 
-    soup = BeautifulSoup(html, "html.parser")
-    return sorted({
-        el.get_text(strip=True)
-        for el in soup.find_all(class_="session-name")
-        if el.get_text(strip=True)
-    })
+        soup = BeautifulSoup(html, "html.parser")
+        names.update(
+            el.get_text(strip=True)
+            for el in soup.find_all(class_="session-name")
+            if el.get_text(strip=True)
+        )
+
+    return sorted(names)
