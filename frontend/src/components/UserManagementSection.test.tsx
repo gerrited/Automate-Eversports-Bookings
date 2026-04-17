@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { vi } from 'vitest'
 import UserManagementSection from './UserManagementSection'
 
@@ -26,6 +26,10 @@ function makeUsers(count: number) {
 
 beforeEach(() => {
   vi.mocked(listUsers).mockResolvedValue(makeUsers(60))
+})
+
+afterEach(() => {
+  vi.clearAllMocks()
 })
 
 describe('UserManagementSection', () => {

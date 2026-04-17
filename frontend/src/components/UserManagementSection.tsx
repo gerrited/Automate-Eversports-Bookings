@@ -3,9 +3,13 @@ import { listUsers, setUserActive } from '../api/users'
 import { getEmail } from '../api/client'
 import type { UserRecord } from '../types'
 
+const PAGE_SIZE = 25
+
 export default function UserManagementSection() {
   const [users, setUsers] = useState<UserRecord[]>([])
   const [loading, setLoading] = useState(true)
+  const [emailFilter, setEmailFilter] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
   const currentEmail = getEmail()
 
   const load = useCallback(async () => {
@@ -18,18 +22,43 @@ export default function UserManagementSection() {
 
   useEffect(() => { load() }, [load])
 
+  function handleFilterChange(value: string) {
+    setEmailFilter(value)
+    setCurrentPage(1)
+  }
+
   async function handleToggle(user: UserRecord) {
-    if (user.email === currentEmail && user.active) return // guard: can't deactivate self
+    if (user.email === currentEmail && user.active) return
     await setUserActive(user.id, !user.active)
     load()
   }
+
+  const filteredUsers = emailFilter.length >= 3
+    ? users.filter(u => u.email.toLowerCase().includes(emailFilter.toLowerCase()))
+    : users
+
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE))
+  const pagedUsers = filteredUsers.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE,
+  )
 
   return (
     <div>
       {loading && <p className="text-slate-400 text-sm">Lädt…</p>}
       {!loading && (
         <div className="flex flex-col gap-2">
-          {users.map(user => {
+          <input
+            type="text"
+            value={emailFilter}
+            onChange={e => handleFilterChange(e.target.value)}
+            placeholder="Nach E-Mail filtern…"
+            className="bg-surface-card border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-slate-500"
+          />
+          <p className="text-slate-500 text-xs">
+            {filteredUsers.length} von {users.length} Benutzern · Seite {currentPage} von {totalPages}
+          </p>
+          {pagedUsers.map(user => {
             const isSelf = user.email === currentEmail
             return (
               <div
@@ -60,6 +89,22 @@ export default function UserManagementSection() {
               </div>
             )
           })}
+          <div className="flex items-center justify-center gap-3 mt-2">
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => p - 1)}
+              className="px-3 py-1 rounded-md text-sm bg-surface-card text-slate-400 border border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:bg-slate-700 transition-colors"
+            >
+              ← Zurück
+            </button>
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => p + 1)}
+              className="px-3 py-1 rounded-md text-sm bg-surface-card text-slate-400 border border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:bg-slate-700 transition-colors"
+            >
+              Weiter →
+            </button>
+          </div>
         </div>
       )}
     </div>
