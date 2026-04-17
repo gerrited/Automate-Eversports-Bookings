@@ -19,7 +19,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
   const [facility, setFacility] = useState<Facility | null>(
     job ? { id: job.facility_id, name: job.facility_name } : null
   )
-  const [className, setClassName] = useState(job?.class_name ?? 'CrossFit')
+  const [className, setClassName] = useState(job?.class_name ?? '')
   const [daysInAdvance, setDaysInAdvance] = useState(job?.days_in_advance ?? 4)
   const [courses, setCourses] = useState<string[]>([])
 

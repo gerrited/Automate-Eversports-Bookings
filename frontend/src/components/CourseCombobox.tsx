@@ -52,7 +52,7 @@ export default function CourseCombobox({ value, onChange, facilityCourses }: Pro
         aria-label="Kursname"
         type="text"
         value={isOpen ? query : value}
-        placeholder={value || 'Kursname eingeben…'}
+        placeholder={isOpen ? '' : (value || 'Kurs suchen…')}
         onFocus={() => { setIsOpen(true); setQuery('') }}
         onChange={e => {
           setQuery(e.target.value)
