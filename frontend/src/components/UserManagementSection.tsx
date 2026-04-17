@@ -9,7 +9,7 @@ export default function UserManagementSection() {
   const [users, setUsers] = useState<UserRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [emailFilter, setEmailFilter] = useState('')
-  const [showInactiveOnly, setShowInactiveOnly] = useState(false)
+  const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all')
   const [currentPage, setCurrentPage] = useState(1)
   const currentEmail = getEmail()
 
@@ -28,8 +28,8 @@ export default function UserManagementSection() {
     setCurrentPage(1)
   }
 
-  function handleInactiveToggle() {
-    setShowInactiveOnly(v => !v)
+  function handleActiveFilterCycle() {
+    setActiveFilter(f => f === 'all' ? 'active' : f === 'active' ? 'inactive' : 'all')
     setCurrentPage(1)
   }
 
@@ -40,7 +40,7 @@ export default function UserManagementSection() {
   }
 
   const filteredUsers = users
-    .filter(u => !showInactiveOnly || !u.active)
+    .filter(u => activeFilter === 'all' || (activeFilter === 'active' ? u.active : !u.active))
     .filter(u => emailFilter.length < 1 || u.email.toLowerCase().includes(emailFilter.toLowerCase()))
 
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE))
@@ -64,14 +64,16 @@ export default function UserManagementSection() {
               className="flex-1 bg-surface-card border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-slate-500"
             />
             <button
-              onClick={handleInactiveToggle}
+              onClick={handleActiveFilterCycle}
               className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors border ${
-                showInactiveOnly
+                activeFilter === 'active'
+                  ? 'bg-green-900 border-green-700 text-green-300'
+                  : activeFilter === 'inactive'
                   ? 'bg-amber-900 border-amber-700 text-amber-300'
                   : 'bg-surface-card border-slate-700 text-slate-400 hover:bg-slate-700'
               }`}
             >
-              Ausstehend
+              {activeFilter === 'active' ? 'Aktiv' : activeFilter === 'inactive' ? 'Inaktiv' : 'Alle'}
             </button>
           </div>
           <p className="text-slate-500 text-xs">
