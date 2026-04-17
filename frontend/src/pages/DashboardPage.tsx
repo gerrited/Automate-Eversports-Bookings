@@ -11,9 +11,9 @@ import UserManagementSection from '../components/UserManagementSection'
 export default function DashboardPage() {
   const navigate = useNavigate()
   const { hash } = useLocation()
-  const activeTab: 'routinen' | 'benutzer' = hash === '#users' ? 'benutzer' : 'routinen'
+  const activeTab: 'buchungen' | 'benutzer' = hash === '#users' ? 'benutzer' : 'buchungen'
 
-  function setActiveTab(tab: 'routinen' | 'benutzer') {
+  function setActiveTab(tab: 'buchungen' | 'benutzer') {
     navigate(tab === 'benutzer' ? '#users' : '#bookings', { replace: true })
   }
 
@@ -91,7 +91,7 @@ useEffect(() => {
   }
 
   async function handleDelete(id: string) {
-    if (!window.confirm('Routine wirklich löschen?')) return
+    if (!window.confirm('Buchung wirklich löschen?')) return
     await deleteJob(id)
     loadJobs()
   }
@@ -125,7 +125,7 @@ useEffect(() => {
           {/* Tab-Navigation – nur für Admins */}
           {isAdmin() && (
             <div className="flex gap-1 border-b border-slate-700">
-              {(['routinen', 'benutzer'] as const).map((tab) => (
+              {(['buchungen', 'benutzer'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -135,7 +135,7 @@ useEffect(() => {
                       : 'text-slate-400 hover:text-slate-200 hover:bg-surface-card'
                     }`}
                 >
-                  {tab === 'routinen' ? 'Routinen' : 'Benutzer'}
+                  {tab === 'buchungen' ? 'Buchungen' : 'Benutzer'}
                 </button>
               ))}
             </div>
@@ -146,22 +146,22 @@ useEffect(() => {
     <div className={`px-4 pb-8 max-w-2xl mx-auto ${isAdmin() ? 'pt-32 sm:pt-44' : 'pt-24 sm:pt-32'}`}>
 
       {/* Add button – nur auf Buchungen-Tab (oder für Nicht-Admins immer) */}
-      {(!isAdmin() || activeTab === 'routinen') && (
+      {(!isAdmin() || activeTab === 'buchungen') && (
         <button
           onClick={() => { setEditingJob('new'); setShowModal(true) }}
           className="w-full mb-6 py-3 bg-brand hover:bg-brand-hover text-white font-semibold rounded-xl transition-colors"
         >
-          + Routine hinzufügen
+          + Buchung planen
         </button>
       )}
 
       {/* Job list – nur auf Buchungen-Tab (oder für Nicht-Admins immer) */}
-      {(!isAdmin() || activeTab === 'routinen') && (
+      {(!isAdmin() || activeTab === 'buchungen') && (
         <>
           {loading && <p className="text-slate-400 text-sm">Lädt…</p>}
           {!loading && jobs.length === 0 && (
             <p className="text-slate-400 text-sm text-center mt-12">
-              Noch keine Routinen. Leg eine an!
+              Noch keine Buchung geplant.
             </p>
           )}
           <div className="flex flex-col gap-3">
