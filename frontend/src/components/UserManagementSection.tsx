@@ -41,7 +41,7 @@ export default function UserManagementSection() {
 
   const filteredUsers = users
     .filter(u => !showInactiveOnly || !u.active)
-    .filter(u => emailFilter.length < 3 || u.email.toLowerCase().includes(emailFilter.toLowerCase()))
+    .filter(u => emailFilter.length < 1 || u.email.toLowerCase().includes(emailFilter.toLowerCase()))
 
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE))
   const safePage = Math.min(currentPage, totalPages)

@@ -45,25 +45,17 @@ describe('UserManagementSection', () => {
     expect(screen.getAllByText(/user\d+@example\.com/).length).toBe(25)
   })
 
-  it('filter mit < 3 Zeichen ändert nichts', async () => {
-    render(<UserManagementSection />)
-    const input = await screen.findByPlaceholderText('Nach E-Mail filtern…')
-    fireEvent.change(input, { target: { value: 'us' } })
-    expect(screen.getAllByText(/user\d+@example\.com/).length).toBe(25)
-  })
-
-  it('filter mit 3+ Zeichen begrenzt Ergebnisse', async () => {
-    // Nur user0@example.com, user10@example.com … treffen auf "user0"
+  it('filter ab 1 Zeichen begrenzt Ergebnisse', async () => {
     vi.mocked(listUsers).mockResolvedValue([
       { id: '1', email: 'anna@firma.de', active: true, role: 'user', job_count: 0, created_at: '' },
-      { id: '2', email: 'bernd@firma.de', active: true, role: 'user', job_count: 0, created_at: '' },
+      { id: '2', email: 'bernd@xyz.org', active: true, role: 'user', job_count: 0, created_at: '' },
       { id: '3', email: 'anna@test.de', active: true, role: 'admin', job_count: 1, created_at: '' },
     ])
     render(<UserManagementSection />)
     const input = await screen.findByPlaceholderText('Nach E-Mail filtern…')
-    fireEvent.change(input, { target: { value: 'ann' } })
+    fireEvent.change(input, { target: { value: 'a' } })
     expect(screen.getAllByText(/anna@/).length).toBe(2)
-    expect(screen.queryByText('bernd@firma.de')).not.toBeInTheDocument()
+    expect(screen.queryByText('bernd@xyz.org')).not.toBeInTheDocument()
   })
 
   it('filter setzt Seite auf 1 zurück', async () => {
