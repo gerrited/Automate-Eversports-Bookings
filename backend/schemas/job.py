@@ -12,6 +12,7 @@ class JobCreate(BaseModel):
     facility_name: str
     class_name: str
     days_in_advance: int
+    one_time: bool = False
 
 
 class JobUpdate(BaseModel):
@@ -21,6 +22,7 @@ class JobUpdate(BaseModel):
     facility_name: Optional[str] = None
     class_name: Optional[str] = None
     days_in_advance: Optional[int] = None
+    one_time: Optional[bool] = None
 
 
 class JobResponse(BaseModel):
@@ -32,6 +34,7 @@ class JobResponse(BaseModel):
     class_name: str
     days_in_advance: int
     enabled: bool
+    one_time: bool
     created_at: datetime
 
     model_config = {"from_attributes": True}

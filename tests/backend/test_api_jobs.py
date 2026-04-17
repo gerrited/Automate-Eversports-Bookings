@@ -37,6 +37,7 @@ def test_create_job(client, db_session):
     assert body["weekday"] == 1
     assert body["facility_id"] == "73041"
     assert body["enabled"] is True
+    assert body["one_time"] is False
 
 
 def test_update_job(client, db_session):
@@ -106,3 +107,34 @@ def test_get_logs_empty(client, db_session):
     resp = client.get(f"/api/jobs/{job_id}/logs", headers=_auth_header(user.id))
     assert resp.status_code == 200
     assert resp.json() == []
+
+
+def test_create_one_time_job(client, db_session):
+    user = _create_user(db_session)
+    payload = {
+        "weekday": 2,
+        "target_time": "10:00:00",
+        "facility_id": "73041",
+        "facility_name": "CrossFit Rabbit Hole",
+        "class_name": "Yoga",
+        "days_in_advance": 2,
+        "one_time": True,
+    }
+    resp = client.post("/api/jobs", json=payload, headers=_auth_header(user.id))
+    assert resp.status_code == 201
+    assert resp.json()["one_time"] is True
+
+
+def test_update_job_one_time_flag(client, db_session):
+    user = _create_user(db_session)
+    create_resp = client.post(
+        "/api/jobs",
+        json={"weekday": 1, "target_time": "18:00:00", "facility_id": "73041",
+              "facility_name": "CrossFit Rabbit Hole", "class_name": "CrossFit",
+              "days_in_advance": 4},
+        headers=_auth_header(user.id),
+    )
+    job_id = create_resp.json()["id"]
+    resp = client.put(f"/api/jobs/{job_id}", json={"one_time": True}, headers=_auth_header(user.id))
+    assert resp.status_code == 200
+    assert resp.json()["one_time"] is True

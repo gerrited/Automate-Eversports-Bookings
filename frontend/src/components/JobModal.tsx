@@ -21,6 +21,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
   )
   const [className, setClassName] = useState(job?.class_name ?? '')
   const [daysInAdvance, setDaysInAdvance] = useState(job?.days_in_advance ?? 4)
+  const [oneTime, setOneTime] = useState(job?.one_time ?? false)
   const [courses, setCourses] = useState<string[]>([])
 
   useEffect(() => {
@@ -45,6 +46,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
       facility_name: facility.name,
       class_name: className,
       days_in_advance: Number(daysInAdvance),
+      one_time: oneTime,
     })
   }
 
@@ -107,6 +109,17 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
               required
               className="bg-surface-input text-white rounded-lg px-3 py-2 outline-hidden focus:ring-2 focus:ring-brand"
             />
+          </label>
+
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              aria-label="Einmalig"
+              type="checkbox"
+              checked={oneTime}
+              onChange={e => setOneTime(e.target.checked)}
+              className="w-4 h-4 rounded accent-brand"
+            />
+            <span className="text-slate-300 text-sm">Einmalig</span>
           </label>
 
           {error && (

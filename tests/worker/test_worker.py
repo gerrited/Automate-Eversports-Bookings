@@ -13,11 +13,12 @@ def _user(db, uid="u1", ev="ev1", email="a@b.com", active=True):
     return u
 
 
-def _job(db, jid="j1", uid="u1", weekday=1, days=4):
+def _job(db, jid="j1", uid="u1", weekday=1, days=4, one_time=False):
     j = BookingJob(
         id=jid, user_id=uid, weekday=weekday,
         target_time=time(18, 0), facility_id="73041",
         class_name="CrossFit", days_in_advance=days, enabled=True,
+        one_time=one_time,
     )
     db.add(j)
     db.commit()
@@ -241,3 +242,60 @@ def test_run_continues_when_email_sending_fails(db_session, mocker):
     log13 = db_session.query(BookingLog).filter(BookingLog.job_id == "j13").first()
     assert log12.status == "failed"
     assert log13.status == "success"
+
+
+def test_run_deletes_one_time_job_after_success(db_session, mocker):
+    _user(db_session, uid="ot1", ev="ev_ot1", email="ot1@b.com")
+    _job(db_session, jid="jot1", uid="ot1", weekday=1, days=4, one_time=True)
+    friday_18 = datetime(2026, 4, 10, 18, 0)
+
+    mocker.patch("worker.worker.decrypt", return_value="pass")
+    mocker.patch("worker.worker.book_session", return_value={"status": "success", "order_id": "ord-ot1"})
+
+    run(db_session, friday_18)
+
+    remaining = db_session.query(BookingJob).filter(BookingJob.id == "jot1").first()
+    assert remaining is None
+
+
+def test_run_deletes_one_time_job_after_already_booked(db_session, mocker):
+    _user(db_session, uid="ot2", ev="ev_ot2", email="ot2@b.com")
+    _job(db_session, jid="jot2", uid="ot2", weekday=1, days=4, one_time=True)
+    friday_18 = datetime(2026, 4, 10, 18, 0)
+
+    mocker.patch("worker.worker.decrypt", return_value="pass")
+    mocker.patch("worker.worker.book_session", return_value={"status": "already_booked", "order_id": None})
+
+    run(db_session, friday_18)
+
+    remaining = db_session.query(BookingJob).filter(BookingJob.id == "jot2").first()
+    assert remaining is None
+
+
+def test_run_keeps_one_time_job_after_failure(db_session, mocker):
+    _user(db_session, uid="ot3", ev="ev_ot3", email="ot3@b.com")
+    _job(db_session, jid="jot3", uid="ot3", weekday=1, days=4, one_time=True)
+    friday_18 = datetime(2026, 4, 10, 18, 0)
+
+    mocker.patch("worker.worker.decrypt", return_value="pass")
+    mocker.patch("worker.worker.book_session", side_effect=RuntimeError("Class full"))
+    mocker.patch("worker.worker.send_booking_failure_email")
+
+    run(db_session, friday_18)
+
+    remaining = db_session.query(BookingJob).filter(BookingJob.id == "jot3").first()
+    assert remaining is not None
+
+
+def test_run_keeps_regular_job_after_success(db_session, mocker):
+    _user(db_session, uid="ot4", ev="ev_ot4", email="ot4@b.com")
+    _job(db_session, jid="jot4", uid="ot4", weekday=1, days=4, one_time=False)
+    friday_18 = datetime(2026, 4, 10, 18, 0)
+
+    mocker.patch("worker.worker.decrypt", return_value="pass")
+    mocker.patch("worker.worker.book_session", return_value={"status": "success", "order_id": "ord-ot4"})
+
+    run(db_session, friday_18)
+
+    remaining = db_session.query(BookingJob).filter(BookingJob.id == "jot4").first()
+    assert remaining is not None

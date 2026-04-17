@@ -8,9 +8,11 @@ const job: Job = {
   weekday: 1,
   target_time: '18:00:00',
   facility_id: '73041',
+  facility_name: 'CrossFit Rabbit Hole',
   class_name: 'CrossFit',
   days_in_advance: 4,
   enabled: true,
+  one_time: false,
   created_at: '2026-04-01T00:00:00Z',
 }
 
@@ -19,9 +21,23 @@ describe('JobCard', () => {
     render(
       <JobCard job={job} onToggle={vi.fn()} onEdit={vi.fn()} onDelete={vi.fn()} onSelect={vi.fn()} />
     )
-    expect(screen.getByText(/Di/)).toBeInTheDocument()
+    expect(screen.getByText(/Dienstag/)).toBeInTheDocument()
     expect(screen.getByText(/18:00/)).toBeInTheDocument()
-    expect(screen.getByText('CrossFit')).toBeInTheDocument()
+    expect(screen.getAllByText(/CrossFit/)[0]).toBeInTheDocument()
+  })
+
+  it('does not show Einmalig for regular jobs', () => {
+    render(
+      <JobCard job={job} onToggle={vi.fn()} onEdit={vi.fn()} onDelete={vi.fn()} onSelect={vi.fn()} />
+    )
+    expect(screen.queryByText(/Einmalig/)).not.toBeInTheDocument()
+  })
+
+  it('shows Einmalig in text for one-time jobs', () => {
+    render(
+      <JobCard job={{ ...job, one_time: true }} onToggle={vi.fn()} onEdit={vi.fn()} onDelete={vi.fn()} onSelect={vi.fn()} />
+    )
+    expect(screen.getByText(/Einmalig/)).toBeInTheDocument()
   })
 
   it('calls onToggle when toggle is clicked', () => {

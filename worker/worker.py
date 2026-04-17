@@ -115,6 +115,11 @@ def run(db: Session, now: datetime) -> None:
         db.add(log_entry)
         db.commit()
 
+        if job.one_time and log_entry.status in ("success", "already_booked"):
+            log.info("Job %s: one-time job executed successfully, deleting", job.id)
+            db.delete(job)
+            db.commit()
+
 
 def main() -> None:
     db = SessionLocal()
