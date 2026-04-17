@@ -69,7 +69,7 @@ export default function UserManagementSection() {
                 activeFilter === 'active'
                   ? 'bg-green-900 border-green-700 text-green-300'
                   : activeFilter === 'inactive'
-                  ? 'bg-amber-900 border-amber-700 text-amber-300'
+                  ? 'bg-red-900 border-red-700 text-red-300'
                   : 'bg-surface-card border-slate-700 text-slate-400 hover:bg-slate-700'
               }`}
             >
