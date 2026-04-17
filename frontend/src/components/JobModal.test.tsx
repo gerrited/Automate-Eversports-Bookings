@@ -2,6 +2,12 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { vi } from 'vitest'
 import JobModal from './JobModal'
 
+const jobWithFacility = {
+  id: 'j1', weekday: 1, target_time: '18:00:00', facility_id: '73041',
+  facility_name: 'CrossFit Rabbit Hole', class_name: 'CrossFit', days_in_advance: 4,
+  enabled: true, one_time: false, created_at: '',
+}
+
 describe('JobModal', () => {
   const onSave = vi.fn()
   const onClose = vi.fn()
@@ -22,10 +28,7 @@ describe('JobModal', () => {
   })
 
   it('calls onSave with one_time false by default', async () => {
-    render(<JobModal onSave={onSave} onClose={onClose} />)
-    fireEvent.change(screen.getByLabelText(/uhrzeit/i), { target: { value: '18:00' } })
-    fireEvent.change(screen.getByLabelText(/kursname/i), { target: { value: 'CrossFit' } })
-    fireEvent.change(screen.getByLabelText(/tage im voraus/i), { target: { value: '4' } })
+    render(<JobModal job={jobWithFacility} onSave={onSave} onClose={onClose} />)
     fireEvent.click(screen.getByRole('button', { name: /speichern/i }))
     await waitFor(() => expect(onSave).toHaveBeenCalledWith(
       expect.objectContaining({ one_time: false })
@@ -33,7 +36,7 @@ describe('JobModal', () => {
   })
 
   it('calls onSave with one_time true when checkbox is checked', async () => {
-    render(<JobModal onSave={onSave} onClose={onClose} />)
+    render(<JobModal job={jobWithFacility} onSave={onSave} onClose={onClose} />)
     fireEvent.click(screen.getByLabelText(/einmalig/i))
     fireEvent.click(screen.getByRole('button', { name: /speichern/i }))
     await waitFor(() => expect(onSave).toHaveBeenCalledWith(

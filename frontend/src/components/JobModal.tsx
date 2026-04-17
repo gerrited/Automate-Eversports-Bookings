@@ -38,11 +38,12 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
+    if (!facility) return
     await onSave({
       weekday,
       target_time: targetTime,
-      facility_id: facility?.id ?? '',
-      facility_name: facility?.name ?? '',
+      facility_id: facility.id,
+      facility_name: facility.name,
       class_name: className,
       days_in_advance: Number(daysInAdvance),
       one_time: oneTime,
@@ -128,6 +129,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
           <div className="flex gap-3 justify-end mt-2">
             <button
               type="submit"
+              disabled={!facility}
               className="px-4 py-2 bg-brand hover:bg-brand-hover text-white rounded-lg font-semibold transition-colors disabled:opacity-50"
             >
               Speichern
