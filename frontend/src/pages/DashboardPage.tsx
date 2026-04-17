@@ -91,7 +91,7 @@ useEffect(() => {
   }
 
   async function handleDelete(id: string) {
-    if (!window.confirm('Buchung wirklich löschen?')) return
+    if (!window.confirm('Geplante Buchung wirklich löschen?')) return
     await deleteJob(id)
     loadJobs()
   }
