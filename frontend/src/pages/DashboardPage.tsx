@@ -11,9 +11,9 @@ import UserManagementSection from '../components/UserManagementSection'
 export default function DashboardPage() {
   const navigate = useNavigate()
   const { hash } = useLocation()
-  const activeTab: 'buchungen' | 'benutzer' = hash === '#users' ? 'benutzer' : 'buchungen'
+  const activeTab: 'routinen' | 'benutzer' = hash === '#users' ? 'benutzer' : 'routinen'
 
-  function setActiveTab(tab: 'buchungen' | 'benutzer') {
+  function setActiveTab(tab: 'routinen' | 'benutzer') {
     navigate(tab === 'benutzer' ? '#users' : '#bookings', { replace: true })
   }
 
@@ -125,7 +125,7 @@ useEffect(() => {
           {/* Tab-Navigation – nur für Admins */}
           {isAdmin() && (
             <div className="flex gap-1 border-b border-slate-700">
-              {(['buchungen', 'benutzer'] as const).map((tab) => (
+              {(['routinen', 'benutzer'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -135,7 +135,7 @@ useEffect(() => {
                       : 'text-slate-400 hover:text-slate-200 hover:bg-surface-card'
                     }`}
                 >
-                  {tab === 'buchungen' ? 'Routinen' : 'Benutzer'}
+                  {tab === 'routinen' ? 'Routinen' : 'Benutzer'}
                 </button>
               ))}
             </div>
@@ -146,7 +146,7 @@ useEffect(() => {
     <div className={`px-4 pb-8 max-w-2xl mx-auto ${isAdmin() ? 'pt-32 sm:pt-44' : 'pt-24 sm:pt-32'}`}>
 
       {/* Add button – nur auf Buchungen-Tab (oder für Nicht-Admins immer) */}
-      {(!isAdmin() || activeTab === 'buchungen') && (
+      {(!isAdmin() || activeTab === 'routinen') && (
         <button
           onClick={() => { setEditingJob('new'); setShowModal(true) }}
           className="w-full mb-6 py-3 bg-brand hover:bg-brand-hover text-white font-semibold rounded-xl transition-colors"
@@ -156,7 +156,7 @@ useEffect(() => {
       )}
 
       {/* Job list – nur auf Buchungen-Tab (oder für Nicht-Admins immer) */}
-      {(!isAdmin() || activeTab === 'buchungen') && (
+      {(!isAdmin() || activeTab === 'routinen') && (
         <>
           {loading && <p className="text-slate-400 text-sm">Lädt…</p>}
           {!loading && jobs.length === 0 && (
