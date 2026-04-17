@@ -38,9 +38,10 @@ export default function UserManagementSection() {
     : users
 
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE))
+  const safePage = Math.min(currentPage, totalPages)
   const pagedUsers = filteredUsers.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE,
   )
 
   return (
@@ -56,7 +57,7 @@ export default function UserManagementSection() {
             className="bg-surface-card border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-slate-500"
           />
           <p className="text-slate-500 text-xs">
-            {filteredUsers.length} von {users.length} Benutzern · Seite {currentPage} von {totalPages}
+            {filteredUsers.length} von {users.length} Benutzern · Seite {safePage} von {totalPages}
           </p>
           {pagedUsers.map(user => {
             const isSelf = user.email === currentEmail
@@ -91,14 +92,14 @@ export default function UserManagementSection() {
           })}
           <div className="flex items-center justify-center gap-3 mt-2">
             <button
-              disabled={currentPage === 1}
+              disabled={safePage === 1}
               onClick={() => setCurrentPage(p => p - 1)}
               className="px-3 py-1 rounded-md text-sm bg-surface-card text-slate-400 border border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:bg-slate-700 transition-colors"
             >
               ← Zurück
             </button>
             <button
-              disabled={currentPage === totalPages}
+              disabled={safePage === totalPages}
               onClick={() => setCurrentPage(p => p + 1)}
               className="px-3 py-1 rounded-md text-sm bg-surface-card text-slate-400 border border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:bg-slate-700 transition-colors"
             >
