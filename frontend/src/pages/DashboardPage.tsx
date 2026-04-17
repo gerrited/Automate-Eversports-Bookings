@@ -151,7 +151,7 @@ useEffect(() => {
           onClick={() => { setEditingJob('new'); setShowModal(true) }}
           className="w-full mb-6 py-3 bg-brand hover:bg-brand-hover text-white font-semibold rounded-xl transition-colors"
         >
-          + Buchung hinzufügen
+          + Routine hinzufügen
         </button>
       )}
 
@@ -161,7 +161,7 @@ useEffect(() => {
           {loading && <p className="text-slate-400 text-sm">Lädt…</p>}
           {!loading && jobs.length === 0 && (
             <p className="text-slate-400 text-sm text-center mt-12">
-              Noch keine Buchungen. Leg eine an!
+              Noch keine Routinen. Leg eine an!
             </p>
           )}
           <div className="flex flex-col gap-3">

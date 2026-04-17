@@ -52,7 +52,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4">
       <div className="bg-surface-card rounded-xl w-full max-w-md p-6">
         <h2 className="text-white font-bold text-lg mb-5">
-          {job ? 'Buchung bearbeiten' : 'Neue Buchung anlegen'}
+          {job ? 'Routine bearbeiten' : 'Neue Routine anlegen'}
         </h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
