@@ -18,7 +18,7 @@ Three containers run on Kubernetes:
 | Container | Image | Purpose |
 |-----------|-------|---------|
 | `backend` | `…-backend:latest` | FastAPI REST API — manages users, jobs, and booking logs |
-| `worker` | `…-worker:latest` | Hourly CronJob — runs due booking jobs for all users |
+| `worker` | `…-worker:latest` | CronJob — runs due booking jobs for all users |
 | `frontend` | `…-frontend:latest` | React SPA served by nginx — booking management UI |
 
 A fourth image (`…-cronjob:latest`, the original `book.py`) still works standalone via CronJob for single-user setups.
@@ -27,7 +27,7 @@ A fourth image (`…-cronjob:latest`, the original `book.py`) still works standa
 
 1. **Login** — users sign in with their Eversports credentials; the backend verifies them against the Eversports API and issues a JWT
 2. **Job management** — authenticated users create booking jobs (weekday, time, facility, class name, days-in-advance) via the frontend
-3. **Hourly worker** — every hour, the worker checks whether any job is due today (`target_date = today + days_in_advance`), skips jobs that were already booked successfully, decrypts stored credentials, and calls the Eversports API
+3. **Worker** — the worker checks regularly whether any job is due (`target_date = today + days_in_advance`), skips jobs that were already booked successfully, decrypts stored credentials, and calls the Eversports API
 4. **Booking flow** — for each job the worker authenticates, finds the class slot on the calendar, creates a cart, and confirms the order
 
 ## Why Kubernetes and not GitHub Actions?
