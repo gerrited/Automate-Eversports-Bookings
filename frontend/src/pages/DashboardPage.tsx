@@ -91,7 +91,7 @@ useEffect(() => {
   }
 
   async function handleDelete(id: string) {
-    if (!window.confirm('Buchung wirklich löschen?')) return
+    if (!window.confirm('Routine wirklich löschen?')) return
     await deleteJob(id)
     loadJobs()
   }
@@ -135,7 +135,7 @@ useEffect(() => {
                       : 'text-slate-400 hover:text-slate-200 hover:bg-surface-card'
                     }`}
                 >
-                  {tab === 'buchungen' ? 'Buchungen' : 'Benutzer'}
+                  {tab === 'buchungen' ? 'Routinen' : 'Benutzer'}
                 </button>
               ))}
             </div>
