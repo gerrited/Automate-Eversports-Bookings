@@ -9,7 +9,7 @@ Automatically books Eversports classes for multiple users. Managed via a web-bas
 
 ## Process
 
-Booking jobs are configured through a React frontend, stored in a PostgreSQL database, and executed by an hourly Kubernetes worker that uses the Eversports GraphQL API directly (no browser required).
+Booking jobs are configured through a React frontend, stored in a PostgreSQL database, and executed by a Kubernetes cronjobs that use the Eversports GraphQL API directly (no browser required).
 
 ## Architecture
 
