@@ -9,6 +9,7 @@ export default function UserManagementSection() {
   const [users, setUsers] = useState<UserRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [emailFilter, setEmailFilter] = useState('')
+  const [showInactiveOnly, setShowInactiveOnly] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const currentEmail = getEmail()
 
@@ -27,15 +28,20 @@ export default function UserManagementSection() {
     setCurrentPage(1)
   }
 
+  function handleInactiveToggle() {
+    setShowInactiveOnly(v => !v)
+    setCurrentPage(1)
+  }
+
   async function handleToggle(user: UserRecord) {
     if (user.email === currentEmail && user.active) return
     await setUserActive(user.id, !user.active)
     load()
   }
 
-  const filteredUsers = emailFilter.length >= 3
-    ? users.filter(u => u.email.toLowerCase().includes(emailFilter.toLowerCase()))
-    : users
+  const filteredUsers = users
+    .filter(u => !showInactiveOnly || !u.active)
+    .filter(u => emailFilter.length < 3 || u.email.toLowerCase().includes(emailFilter.toLowerCase()))
 
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE))
   const safePage = Math.min(currentPage, totalPages)
@@ -49,13 +55,25 @@ export default function UserManagementSection() {
       {loading && <p className="text-slate-400 text-sm">Lädt…</p>}
       {!loading && (
         <div className="flex flex-col gap-2">
-          <input
-            type="text"
-            value={emailFilter}
-            onChange={e => handleFilterChange(e.target.value)}
-            placeholder="Nach E-Mail filtern…"
-            className="bg-surface-card border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-slate-500"
-          />
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={emailFilter}
+              onChange={e => handleFilterChange(e.target.value)}
+              placeholder="Nach E-Mail filtern…"
+              className="flex-1 bg-surface-card border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-slate-500"
+            />
+            <button
+              onClick={handleInactiveToggle}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors border ${
+                showInactiveOnly
+                  ? 'bg-amber-900 border-amber-700 text-amber-300'
+                  : 'bg-surface-card border-slate-700 text-slate-400 hover:bg-slate-700'
+              }`}
+            >
+              Ausstehend
+            </button>
+          </div>
           <p className="text-slate-500 text-xs">
             {filteredUsers.length} von {users.length} Benutzern · Seite {safePage} von {totalPages}
           </p>
