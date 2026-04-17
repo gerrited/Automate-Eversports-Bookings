@@ -24,10 +24,10 @@ export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect }: P
         <div className="flex justify-between items-start">
           <div>
             <p className="text-white font-semibold">
-              {WEEKDAY_NAMES[job.weekday]} · {time} Uhr · {job.class_name}{job.one_time ? ' · Einmalig' : ''}
+              {WEEKDAY_NAMES[job.weekday]} · {time} Uhr · {job.class_name}
             </p>
             <p className="text-slate-400 text-sm mt-1">
-              {facilityLabel} · {job.days_in_advance} Tage im Voraus
+              {facilityLabel} · {job.days_in_advance} Tage im Voraus{job.one_time ? ' · Einmalig' : ''}
             </p>
           </div>
           {/* Toggle */}
