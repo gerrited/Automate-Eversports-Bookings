@@ -1,11 +1,20 @@
 import { useState } from 'react'
 import LoginModal from '../components/LoginModal'
 
+interface LightboxImage {
+  src: string
+  alt: string
+}
+
 export default function LandingPage() {
   const [modalOpen, setModalOpen] = useState(false)
+  const [lightbox, setLightbox] = useState<LightboxImage | null>(null)
 
   function openModal() { setModalOpen(true) }
   function closeModal() { setModalOpen(false) }
+
+  function openLightbox(src: string, alt: string) { setLightbox({ src, alt }) }
+  function closeLightbox() { setLightbox(null) }
 
   return (
     <div className="min-h-screen bg-surface-page">
@@ -30,24 +39,26 @@ export default function LandingPage() {
           <div className="flex-1">
             <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
               Nie wieder<br />
-              <span className="text-brand-hover">Buchung verpassen.</span>
+              <span className="text-brand-hover">einen Kurs verpassen.</span>
             </h1>
             <p className="text-slate-400 text-base leading-relaxed mb-8">
-              Richte deine Eversports-Buchungen einmal ein – die App bucht
+              Richte deine Eversports-Buchungen einmal ein und die App bucht
               automatisch jede Woche zur richtigen Zeit.
             </p>
             <button
               onClick={openModal}
-              className="bg-brand hover:bg-brand-hover text-white font-semibold rounded-xl px-6 py-3 transition-colors"
+              className="bg-brand hover:bg-brand-hover text-white font-semibold rounded-xl px-6 py-3 transition-colors whitespace-nowrap"
             >
               Jetzt anmelden →
             </button>
           </div>
 
-          {/* Screenshot 1 Platzhalter */}
-          <div className="flex-shrink-0 w-full sm:w-72 h-48 bg-surface-card border border-slate-700/60 rounded-xl flex flex-col items-center justify-center text-slate-600 gap-2">
-            <span className="text-3xl">📷</span>
-            <span className="text-sm">Screenshot 1</span>
+          {/* Screenshot 1 */}
+          <div
+            className="flex-shrink-0 w-full sm:w-72 bg-surface-card border border-slate-700/60 rounded-xl overflow-hidden cursor-zoom-in"
+            onClick={() => openLightbox('/new-booking.png', 'Screenshot - neue Buchung')}
+          >
+            <img src="/new-booking.png" alt="Screenshot - neue Buchung" className="w-full h-auto" />
           </div>
         </section>
 
@@ -65,12 +76,14 @@ export default function LandingPage() {
             Wähle Kurs, Uhrzeit und Wochentag – die App erledigt den Rest vollautomatisch.
           </p>
 
-          {/* Video Platzhalter */}
-          <div className="w-full h-56 sm:h-72 bg-surface-card border border-slate-700/60 rounded-xl flex flex-col items-center justify-center text-slate-600 gap-3">
-            <div className="w-12 h-12 rounded-full bg-brand flex items-center justify-center text-white text-lg">
-              ▶
-            </div>
-            <span className="text-sm">Video-Platzhalter</span>
+          <div className="w-full aspect-video rounded-xl overflow-hidden border border-slate-700/60">
+            <iframe
+              src="https://www.youtube.com/embed/spngnOZDBQo"
+              title="So funktioniert's"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="w-full h-full"
+            />
           </div>
         </section>
 
@@ -91,10 +104,12 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* Screenshot 2 Platzhalter */}
-          <div className="flex-shrink-0 w-full sm:w-72 h-44 bg-surface-card border border-slate-700/60 rounded-xl flex flex-col items-center justify-center text-slate-600 gap-2">
-            <span className="text-3xl">📷</span>
-            <span className="text-sm">Screenshot 2</span>
+          {/* Screenshot 2 */}
+          <div
+            className="flex-shrink-0 w-full sm:w-72 bg-surface-card border border-slate-700/60 rounded-xl overflow-hidden cursor-zoom-in"
+            onClick={() => openLightbox('/overview.png', 'Screenshot - Buchungsübersicht')}
+          >
+            <img src="/overview.png" alt="Screenshot - Buchungsübersicht" className="w-full h-auto" />
           </div>
         </section>
 
@@ -111,6 +126,22 @@ export default function LandingPage() {
         </section>
 
       </div>
+
+      {/* Lightbox */}
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex flex-col items-center justify-center px-4"
+          onClick={closeLightbox}
+        >
+          <img
+            src={lightbox.src}
+            alt={lightbox.alt}
+            className="max-w-full max-h-[80vh] rounded-xl shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          />
+          <p className="mt-4 text-slate-300 text-sm">{lightbox.alt}</p>
+        </div>
+      )}
 
       {/* Login Modal */}
       {modalOpen && <LoginModal onClose={closeModal} />}
