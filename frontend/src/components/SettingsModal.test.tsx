@@ -1,0 +1,92 @@
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { vi } from 'vitest'
+import { MemoryRouter } from 'react-router-dom'
+
+vi.mock('../api/account', () => ({
+  deleteAccount: vi.fn(),
+}))
+vi.mock('../api/client', () => ({
+  clearToken: vi.fn(),
+}))
+
+import SettingsModal from './SettingsModal'
+import { deleteAccount } from '../api/account'
+import { clearToken } from '../api/client'
+
+const mockNavigate = vi.fn()
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom')
+  return { ...actual, useNavigate: () => mockNavigate }
+})
+
+function renderModal(onClose = vi.fn()) {
+  return render(
+    <MemoryRouter>
+      <SettingsModal onClose={onClose} />
+    </MemoryRouter>
+  )
+}
+
+afterEach(() => {
+  vi.clearAllMocks()
+})
+
+describe('SettingsModal', () => {
+  it('renders the settings heading and delete section', () => {
+    renderModal()
+    expect(screen.getByRole('heading', { name: 'Einstellungen' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Konto löschen' })).toBeInTheDocument()
+  })
+
+  it('shows the irreversibility warning', () => {
+    renderModal()
+    expect(screen.getByText(/unwiderruflich/i)).toBeInTheDocument()
+  })
+
+  it('delete button is disabled when input is empty', () => {
+    renderModal()
+    const btn = screen.getByRole('button', { name: /konto löschen/i })
+    expect(btn).toBeDisabled()
+  })
+
+  it('delete button is disabled when input is wrong', () => {
+    renderModal()
+    fireEvent.change(screen.getByPlaceholderText('DELETE'), { target: { value: 'delete' } })
+    expect(screen.getByRole('button', { name: /konto löschen/i })).toBeDisabled()
+  })
+
+  it('delete button is enabled when DELETE is typed exactly', () => {
+    renderModal()
+    fireEvent.change(screen.getByPlaceholderText('DELETE'), { target: { value: 'DELETE' } })
+    expect(screen.getByRole('button', { name: /konto löschen/i })).not.toBeDisabled()
+  })
+
+  it('calls deleteAccount, clearToken, and navigates to /login on success', async () => {
+    vi.mocked(deleteAccount).mockResolvedValue(undefined)
+    renderModal()
+    fireEvent.change(screen.getByPlaceholderText('DELETE'), { target: { value: 'DELETE' } })
+    fireEvent.click(screen.getByRole('button', { name: /konto löschen/i }))
+    await waitFor(() => {
+      expect(deleteAccount).toHaveBeenCalledOnce()
+      expect(clearToken).toHaveBeenCalledOnce()
+      expect(mockNavigate).toHaveBeenCalledWith('/login')
+    })
+  })
+
+  it('shows error message when deleteAccount fails', async () => {
+    vi.mocked(deleteAccount).mockRejectedValue(new Error('Serverfehler'))
+    renderModal()
+    fireEvent.change(screen.getByPlaceholderText('DELETE'), { target: { value: 'DELETE' } })
+    fireEvent.click(screen.getByRole('button', { name: /konto löschen/i }))
+    expect(await screen.findByText('Serverfehler')).toBeInTheDocument()
+    expect(clearToken).not.toHaveBeenCalled()
+    expect(mockNavigate).not.toHaveBeenCalled()
+  })
+
+  it('calls onClose when the X button is clicked', () => {
+    const onClose = vi.fn()
+    renderModal(onClose)
+    fireEvent.click(screen.getByLabelText('Schließen'))
+    expect(onClose).toHaveBeenCalledOnce()
+  })
+})
