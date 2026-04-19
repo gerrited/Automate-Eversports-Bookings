@@ -7,16 +7,18 @@ import JobCard from '../components/JobCard'
 import JobModal from '../components/JobModal'
 import LogDrawer from '../components/LogDrawer'
 import UserManagementSection from '../components/UserManagementSection'
+import AllJobsSection from '../components/AllJobsSection'
 import HamburgerMenu from '../components/HamburgerMenu'
 import SettingsModal from '../components/SettingsModal'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
   const { hash } = useLocation()
-  const activeTab: 'buchungen' | 'benutzer' = hash === '#users' ? 'benutzer' : 'buchungen'
+  const activeTab: 'buchungen' | 'benutzer' | 'alle-buchungen' =
+    hash === '#users' ? 'benutzer' : hash === '#all-jobs' ? 'alle-buchungen' : 'buchungen'
 
-  function setActiveTab(tab: 'buchungen' | 'benutzer') {
-    navigate(tab === 'benutzer' ? '#users' : '#bookings', { replace: true })
+  function setActiveTab(tab: 'buchungen' | 'benutzer' | 'alle-buchungen') {
+    navigate(tab === 'benutzer' ? '#users' : tab === 'alle-buchungen' ? '#all-jobs' : '#bookings', { replace: true })
   }
 
   const [jobs, setJobs] = useState<Job[]>([])
@@ -45,8 +47,12 @@ useEffect(() => {
       touchStartX.current = null
       touchStartY.current = null
       if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return
-      const next = dx < 0 ? '#users' : '#bookings'
-      window.location.hash = next
+      const tabs = ['#bookings', '#users', '#all-jobs']
+      const currentIndex = tabs.indexOf(window.location.hash || '#bookings')
+      const nextIndex = dx < 0
+        ? Math.min(currentIndex + 1, tabs.length - 1)
+        : Math.max(currentIndex - 1, 0)
+      window.location.hash = tabs[nextIndex]
     }
 
     document.addEventListener('touchstart', onTouchStart)
@@ -123,7 +129,7 @@ useEffect(() => {
           {/* Tab-Navigation – nur für Admins */}
           {isAdmin() && (
             <div className="flex gap-1 border-b border-slate-700">
-              {(['buchungen', 'benutzer'] as const).map((tab) => (
+              {(['buchungen', 'benutzer', 'alle-buchungen'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -133,7 +139,7 @@ useEffect(() => {
                       : 'text-slate-400 hover:text-slate-200 hover:bg-surface-card'
                     }`}
                 >
-                  {tab === 'buchungen' ? 'Buchungen' : 'Benutzer'}
+                  {tab === 'buchungen' ? 'Buchungen' : tab === 'benutzer' ? 'Benutzer' : 'Alle Buchungen'}
                 </button>
               ))}
             </div>
@@ -184,6 +190,9 @@ useEffect(() => {
 
       {/* Admin: Benutzer-Tab */}
       {isAdmin() && activeTab === 'benutzer' && <UserManagementSection />}
+
+      {/* Admin: Alle Buchungen-Tab */}
+      {isAdmin() && activeTab === 'alle-buchungen' && <AllJobsSection />}
 
       {/* Modal */}
       {showModal && (
