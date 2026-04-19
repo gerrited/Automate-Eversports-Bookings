@@ -38,3 +38,8 @@ class JobResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class AdminJobResponse(JobResponse):
+    user_email: str
+    execution_count: int
