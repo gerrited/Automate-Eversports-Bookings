@@ -69,7 +69,7 @@ useEffect(() => {
 
   function handleLogout() {
     clearToken()
-    navigate('/login')
+    navigate('/')
   }
 
   async function handleSave(data: JobFormData) {

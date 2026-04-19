@@ -69,7 +69,7 @@ describe('SettingsModal', () => {
     await waitFor(() => {
       expect(deleteAccount).toHaveBeenCalledOnce()
       expect(clearToken).toHaveBeenCalledOnce()
-      expect(mockNavigate).toHaveBeenCalledWith('/login')
+      expect(mockNavigate).toHaveBeenCalledWith('/')
     })
   })
 

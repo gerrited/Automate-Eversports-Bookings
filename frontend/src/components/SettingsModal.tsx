@@ -19,7 +19,7 @@ export default function SettingsModal({ onClose }: Props) {
     try {
       await deleteAccount()
       clearToken()
-      navigate('/login')
+      navigate('/')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Fehler beim Löschen des Kontos.')
       setLoading(false)
