@@ -1,4 +1,5 @@
 import os
+from datetime import date, time
 from cryptography.fernet import Fernet
 
 os.environ.setdefault("ENCRYPTION_KEY", Fernet.generate_key().decode())
@@ -7,6 +8,8 @@ os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 os.environ.setdefault("FRONTEND_URL", "http://localhost:5173")
 
 from backend.core.auth import create_access_token
+from backend.models.booking_job import BookingJob
+from backend.models.booking_log import BookingLog
 from backend.models.user import User
 
 
@@ -174,10 +177,6 @@ def test_no_email_when_user_not_found(client, db_session, mocker):
 
 # --- /admin/jobs ---
 
-from backend.models.booking_job import BookingJob
-from backend.models.booking_log import BookingLog
-from datetime import time, date
-
 
 def _make_job(db_session, user_id: str, weekday: int = 0, target_time=time(18, 0)) -> BookingJob:
     job = BookingJob(
@@ -263,3 +262,7 @@ def test_list_all_jobs_sorted_by_weekday_time_email(client, db_session):
     jobs = resp.json()
     weekdays = [j["weekday"] for j in jobs]
     assert weekdays == sorted(weekdays)
+    # Within each weekday, verify target_time ordering
+    weekday_0_jobs = [j for j in jobs if j["weekday"] == 0]
+    times = [j["target_time"] for j in weekday_0_jobs]
+    assert times == sorted(times)

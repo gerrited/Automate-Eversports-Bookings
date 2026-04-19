@@ -87,7 +87,7 @@ def list_all_jobs(
         )
         .join(User, User.id == BookingJob.user_id)
         .outerjoin(BookingLog, BookingLog.job_id == BookingJob.id)
-        .group_by(BookingJob.id)
+        .group_by(BookingJob.id, User.email)
         .order_by(BookingJob.weekday, BookingJob.target_time, User.email)
         .all()
     )
