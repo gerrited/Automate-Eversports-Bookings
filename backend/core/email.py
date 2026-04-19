@@ -25,7 +25,7 @@ def send_new_user_notification(admin_emails: list[str], new_user_email: str) -> 
         sender = f"FOReversports <{from_email}>"
 
         frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:5173")
-        users_url = f"{frontend_url}/#users"
+        users_url = f"{frontend_url}/dashboard#users"
 
         now = datetime.now(BERLIN).strftime("%d.%m.%Y %H:%M")
         subject = f"Neuer User: {new_user_email}"
