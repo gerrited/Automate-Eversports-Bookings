@@ -45,3 +45,8 @@ export interface UserRecord {
   job_count: number
   created_at: string
 }
+
+export interface AdminJob extends Job {
+  user_email: string
+  execution_count: number
+}
