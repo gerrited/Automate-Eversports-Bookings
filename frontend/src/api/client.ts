@@ -51,7 +51,7 @@ export async function apiFetch<T>(
 
   if (resp.status === 401) {
     clearToken()
-    window.location.href = '/login'
+    window.location.href = '/'
     throw new Error('Unauthorized')
   }
 

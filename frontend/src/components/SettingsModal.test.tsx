@@ -61,7 +61,7 @@ describe('SettingsModal', () => {
     expect(screen.getByRole('button', { name: /konto löschen/i })).not.toBeDisabled()
   })
 
-  it('calls deleteAccount, clearToken, and navigates to /login on success', async () => {
+  it('calls deleteAccount, clearToken, and navigates to / on success', async () => {
     vi.mocked(deleteAccount).mockResolvedValue(undefined)
     renderModal()
     fireEvent.change(screen.getByPlaceholderText('DELETE'), { target: { value: 'DELETE' } })
