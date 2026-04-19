@@ -20,8 +20,8 @@ export default function LoginModal({ onClose }: Props) {
     setLoading(true)
     try {
       await login(email, password)
-      navigate('/dashboard')
       onClose()
+      navigate('/dashboard')
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : ''
       setError(

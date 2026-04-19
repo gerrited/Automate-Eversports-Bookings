@@ -10,6 +10,11 @@ vi.mock('react-router-dom', async () => {
   return { ...actual, useNavigate: () => mockNavigate }
 })
 
+beforeEach(() => {
+  vi.restoreAllMocks()
+  mockNavigate.mockReset()
+})
+
 describe('LoginModal', () => {
   it('renders email and password fields', () => {
     render(<MemoryRouter><LoginModal onClose={vi.fn()} /></MemoryRouter>)
