@@ -42,8 +42,8 @@ export default function LandingPage() {
               <span className="text-brand-hover">einen Kurs verpassen.</span>
             </h1>
             <p className="text-slate-400 text-base leading-relaxed mb-8">
-              Richte deine Eversports-Buchungen einmal ein und die App bucht
-              automatisch jede Woche zur richtigen Zeit.
+              Plane deine Eversports-Termine im Voraus und die App bucht sie
+              automatisch zur richtigen Zeit.
             </p>
             <button
               onClick={openModal}
@@ -73,7 +73,7 @@ export default function LandingPage() {
             Einmal einrichten, jede Woche profitieren
           </h2>
           <p className="text-slate-400 text-sm leading-relaxed mb-6 max-w-xl">
-            Wähle Kurs, Uhrzeit und Wochentag – die App erledigt den Rest vollautomatisch.
+            Wähle Kurs, Wochentag und Uhrzeit – die App erledigt den Rest vollautomatisch.
           </p>
 
           <div className="w-full aspect-video rounded-xl overflow-hidden border border-slate-700/60">
@@ -96,7 +96,7 @@ export default function LandingPage() {
               Übersicht behalten
             </p>
             <h2 className="text-2xl font-bold text-white mb-2">
-              Alle Buchungen auf einen Blick
+              Alle Buchungen auf einem Blick
             </h2>
             <p className="text-slate-400 text-sm leading-relaxed">
               Sieh alle geplanten Buchungen, aktiviere oder pausiere sie
