@@ -7,6 +7,8 @@ import JobCard from '../components/JobCard'
 import JobModal from '../components/JobModal'
 import LogDrawer from '../components/LogDrawer'
 import UserManagementSection from '../components/UserManagementSection'
+import HamburgerMenu from '../components/HamburgerMenu'
+import SettingsModal from '../components/SettingsModal'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
@@ -25,6 +27,7 @@ export default function DashboardPage() {
   const [logs, setLogs] = useState<BookingLog[]>([])
   const [logsLoading, setLogsLoading] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [showSettings, setShowSettings] = useState(false)
   const touchStartX = useRef<number | null>(null)
   const touchStartY = useRef<number | null>(null)
 useEffect(() => {
@@ -114,12 +117,7 @@ useEffect(() => {
         <div className="px-4 max-w-2xl mx-auto">
           <div className="flex justify-between items-center py-4">
             <img src="/logo.png" alt="Logo" className="h-10 w-auto sm:h-16" />
-            <button
-              onClick={handleLogout}
-              className="px-3 py-1 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm transition-colors"
-            >
-              Abmelden
-            </button>
+            <HamburgerMenu onLogout={handleLogout} onSettings={() => setShowSettings(true)} />
           </div>
 
           {/* Tab-Navigation – nur für Admins */}
@@ -206,6 +204,9 @@ useEffect(() => {
           onClose={() => setSelectedJob(null)}
         />
       )}
+
+      {/* Settings modal */}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
     </div>
     </div>
   )
