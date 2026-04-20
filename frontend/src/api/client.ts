@@ -24,6 +24,7 @@ export function clearToken(): void {
   localStorage.removeItem('token')
   localStorage.removeItem('email')
   localStorage.removeItem('role')
+  localStorage.removeItem('avatarUrl')
   window.dispatchEvent(new Event('auth-changed'))
 }
 
@@ -34,6 +35,14 @@ export function setEmail(email: string): void {
 
 export function getEmail(): string | null {
   return localStorage.getItem('email')
+}
+
+export function setAvatarUrl(url: string): void {
+  localStorage.setItem('avatarUrl', url)
+}
+
+export function getAvatarUrl(): string | null {
+  return localStorage.getItem('avatarUrl')
 }
 
 export async function apiFetch<T>(

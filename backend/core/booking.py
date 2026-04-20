@@ -70,12 +70,20 @@ def _resolve_facility_id(facility_id: str, session: requests.Session) -> str:
 def eversports_login(email: str, password: str) -> Optional[dict]:
     """
     Authenticate against Eversports.
-    Returns {"user_id": str, "session": requests.Session} on success, None on failure.
+    Returns {"user_id": str, "session": requests.Session, "avatar_url": str | None} on success, None on failure.
     """
     query = """
     mutation LoginCredentialLogin($params: AuthParamsInput!, $credentials: CredentialLoginInput!) {
       credentialLogin(params: $params, credentials: $credentials) {
-        ... on AuthResult { apiToken user { id __typename } __typename }
+        ... on AuthResult {
+          apiToken
+          user {
+            id
+            profilePicture { xSmall __typename }
+            __typename
+          }
+          __typename
+        }
         ... on ExpectedErrors { errors { id message path __typename } __typename }
         __typename
       }
@@ -99,7 +107,12 @@ def eversports_login(email: str, password: str) -> Optional[dict]:
     result = data["credentialLogin"]
     if result["__typename"] != "AuthResult":
         return None
-    return {"user_id": result["user"]["id"], "session": session}
+    profile_picture = result["user"].get("profilePicture") or {}
+    return {
+        "user_id": result["user"]["id"],
+        "session": session,
+        "avatar_url": profile_picture.get("xSmall"),
+    }
 
 
 def book_session(

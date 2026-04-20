@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { clearToken, isAdmin } from '../api/client'
+import { clearToken, isAdmin, getEmail, getAvatarUrl } from '../api/client'
 import { listJobs, createJob, updateJob, toggleJob, deleteJob, getJobLogs } from '../api/jobs'
 import type { Job, BookingLog, JobFormData } from '../types'
 import JobCard from '../components/JobCard'
@@ -141,7 +141,7 @@ useEffect(() => {
         <div className="px-4 max-w-2xl mx-auto">
           <div className="flex justify-between items-center py-4">
             <img src="/logo.png" alt="Logo" className="h-10 w-auto sm:h-16 cursor-pointer" onClick={() => navigate('/dashboard')} />
-            <HamburgerMenu onLogout={handleLogout} onSettings={() => setShowSettings(true)} />
+            <HamburgerMenu onLogout={handleLogout} onSettings={() => setShowSettings(true)} userEmail={getEmail()} userAvatar={getAvatarUrl()} />
           </div>
 
           {/* Tab-Navigation – nur für Admins */}

@@ -3,10 +3,13 @@ import { useState, useEffect, useRef } from 'react'
 interface Props {
   onLogout: () => void
   onSettings: () => void
+  userEmail?: string | null
+  userAvatar?: string | null
 }
 
-export default function HamburgerMenu({ onLogout, onSettings }: Props) {
+export default function HamburgerMenu({ onLogout, onSettings, userEmail, userAvatar }: Props) {
   const [open, setOpen] = useState(false)
+  const [tooltipVisible, setTooltipVisible] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -20,7 +23,30 @@ export default function HamburgerMenu({ onLogout, onSettings }: Props) {
   }, [])
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative flex items-center gap-2">
+      {userEmail && (
+        <div className="relative">
+          <button
+            onMouseEnter={() => setTooltipVisible(true)}
+            onMouseLeave={() => setTooltipVisible(false)}
+            onClick={() => setTooltipVisible(v => !v)}
+            className="flex items-center justify-center w-9 h-9 rounded-full bg-slate-700 hover:bg-slate-600 transition-colors"
+            aria-label={`Angemeldet als ${userEmail}`}
+          >
+            {userAvatar
+              ? <img src={userAvatar} alt="Profil" className="w-7 h-7 rounded-full object-cover" />
+              : <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-slate-200" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+                </svg>
+            }
+          </button>
+          {tooltipVisible && (
+            <div className="absolute right-0 mt-2 px-3 py-2 rounded-lg bg-surface-card border border-slate-700 shadow-lg z-50 whitespace-nowrap text-sm text-slate-200">
+              Angemeldet als {userEmail}
+            </div>
+          )}
+        </div>
+      )}
       <button
         onClick={() => setOpen(o => !o)}
         className="flex flex-col justify-center items-center w-9 h-9 gap-1.5 rounded-md bg-slate-700 hover:bg-slate-600 transition-colors"

@@ -53,4 +53,8 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(user)
 
-    return TokenResponse(access_token=create_access_token(user.id), role=user.role)
+    return TokenResponse(
+        access_token=create_access_token(user.id),
+        role=user.role,
+        avatar_url=result.get("avatar_url"),
+    )

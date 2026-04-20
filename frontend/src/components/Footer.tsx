@@ -1,19 +1,9 @@
-import { useState, useEffect } from 'react'
-import { getEmail } from '../api/client'
-
 export default function Footer() {
   const sha = import.meta.env.VITE_COMMIT_SHA as string | undefined
   const repo = import.meta.env.VITE_GITHUB_REPO as string | undefined
   const version = (import.meta.env.VITE_VERSION as string | undefined)?.replace(/^v/, '')
-  const [email, setEmail] = useState<string | null>(getEmail)
 
-  useEffect(() => {
-    const handler = () => setEmail(getEmail())
-    window.addEventListener('auth-changed', handler)
-    return () => window.removeEventListener('auth-changed', handler)
-  }, [])
-
-  if (!sha && !email && !version) return null
+  if (!sha && !version) return null
 
   const shortSha = sha?.slice(0, 7)
   const commitHref = sha && repo ? `https://github.com/${repo}/commit/${sha}` : undefined
@@ -21,8 +11,6 @@ export default function Footer() {
 
   return (
     <footer style={{ position: 'fixed', bottom: 0, left: 0, right: 0, textAlign: 'center', padding: '6px', fontSize: '0.7rem', color: '#9ca3af', background: '#021214', borderTop: '1px solid #0d3538', display: 'flex', justifyContent: 'center', gap: '8px' }}>
-      {email && <span>Angemeldet als {email}</span>}
-      {email && <span>·</span>}
       {version && (
         <span>
           {versionHref ? (
