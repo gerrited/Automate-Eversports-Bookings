@@ -102,7 +102,7 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
                       <button
                         aria-label={`Jobs von ${user.email} anzeigen`}
                         onClick={() => onJobsClick(user.email)}
-                        className="text-brand underline cursor-pointer hover:opacity-80 transition-opacity"
+                        className="text-white underline cursor-pointer hover:opacity-80 transition-opacity"
                       >
                         {user.job_count} {user.job_count === 1 ? 'Job' : 'Jobs'}
                       </button>
