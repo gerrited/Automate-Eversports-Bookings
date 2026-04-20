@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import LoginModal from '../components/LoginModal'
+
+const ROTATING_TEXTS = ['einen Kurs verpassen.', 'eine Klasse verpassen.', 'ein Training verpassen.']
 
 interface LightboxImage {
   src: string
@@ -9,6 +11,26 @@ interface LightboxImage {
 export default function LandingPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [lightbox, setLightbox] = useState<LightboxImage | null>(null)
+  const [textIdx, setTextIdx] = useState(0)
+  const [visible, setVisible] = useState(true)
+  const pendingIdx = useRef(0)
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setVisible(false)
+      pendingIdx.current = (textIdx + 1) % ROTATING_TEXTS.length
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [textIdx])
+
+  useEffect(() => {
+    if (visible) return
+    const t = setTimeout(() => {
+      setTextIdx(pendingIdx.current)
+      setVisible(true)
+    }, 250)
+    return () => clearTimeout(t)
+  }, [visible])
 
   function openModal() { setModalOpen(true) }
   function closeModal() { setModalOpen(false) }
@@ -39,7 +61,18 @@ export default function LandingPage() {
           <div className="flex-1">
             <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
               Nie wieder<br />
-              <span className="text-brand-hover">einen Kurs verpassen.</span>
+              <span
+                className="text-brand-hover inline-block"
+                style={{
+                  opacity: visible ? 1 : 0,
+                  transform: visible ? 'translateY(0)' : 'translateY(-6px)',
+                  transition: visible
+                    ? 'opacity 300ms ease-in-out, transform 300ms ease-in-out'
+                    : 'opacity 250ms ease-in-out, transform 250ms ease-in-out',
+                }}
+              >
+                {ROTATING_TEXTS[textIdx]}
+              </span>
             </h1>
             <p className="text-slate-400 text-base leading-relaxed mb-8">
               Plane deine Eversports-Termine im Voraus und die App bucht sie

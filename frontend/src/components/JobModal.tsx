@@ -61,7 +61,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
         </h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
-            <span className="text-slate-400 text-sm">Einrichtung</span>
+            <span className="text-slate-400 text-sm">Anbieter</span>
             <FacilityCombobox value={facility} onChange={setFacility} />
           </div>
 

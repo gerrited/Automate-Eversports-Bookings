@@ -64,10 +64,10 @@ export default function FacilityCombobox({ value, onChange }: Props) {
   return (
     <div ref={containerRef} className="relative">
       <input
-        aria-label="Einrichtung suchen"
+        aria-label="Anbieter suchen"
         type="text"
         value={isOpen ? query : (value?.name ?? '')}
-        placeholder={value ? value.name : 'Einrichtung suchen…'}
+        placeholder={value ? value.name : 'Anbieter suchen…'}
         onFocus={() => { setIsOpen(true); setQuery('') }}
         onChange={e => setQuery(e.target.value)}
         className={inputClass}

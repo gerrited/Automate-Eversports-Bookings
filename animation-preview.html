@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Text-Animation Vorschau</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0f172a; color: #e2e8f0; font-family: system-ui, sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* Layout */
+  .layout { display: flex; flex: 1; gap: 0; min-height: 0; }
+  .controls { width: 280px; flex-shrink: 0; background: #1e293b; border-right: 1px solid #334155; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+  .right { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .preview-area { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px; }
+  .prompt-area { background: #1e293b; border-top: 1px solid #334155; padding: 16px 20px; }
+
+  /* Controls */
+  .section-label { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #64748b; margin-bottom: 10px; }
+  .control-row { display: flex; flex-direction: column; gap: 6px; }
+  .control-row label { font-size: 13px; color: #94a3b8; display: flex; justify-content: space-between; }
+  .control-row label span { color: #a78bfa; font-weight: 600; }
+  input[type=range] { width: 100%; accent-color: #a78bfa; cursor: pointer; }
+  select { width: 100%; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; padding: 7px 10px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+  select:focus { outline: 2px solid #a78bfa; }
+
+  /* Presets */
+  .presets { display: flex; flex-direction: column; gap: 6px; }
+  .preset-btn { background: #0f172a; border: 1px solid #334155; color: #94a3b8; padding: 7px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; text-align: left; transition: border-color .15s, color .15s; }
+  .preset-btn:hover, .preset-btn.active { border-color: #a78bfa; color: #a78bfa; }
+
+  /* Hero preview */
+  .hero-preview {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 16px;
+    padding: 40px 48px;
+    max-width: 520px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,.5);
+  }
+  .hero-headline { font-size: 32px; font-weight: 700; color: #fff; line-height: 1.2; margin-bottom: 16px; }
+  .hero-sub { font-size: 14px; color: #64748b; line-height: 1.6; margin-bottom: 24px; }
+  .hero-btn { background: #a78bfa; color: #fff; font-weight: 600; padding: 10px 20px; border-radius: 10px; border: none; font-size: 14px; cursor: pointer; }
+
+  /* Animated text */
+  .animated-text { display: inline-block; color: #a78bfa; }
+
+  /* Prompt */
+  .prompt-label { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #64748b; margin-bottom: 8px; }
+  .prompt-box { display: flex; gap: 10px; align-items: flex-start; }
+  .prompt-text { flex: 1; font-family: monospace; font-size: 12px; color: #94a3b8; line-height: 1.5; background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 10px 12px; min-height: 56px; }
+  .copy-btn { background: #a78bfa; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: background .15s; }
+  .copy-btn:hover { background: #9061f9; }
+  .copy-btn.copied { background: #10b981; }
+
+  /* Divider in controls */
+  hr { border: none; border-top: 1px solid #334155; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- Controls -->
+  <div class="controls">
+    <div>
+      <div class="section-label">Presets</div>
+      <div class="presets">
+        <button class="preset-btn active" onclick="applyPreset('default')">Sanft (Standard)</button>
+        <button class="preset-btn" onclick="applyPreset('snappy')">Schnell &amp; direkt</button>
+        <button class="preset-btn" onclick="applyPreset('dramatic')">Dramatisch</button>
+        <button class="preset-btn" onclick="applyPreset('slide')">Nur Slide</button>
+      </div>
+    </div>
+
+    <hr />
+
+    <div>
+      <div class="section-label">Timing</div>
+      <div class="control-row">
+        <label>Intervall <span id="intervalVal">3 s</span></label>
+        <input type="range" id="interval" min="1" max="6" step="0.5" value="3" oninput="update('interval')" />
+      </div>
+      <div class="control-row" style="margin-top:12px">
+        <label>Einblend-Dauer <span id="fadeInVal">400 ms</span></label>
+        <input type="range" id="fadeIn" min="100" max="1000" step="50" value="400" oninput="update('fadeIn')" />
+      </div>
+      <div class="control-row" style="margin-top:12px">
+        <label>Ausblend-Dauer <span id="fadeOutVal">300 ms</span></label>
+        <input type="range" id="fadeOut" min="100" max="800" step="50" value="300" oninput="update('fadeOut')" />
+      </div>
+    </div>
+
+    <hr />
+
+    <div>
+      <div class="section-label">Animation-Stil</div>
+      <div class="control-row">
+        <label>Typ</label>
+        <select id="animType" onchange="update('animType')">
+          <option value="fade-slide">Fade + Slide</option>
+          <option value="fade">Nur Fade</option>
+          <option value="slide-up">Slide von unten</option>
+          <option value="slide-down">Slide von oben</option>
+        </select>
+      </div>
+      <div class="control-row" style="margin-top:12px">
+        <label>Slide-Distanz <span id="slideVal">8 px</span></label>
+        <input type="range" id="slide" min="0" max="30" step="2" value="8" oninput="update('slide')" />
+      </div>
+      <div class="control-row" style="margin-top:12px">
+        <label>Easing</label>
+        <select id="easing" onchange="update('easing')">
+          <option value="ease-in-out">ease-in-out</option>
+          <option value="ease-out">ease-out</option>
+          <option value="ease-in">ease-in</option>
+          <option value="cubic-bezier(0.34,1.56,0.64,1)">Spring (overshoot)</option>
+          <option value="linear">linear</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: preview + prompt -->
+  <div class="right">
+    <div class="preview-area">
+      <div class="hero-preview">
+        <h1 class="hero-headline">
+          Nie wieder<br />
+          <span class="animated-text" id="animText">einen Kurs verpassen.</span>
+        </h1>
+        <p class="hero-sub">Plane deine Eversports-Termine im Voraus und die App bucht sie immer automatisch für dich.</p>
+        <button class="hero-btn">Jetzt anmelden →</button>
+      </div>
+    </div>
+
+    <div class="prompt-area">
+      <div class="prompt-label">Generierter Code-Hinweis</div>
+      <div class="prompt-box">
+        <div class="prompt-text" id="promptText"></div>
+        <button class="copy-btn" id="copyBtn" onclick="copyPrompt()">Kopieren</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const texts = ['einen Kurs verpassen.', 'eine Klasse verpassen.', 'ein Training verpassen.'];
+  let currentIdx = 0;
+  let timer = null;
+  let fadeOutTimer = null;
+  let styleEl = null;
+
+  const state = {
+    interval: 3,
+    fadeIn: 400,
+    fadeOut: 300,
+    animType: 'fade-slide',
+    slide: 8,
+    easing: 'ease-in-out',
+  };
+
+  const DEFAULTS = { ...state };
+
+  function applyPreset(name) {
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+
+    const presets = {
+      default: { interval: 3, fadeIn: 400, fadeOut: 300, animType: 'fade-slide', slide: 8, easing: 'ease-in-out' },
+      snappy:  { interval: 2, fadeIn: 150, fadeOut: 150, animType: 'fade-slide', slide: 6, easing: 'ease-out' },
+      dramatic:{ interval: 4, fadeIn: 600, fadeOut: 500, animType: 'slide-up',   slide: 20, easing: 'cubic-bezier(0.34,1.56,0.64,1)' },
+      slide:   { interval: 3, fadeIn: 350, fadeOut: 250, animType: 'slide-up',   slide: 12, easing: 'ease-in-out' },
+    };
+
+    Object.assign(state, presets[name]);
+    syncControls();
+    restartAnimation();
+    updatePrompt();
+  }
+
+  function syncControls() {
+    document.getElementById('interval').value = state.interval;
+    document.getElementById('intervalVal').textContent = state.interval + ' s';
+    document.getElementById('fadeIn').value = state.fadeIn;
+    document.getElementById('fadeInVal').textContent = state.fadeIn + ' ms';
+    document.getElementById('fadeOut').value = state.fadeOut;
+    document.getElementById('fadeOutVal').textContent = state.fadeOut + ' ms';
+    document.getElementById('animType').value = state.animType;
+    document.getElementById('slide').value = state.slide;
+    document.getElementById('slideVal').textContent = state.slide + ' px';
+    document.getElementById('easing').value = state.easing;
+  }
+
+  function update(key) {
+    const el = document.getElementById(key);
+    const val = el.type === 'range' ? parseFloat(el.value) : el.value;
+    state[key] = val;
+
+    // Update display labels
+    if (key === 'interval') document.getElementById('intervalVal').textContent = val + ' s';
+    if (key === 'fadeIn')   document.getElementById('fadeInVal').textContent = val + ' ms';
+    if (key === 'fadeOut')  document.getElementById('fadeOutVal').textContent = val + ' ms';
+    if (key === 'slide')    document.getElementById('slideVal').textContent = val + ' px';
+
+    restartAnimation();
+    updatePrompt();
+  }
+
+  function getTransforms() {
+    const s = state.slide;
+    switch (state.animType) {
+      case 'fade':       return { inFrom: 'none', outTo: 'none' };
+      case 'slide-up':   return { inFrom: `translateY(${s}px)`, outTo: `translateY(-${s}px)` };
+      case 'slide-down': return { inFrom: `translateY(-${s}px)`, outTo: `translateY(${s}px)` };
+      default:           return { inFrom: `translateY(${s}px)`, outTo: `translateY(-${s}px)` };
+    }
+  }
+
+  function showText(idx, animate) {
+    const el = document.getElementById('animText');
+    el.textContent = texts[idx];
+
+    if (!animate) { el.style.opacity = '1'; el.style.transform = 'none'; return; }
+
+    const { inFrom } = getTransforms();
+    el.style.transition = 'none';
+    el.style.opacity = '0';
+    el.style.transform = inFrom;
+
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      el.style.transition = `opacity ${state.fadeIn}ms ${state.easing}, transform ${state.fadeIn}ms ${state.easing}`;
+      el.style.opacity = '1';
+      el.style.transform = 'none';
+    }));
+  }
+
+  function fadeOutAndNext() {
+    const el = document.getElementById('animText');
+    const { outTo } = getTransforms();
+    el.style.transition = `opacity ${state.fadeOut}ms ${state.easing}, transform ${state.fadeOut}ms ${state.easing}`;
+    el.style.opacity = '0';
+    el.style.transform = outTo;
+
+    fadeOutTimer = setTimeout(() => {
+      currentIdx = (currentIdx + 1) % texts.length;
+      showText(currentIdx, true);
+    }, state.fadeOut);
+  }
+
+  function restartAnimation() {
+    clearInterval(timer);
+    clearTimeout(fadeOutTimer);
+    currentIdx = 0;
+    showText(0, false);
+
+    timer = setInterval(() => {
+      fadeOutAndNext();
+    }, state.interval * 1000);
+  }
+
+  function updatePrompt() {
+    const parts = [];
+    const animLabel = { 'fade-slide': 'Fade + Slide', 'fade': 'nur Fade', 'slide-up': 'Slide von unten', 'slide-down': 'Slide von oben' }[state.animType];
+
+    if (state.animType !== DEFAULTS.animType || state.slide !== DEFAULTS.slide) {
+      const slideNote = state.animType !== 'fade' ? `, ${state.slide}px Versatz` : '';
+      parts.push(`Animation: ${animLabel}${slideNote}`);
+    }
+    if (state.interval !== DEFAULTS.interval) parts.push(`Intervall: ${state.interval}s`);
+    if (state.fadeIn !== DEFAULTS.fadeIn)    parts.push(`Einblenden: ${state.fadeIn}ms`);
+    if (state.fadeOut !== DEFAULTS.fadeOut)  parts.push(`Ausblenden: ${state.fadeOut}ms`);
+    if (state.easing !== DEFAULTS.easing)    parts.push(`Easing: ${state.easing}`);
+
+    const base = `Rotiere die Textvarianten ["einen Kurs verpassen.", "eine Klasse verpassen.", "ein Training verpassen."] mit einem useEffect-Interval von ${state.interval}s.`;
+    const details = parts.length ? ` ${parts.join(', ')}.` : ' Standard-Animation (Fade + Slide, 400ms ein / 300ms aus, 8px Versatz).';
+
+    document.getElementById('promptText').textContent = base + details;
+  }
+
+  function copyPrompt() {
+    const text = document.getElementById('promptText').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = 'Kopiert!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Kopieren'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+
+  // Init
+  restartAnimation();
+  updatePrompt();
+</script>
+</body>
+</html>
