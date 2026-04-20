@@ -49,3 +49,40 @@ def send_booking_failure_email(user_email: str, job, error_message: str, target_
         log.info("Failure email sent to %s for job %s", user_email, job.id)
     except Exception as exc:
         log.error("Failed to send failure email to %s: %s", user_email, exc)
+
+
+def send_debug_cancel_failure_email(user_email: str, job, error_message: str, target_date: date) -> None:
+    """Sendet eine Email wenn die Stornierung einer Debug-Buchung fehlgeschlagen ist."""
+    try:
+        resend.api_key = os.environ["RESEND_API_KEY"]
+        from_email = os.environ["FROM_EMAIL"]
+
+        time_str = job.target_time.strftime("%H:%M")
+        date_str = target_date.strftime("%d.%m.%Y")
+        weekday_str = WEEKDAYS_DE[target_date.weekday()]
+
+        frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:5173")
+        sender = f"FOReversports <{from_email}>"
+
+        subject = f"Debug-Stornierung fehlgeschlagen: {job.class_name} am {date_str}"
+        html = f"""
+<p><strong>Die Debug-Buchung für {job.class_name} wurde erfolgreich gebucht, konnte aber nicht automatisch storniert werden.</strong></p>
+<ul>
+  <li><strong>Kurs:</strong> {job.class_name} — {time_str} Uhr</li>
+  <li><strong>Tag:</strong> {weekday_str}, {date_str}</li>
+  <li><strong>Facility:</strong> {job.facility_name}</li>
+</ul>
+<p><strong>Fehler:</strong> <code>{error_message}</code></p>
+<p>Bitte storniere die Buchung manuell auf Eversports.</p>
+<p><a href="{frontend_url}">Zur App</a></p>
+"""
+
+        resend.Emails.send({
+            "from": sender,
+            "to": [user_email],
+            "subject": subject,
+            "html": html,
+        })
+        log.info("Debug cancel failure email sent to %s for job %s", user_email, job.id)
+    except Exception as exc:
+        log.error("Failed to send debug cancel failure email to %s: %s", user_email, exc)
