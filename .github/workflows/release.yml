@@ -1,0 +1,47 @@
+# .github/workflows/release.yml
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  test:
+    name: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install -r requirements-backend.txt
+      - run: pytest tests/ -v
+        env:
+          JWT_SECRET: test-secret
+
+  version:
+    name: calculate version
+    runs-on: ubuntu-latest
+    outputs:
+      semver: ${{ steps.gitversion.outputs.semVer }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gittools/actions/gitversion/setup@v3
+        with:
+          versionSpec: '6.x'
+      - uses: gittools/actions/gitversion/execute@v3
+        id: gitversion
+
+  build:
+    name: build images
+    needs: [test, version]
+    uses: ./.github/workflows/build-images.yml
+    with:
+      version: ${{ needs.version.outputs.semver }}
