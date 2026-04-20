@@ -14,11 +14,11 @@ import SettingsModal from '../components/SettingsModal'
 export default function DashboardPage() {
   const navigate = useNavigate()
   const { hash } = useLocation()
-  const activeTab: 'buchungen' | 'benutzer' | 'alle-buchungen' =
-    hash === '#users' ? 'benutzer' : hash === '#all-jobs' ? 'alle-buchungen' : 'buchungen'
+  const activeTab: 'buchungen' | 'benutzer' | 'jobs' =
+    hash === '#users' ? 'benutzer' : hash === '#all-jobs' ? 'jobs' : 'buchungen'
 
-  function setActiveTab(tab: 'buchungen' | 'benutzer' | 'alle-buchungen') {
-    navigate(tab === 'benutzer' ? '#users' : tab === 'alle-buchungen' ? '#all-jobs' : '#bookings', { replace: true })
+  function setActiveTab(tab: 'buchungen' | 'benutzer' | 'jobs') {
+    navigate(tab === 'benutzer' ? '#users' : tab === 'jobs' ? '#all-jobs' : '#bookings', { replace: true })
   }
 
   const [jobs, setJobs] = useState<Job[]>([])
@@ -30,6 +30,13 @@ export default function DashboardPage() {
   const [logsLoading, setLogsLoading] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [showSettings, setShowSettings] = useState(false)
+  const [jobsEmailFilter, setJobsEmailFilter] = useState('')
+
+  function handleUserJobsClick(email: string) {
+    setJobsEmailFilter(email)
+    setActiveTab('jobs')
+  }
+
   const touchStartX = useRef<number | null>(null)
   const touchStartY = useRef<number | null>(null)
 useEffect(() => {
@@ -129,7 +136,7 @@ useEffect(() => {
           {/* Tab-Navigation – nur für Admins */}
           {isAdmin() && (
             <div className="flex gap-1 border-b border-slate-700">
-              {(['buchungen', 'benutzer', 'alle-buchungen'] as const).map((tab) => (
+              {(['buchungen', 'benutzer', 'jobs'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -139,7 +146,7 @@ useEffect(() => {
                       : 'text-slate-400 hover:text-slate-200 hover:bg-surface-card'
                     }`}
                 >
-                  {tab === 'buchungen' ? 'Buchungen' : tab === 'benutzer' ? 'Benutzer' : 'Alle Buchungen'}
+                  {tab === 'buchungen' ? 'Buchungen' : tab === 'benutzer' ? 'Benutzer' : 'Jobs'}
                 </button>
               ))}
             </div>
@@ -189,10 +196,10 @@ useEffect(() => {
       )}
 
       {/* Admin: Benutzer-Tab */}
-      {isAdmin() && activeTab === 'benutzer' && <UserManagementSection />}
+      {isAdmin() && activeTab === 'benutzer' && <UserManagementSection onJobsClick={handleUserJobsClick} />}
 
-      {/* Admin: Alle Buchungen-Tab */}
-      {isAdmin() && activeTab === 'alle-buchungen' && <AllJobsSection />}
+      {/* Admin: Jobs-Tab */}
+      {isAdmin() && activeTab === 'jobs' && <AllJobsSection initialEmailFilter={jobsEmailFilter} />}
 
       {/* Modal */}
       {showModal && (
