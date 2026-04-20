@@ -1,5 +1,6 @@
 // frontend/src/components/Footer.test.tsx
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { vi, afterEach } from 'vitest'
 import Footer from './Footer'
 
@@ -10,9 +11,10 @@ afterEach(() => {
 })
 
 describe('Footer', () => {
-  it('renders nothing when no sha, version, or email', () => {
-    const { container } = render(<Footer />)
-    expect(container.firstChild).toBeNull()
+  it('renders only the FAQ link when no sha or version is set', () => {
+    render(<Footer />)
+    expect(screen.getByRole('button', { name: 'FAQ' })).toBeInTheDocument()
+    expect(screen.queryByRole('link')).toBeNull()
   })
 
   it('renders version link pointing to GitHub releases when VITE_VERSION is set', () => {
@@ -44,7 +46,7 @@ describe('Footer', () => {
     render(<Footer />)
     expect(screen.getByRole('link', { name: 'v1.2.3' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'abc1234' })).toBeInTheDocument()
-    expect(screen.getByText('·')).toBeInTheDocument()
+    expect(screen.getAllByText('·')).toHaveLength(2)
   })
 
   it('renders version without link when VITE_GITHUB_REPO is absent', () => {
@@ -59,5 +61,23 @@ describe('Footer', () => {
     render(<Footer />)
     expect(screen.getByText('abc1234')).toBeInTheDocument()
     expect(screen.queryByRole('link')).toBeNull()
+  })
+
+  it('always renders the FAQ link even without env vars', () => {
+    render(<Footer />)
+    expect(screen.getByRole('button', { name: 'FAQ' })).toBeInTheDocument()
+  })
+
+  it('opens FaqModal when FAQ link is clicked', async () => {
+    render(<Footer />)
+    await userEvent.click(screen.getByRole('button', { name: 'FAQ' }))
+    expect(screen.getByText('Häufig gestellte Fragen')).toBeInTheDocument()
+  })
+
+  it('closes FaqModal when close button inside modal is clicked', async () => {
+    render(<Footer />)
+    await userEvent.click(screen.getByRole('button', { name: 'FAQ' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Schließen' }))
+    expect(screen.queryByText('Häufig gestellte Fragen')).not.toBeInTheDocument()
   })
 })
