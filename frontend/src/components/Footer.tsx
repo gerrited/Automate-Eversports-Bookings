@@ -21,7 +21,8 @@ export default function Footer() {
 
   return (
     <footer style={{ position: 'fixed', bottom: 0, left: 0, right: 0, textAlign: 'center', padding: '6px', fontSize: '0.7rem', color: '#9ca3af', background: '#021214', borderTop: '1px solid #0d3538', display: 'flex', justifyContent: 'center', gap: '8px' }}>
-      {email && <span>Angemeldet als {email} -</span>}
+      {email && <span>Angemeldet als {email}</span>}
+      {email && <span>·</span>}
       {version && (
         <span>
           {versionHref ? (
