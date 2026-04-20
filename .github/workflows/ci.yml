@@ -27,3 +27,7 @@ jobs:
     name: build images
     needs: test
     uses: ./.github/workflows/build-images.yml
+    secrets: inherit
+    permissions:
+      contents: read
+      packages: write
