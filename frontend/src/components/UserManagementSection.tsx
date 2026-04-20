@@ -5,7 +5,7 @@ import type { UserRecord } from '../types'
 
 const PAGE_SIZE = 25
 
-export default function UserManagementSection() {
+export default function UserManagementSection({ onJobsClick }: { onJobsClick?: (email: string) => void } = {}) {
   const [users, setUsers] = useState<UserRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [emailFilter, setEmailFilter] = useState('')
@@ -91,7 +91,16 @@ export default function UserManagementSection() {
                   <p className="text-slate-400 text-xs">
                     {user.role === 'admin' ? 'Admin' : 'User'} ·{' '}
                     {user.active ? 'Aktiv' : 'Inaktiv'} ·{' '}
-                    {user.job_count} {user.job_count === 1 ? 'Job' : 'Jobs'}
+                    {onJobsClick && user.job_count > 0 ? (
+                      <button
+                        onClick={() => onJobsClick(user.email)}
+                        className="text-brand underline cursor-pointer hover:opacity-80 transition-opacity"
+                      >
+                        {user.job_count} {user.job_count === 1 ? 'Job' : 'Jobs'}
+                      </button>
+                    ) : (
+                      <>{user.job_count} {user.job_count === 1 ? 'Job' : 'Jobs'}</>
+                    )}
                   </p>
                 </div>
                 <button

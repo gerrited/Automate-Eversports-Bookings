@@ -88,4 +88,43 @@ describe('UserManagementSection', () => {
     fireEvent.click(screen.getByRole('button', { name: /weiter/i }))
     expect(await screen.findByText(/Seite 2 von 3/)).toBeInTheDocument()
   })
+
+  it('calls onJobsClick with user email when jobs count button is clicked', async () => {
+    vi.mocked(listUsers).mockResolvedValue([
+      {
+        id: '1',
+        email: 'alice@example.com',
+        role: 'user' as const,
+        active: true,
+        job_count: 3,
+        created_at: '',
+      },
+    ])
+
+    const onJobsClick = vi.fn()
+    render(<UserManagementSection onJobsClick={onJobsClick} />)
+
+    const jobsButton = await screen.findByRole('button', { name: '3 Jobs' })
+    fireEvent.click(jobsButton)
+
+    expect(onJobsClick).toHaveBeenCalledWith('alice@example.com')
+  })
+
+  it('does not render a jobs button when job_count is 0', async () => {
+    vi.mocked(listUsers).mockResolvedValue([
+      {
+        id: '2',
+        email: 'bob@example.com',
+        role: 'user' as const,
+        active: true,
+        job_count: 0,
+        created_at: '',
+      },
+    ])
+
+    render(<UserManagementSection />)
+
+    await screen.findByPlaceholderText('Nach E-Mail filtern…')
+    expect(screen.queryByRole('button', { name: /Jobs/ })).not.toBeInTheDocument()
+  })
 })
