@@ -1,0 +1,6 @@
+# GitVersion.yml
+mode: ContinuousDelivery
+branches:
+  main:
+    is-mainline: true
+    increment: Patch
