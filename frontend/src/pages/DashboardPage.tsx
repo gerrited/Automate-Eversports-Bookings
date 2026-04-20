@@ -169,12 +169,26 @@ useEffect(() => {
 
       {/* Add button – nur auf Buchungen-Tab (oder für Nicht-Admins immer) */}
       {(!isAdmin() || activeTab === 'buchungen') && (
-        <button
-          onClick={() => { setEditingJob('new'); setShowModal(true) }}
-          className="w-full mb-6 py-3 bg-brand hover:bg-brand-hover text-white font-semibold rounded-xl transition-colors"
-        >
-          + Buchung planen
-        </button>
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={() => { setEditingJob('new'); setShowModal(true) }}
+            className="flex-1 py-3 bg-brand hover:bg-brand-hover text-white font-semibold rounded-xl transition-colors"
+          >
+            + Buchung planen
+          </button>
+          {isAdmin() && (
+            <button
+              onClick={() => setDebugFilter(f => f === 'live' ? 'debug' : 'live')}
+              className={`px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${
+                debugFilter === 'debug'
+                  ? 'bg-amber-500 hover:bg-amber-400 text-white'
+                  : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
+              }`}
+            >
+              {debugFilter === 'debug' ? 'Debug' : 'Live'}
+            </button>
+          )}
+        </div>
       )}
 
       {/* Job list – nur auf Buchungen-Tab (oder für Nicht-Admins immer) */}
@@ -185,23 +199,6 @@ useEffect(() => {
             <p className="text-slate-400 text-sm text-center mt-12">
               Noch keine Buchung geplant.
             </p>
-          )}
-          {isAdmin() && (
-            <div className="flex gap-1 mb-4">
-              {(['live', 'debug'] as const).map(f => (
-                <button
-                  key={f}
-                  onClick={() => setDebugFilter(f)}
-                  className={`px-3 py-1 rounded-md text-sm transition-colors ${
-                    debugFilter === f
-                      ? 'bg-brand text-white'
-                      : 'bg-slate-700 text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  {f === 'live' ? 'Live' : 'Debug'}
-                </button>
-              ))}
-            </div>
           )}
 
           <div className="flex flex-col gap-3">
