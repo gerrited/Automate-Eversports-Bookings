@@ -43,7 +43,7 @@ export default function SettingsModal({ onClose }: Props) {
         <div className="border-t border-slate-700 pt-5">
           <h3 className="text-white font-semibold mb-2">Konto löschen</h3>
           <p className="text-red-400 text-sm mb-4">
-            Diese Aktion ist unwiderruflich. Dein Konto, alle geplanten Buchungen und das Buchungsprotokoll werden dauerhaft gelöscht.
+            Diese Aktion ist unwiderruflich. Dein Konto bei FOReversports und alle geplanten Buchungen werden dauerhaft gelöscht.
           </p>
 
           <label className="flex flex-col gap-1 mb-4">
