@@ -28,7 +28,7 @@ Alle API-Endpunkte sind durch serverseitige Authentifizierung geschützt. Es gib
 
 **Kontext:** Das System muss sich periodisch automatisch bei Eversports einloggen. Passwörter müssen daher reversibel gespeichert werden — Hashing ist nicht möglich.
 
-**Implementierung:** Passwörter werden symmetrisch mit Fernet verschlüsselt (`backend/core/encryption.py`). Der Schlüssel kommt aus einer Umgebungsvariable.
+**Implementierung:** Passwörter werden symmetrisch mit AES-256-GCM (AEAD) verschlüsselt (`backend/core/encryption.py`). Der 256-Bit-Schlüssel (32 Bytes) kommt aus der Umgebungsvariable `ENCRYPTION_KEY`. Jede Verschlüsselung verwendet einen zufälligen 12-Byte-Nonce; Authentizität und Vertraulichkeit werden durch GCM nativ garantiert — kein separates HMAC erforderlich.
 
 **Risiko:** Wer sowohl Datenbankinhalt als auch den Verschlüsselungsschlüssel kompromittiert, kann alle gespeicherten Eversports-Passwörter im Klartext lesen. Es gibt keine Möglichkeit, dieses Risiko vollständig zu eliminieren, ohne die Architektur grundlegend zu ändern (z. B. OAuth-Delegation durch Eversports, falls verfügbar).
 
