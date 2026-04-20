@@ -79,6 +79,7 @@ export default function HamburgerMenu({ onLogout, onSettings, userEmail, userAva
                     onChange={e => {
                       setRole(e.target.checked ? 'admin' : 'user')
                       window.dispatchEvent(new Event('auth-changed'))
+                      setOpen(false)
                     }}
                     className="accent-brand"
                   />
