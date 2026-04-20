@@ -88,11 +88,12 @@ export default function UserManagementSection({ onJobsClick }: { onJobsClick?: (
               >
                 <div>
                   <p className="text-white text-sm">{user.email}</p>
-                  <p className="text-slate-400 text-xs">
+                  <span className="text-slate-400 text-xs">
                     {user.role === 'admin' ? 'Admin' : 'User'} ·{' '}
                     {user.active ? 'Aktiv' : 'Inaktiv'} ·{' '}
                     {onJobsClick && user.job_count > 0 ? (
                       <button
+                        aria-label={`Jobs von ${user.email} anzeigen`}
                         onClick={() => onJobsClick(user.email)}
                         className="text-brand underline cursor-pointer hover:opacity-80 transition-opacity"
                       >
@@ -101,7 +102,7 @@ export default function UserManagementSection({ onJobsClick }: { onJobsClick?: (
                     ) : (
                       <>{user.job_count} {user.job_count === 1 ? 'Job' : 'Jobs'}</>
                     )}
-                  </p>
+                  </span>
                 </div>
                 <button
                   disabled={isSelf}

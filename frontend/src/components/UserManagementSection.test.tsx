@@ -104,7 +104,7 @@ describe('UserManagementSection', () => {
     const onJobsClick = vi.fn()
     render(<UserManagementSection onJobsClick={onJobsClick} />)
 
-    const jobsButton = await screen.findByRole('button', { name: '3 Jobs' })
+    const jobsButton = await screen.findByRole('button', { name: 'Jobs von alice@example.com anzeigen' })
     fireEvent.click(jobsButton)
 
     expect(onJobsClick).toHaveBeenCalledWith('alice@example.com')
