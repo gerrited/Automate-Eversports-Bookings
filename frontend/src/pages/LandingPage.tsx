@@ -43,7 +43,7 @@ export default function LandingPage() {
             </h1>
             <p className="text-slate-400 text-base leading-relaxed mb-8">
               Plane deine Eversports-Termine im Voraus und die App bucht sie
-              automatisch zur richtigen Zeit.
+              immer automatisch für dich.
             </p>
             <button
               onClick={openModal}
@@ -73,7 +73,7 @@ export default function LandingPage() {
             Einmal einrichten, jede Woche profitieren
           </h2>
           <p className="text-slate-400 text-sm leading-relaxed mb-6 max-w-xl">
-            Wähle Kurs, Wochentag und Uhrzeit – die App erledigt den Rest vollautomatisch.
+            Wähle einfach Kurs, Wochentag sowie Uhrzeit – die App erledigt den Rest vollautomatisch.
           </p>
 
           <div className="w-full aspect-video rounded-xl overflow-hidden border border-slate-700/60">
