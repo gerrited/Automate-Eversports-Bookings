@@ -5,10 +5,10 @@ import type { UserRecord } from '../types'
 
 const PAGE_SIZE = 25
 
-export default function UserManagementSection({ onJobsClick }: { onJobsClick?: (email: string) => void } = {}) {
+export default function UserManagementSection({ onJobsClick, initialEmailFilter }: { onJobsClick?: (email: string) => void; initialEmailFilter?: string } = {}) {
   const [users, setUsers] = useState<UserRecord[]>([])
   const [loading, setLoading] = useState(true)
-  const [emailFilter, setEmailFilter] = useState('')
+  const [emailFilter, setEmailFilter] = useState(initialEmailFilter ?? '')
   const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all')
   const [currentPage, setCurrentPage] = useState(1)
   const currentEmail = getEmail()
@@ -22,6 +22,13 @@ export default function UserManagementSection({ onJobsClick }: { onJobsClick?: (
   }, [])
 
   useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    if (initialEmailFilter !== undefined) {
+      setEmailFilter(initialEmailFilter)
+      setCurrentPage(1)
+    }
+  }, [initialEmailFilter])
 
   function handleFilterChange(value: string) {
     setEmailFilter(value)

@@ -5,7 +5,7 @@ import type { AdminJob } from '../types'
 
 const PAGE_SIZE = 25
 
-export default function AllJobsSection({ initialEmailFilter }: { initialEmailFilter?: string } = {}) {
+export default function AllJobsSection({ initialEmailFilter, onUserClick }: { initialEmailFilter?: string; onUserClick?: (email: string) => void } = {}) {
   const [jobs, setJobs] = useState<AdminJob[]>([])
   const [loading, setLoading] = useState(true)
   const [emailFilter, setEmailFilter] = useState(initialEmailFilter ?? '')
@@ -70,7 +70,17 @@ export default function AllJobsSection({ initialEmailFilter }: { initialEmailFil
                 className="bg-surface-card rounded-xl px-4 py-3 flex items-center justify-between"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="text-white text-sm font-medium truncate">{job.user_email}</p>
+                  {onUserClick ? (
+                    <button
+                      aria-label={`Benutzer ${job.user_email} anzeigen`}
+                      onClick={() => onUserClick(job.user_email)}
+                      className="text-white text-sm font-medium truncate text-left hover:text-brand transition-colors cursor-pointer"
+                    >
+                      {job.user_email}
+                    </button>
+                  ) : (
+                    <p className="text-white text-sm font-medium truncate">{job.user_email}</p>
+                  )}
                   <p className="text-slate-300 text-sm">
                     {WEEKDAY_NAMES[job.weekday]} · {displayTime} Uhr · <span>{job.class_name}</span>
                   </p>

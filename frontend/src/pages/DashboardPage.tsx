@@ -31,10 +31,16 @@ export default function DashboardPage() {
   const [saveError, setSaveError] = useState<string | null>(null)
   const [showSettings, setShowSettings] = useState(false)
   const [jobsEmailFilter, setJobsEmailFilter] = useState('')
+  const [usersEmailFilter, setUsersEmailFilter] = useState('')
 
   function handleUserJobsClick(email: string) {
     setJobsEmailFilter(email)
     setActiveTab('jobs')
+  }
+
+  function handleJobUserClick(email: string) {
+    setUsersEmailFilter(email)
+    setActiveTab('benutzer')
   }
 
   const touchStartX = useRef<number | null>(null)
@@ -196,10 +202,10 @@ useEffect(() => {
       )}
 
       {/* Admin: Benutzer-Tab */}
-      {isAdmin() && activeTab === 'benutzer' && <UserManagementSection onJobsClick={handleUserJobsClick} />}
+      {isAdmin() && activeTab === 'benutzer' && <UserManagementSection onJobsClick={handleUserJobsClick} initialEmailFilter={usersEmailFilter} />}
 
       {/* Admin: Jobs-Tab */}
-      {isAdmin() && activeTab === 'jobs' && <AllJobsSection initialEmailFilter={jobsEmailFilter} />}
+      {isAdmin() && activeTab === 'jobs' && <AllJobsSection initialEmailFilter={jobsEmailFilter} onUserClick={handleJobUserClick} />}
 
       {/* Modal */}
       {showModal && (
