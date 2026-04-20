@@ -20,11 +20,24 @@ export function isAdmin(): boolean {
   return localStorage.getItem('role') === 'admin'
 }
 
+export function setIsActualAdmin(value: boolean): void {
+  if (value) {
+    localStorage.setItem('isActualAdmin', 'true')
+  } else {
+    localStorage.removeItem('isActualAdmin')
+  }
+}
+
+export function isActualAdmin(): boolean {
+  return localStorage.getItem('isActualAdmin') === 'true'
+}
+
 export function clearToken(): void {
   localStorage.removeItem('token')
   localStorage.removeItem('email')
   localStorage.removeItem('role')
   localStorage.removeItem('avatarUrl')
+  localStorage.removeItem('isActualAdmin')
   window.dispatchEvent(new Event('auth-changed'))
 }
 
