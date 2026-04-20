@@ -24,13 +24,27 @@ const FAQ_ITEMS = [
     answer:
       'Du erhältst eine E-Mail, wenn eine Buchung fehlschlägt – z.B. weil der Kurs bereits ausgebucht ist, deine Mitgliedschaft abgelaufen ist oder es ein technisches Problem gab. Bei erfolgreichen Buchungen bekommst du eine Bestätigungs-E-Mail direkt von Eversports.',
   },
+  {
+    question: 'Wie funktioniert die Anmeldung?',
+    answer:
+      'Die Anmeldung bei FOReversports erfolgt direkt mit deinen bestehenden Eversports-Zugangsdaten – ein separates Konto ist nicht erforderlich. Beim ersten Login werden deine Daten gegen Eversports geprüft und anschließend automatisch ein Konto für dich angelegt. Sobald die Anmeldung erfolgreich war, siehst du das Dashboard mit all deinen geplanten Buchungen. Wichtig: Wenn du dein Eversports-Passwort änderst, musst du dich danach auch einmal kurz bei FOReversports neu anmelden, damit deine gespeicherten Zugangsdaten aktualisiert werden – andernfalls schlagen automatische Buchungen fehl.',
+  },
+  {
+    question: 'Wie kann ich mein Konto bei FOReversports löschen?',
+    answer:
+      'Du kannst dein Konto jederzeit selbst löschen. Öffne dazu das Menü oben rechts und wähle Einstellungen. Dort findest du die Option zum Löschen deines Kontos. Dabei werden deine gespeicherten Eversports-Zugangsdaten, alle geplanten Buchungen sowie dein Benutzerkonto vollständig und unwiderruflich entfernt.',
+  },
 ]
+
+import { useState } from 'react'
 
 interface Props {
   onClose: () => void
 }
 
 export default function FaqModal({ onClose }: Props) {
+  const [openIndex, setOpenIndex] = useState<number | null>(null)
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60"
@@ -55,20 +69,26 @@ export default function FaqModal({ onClose }: Props) {
         </div>
 
         <div className="flex flex-col gap-2">
-          {FAQ_ITEMS.map(({ question, answer }) => (
-            <details
-              key={question}
-              className="group border border-slate-700/60 rounded-lg"
-            >
-              <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium text-white select-none flex justify-between items-center gap-2">
-                {question}
-                <span className="text-slate-400 group-open:rotate-180 transition-transform shrink-0">▾</span>
-              </summary>
-              <p className="px-4 pb-4 pt-1 text-sm text-slate-400 leading-relaxed">
-                {answer}
-              </p>
-            </details>
-          ))}
+          {FAQ_ITEMS.map(({ question, answer }, index) => {
+            const isOpen = openIndex === index
+            return (
+              <div key={question} className="border border-slate-700/60 rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => setOpenIndex(isOpen ? null : index)}
+                  className="w-full cursor-pointer px-4 py-3 text-sm font-medium text-white select-none flex justify-between items-center gap-2 text-left"
+                >
+                  {question}
+                  <span className={`text-slate-400 transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`}>▾</span>
+                </button>
+                {isOpen && (
+                  <p className="px-4 pb-4 pt-1 text-sm text-slate-400 leading-relaxed">
+                    {answer}
+                  </p>
+                )}
+              </div>
+            )
+          })}
         </div>
       </div>
     </div>
