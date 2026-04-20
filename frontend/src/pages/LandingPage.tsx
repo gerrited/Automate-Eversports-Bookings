@@ -56,9 +56,9 @@ export default function LandingPage() {
           {/* Screenshot 1 */}
           <div
             className="flex-shrink-0 w-full sm:w-72 bg-surface-card border border-slate-700/60 rounded-xl overflow-hidden cursor-zoom-in"
-            onClick={() => openLightbox('/new-booking.png', 'Screenshot - neue Buchung')}
+            onClick={() => openLightbox('/new-booking.gif', 'Screenshot - neue Buchung')}
           >
-            <img src="/new-booking.png" alt="Screenshot - neue Buchung" className="w-full h-auto" />
+            <img src="/new-booking.gif" alt="Screenshot - neue Buchung" className="w-full h-auto" />
           </div>
         </section>
 
