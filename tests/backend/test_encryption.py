@@ -1,9 +1,11 @@
+import pytest
+from cryptography.exceptions import InvalidTag
+
 from backend.core.encryption import encrypt, decrypt
 
 
 def test_encrypt_returns_different_from_plaintext():
-    ciphertext = encrypt("mysecret")
-    assert ciphertext != "mysecret"
+    assert encrypt("mysecret") != "mysecret"
 
 
 def test_decrypt_roundtrip():
@@ -11,13 +13,14 @@ def test_decrypt_roundtrip():
     assert decrypt(encrypt(plaintext)) == plaintext
 
 
-def test_encrypt_produces_different_tokens_each_time():
-    # Fernet uses random IV, so two encryptions of the same value differ
+def test_encrypt_produces_different_ciphertexts_each_time():
+    # Zufälliger Nonce pro Aufruf, daher immer unterschiedlich
     assert encrypt("same") != encrypt("same")
 
 
-def test_decrypt_wrong_value_raises():
-    import pytest
-    from cryptography.fernet import InvalidToken
-    with pytest.raises(InvalidToken):
-        decrypt("not-valid-ciphertext")
+def test_decrypt_tampered_raises():
+    ct = encrypt("secret")
+    # Letztes Zeichen kippen → GCM-Tag-Verifikation schlägt fehl
+    tampered = ct[:-1] + ("0" if ct[-1] != "0" else "1")
+    with pytest.raises(InvalidTag):
+        decrypt(tampered)
