@@ -17,7 +17,11 @@ export default function DashboardPage() {
   const activeTab: 'buchungen' | 'benutzer' | 'jobs' =
     hash === '#users' ? 'benutzer' : hash === '#all-jobs' ? 'jobs' : 'buchungen'
 
-  function setActiveTab(tab: 'buchungen' | 'benutzer' | 'jobs') {
+  function setActiveTab(tab: 'buchungen' | 'benutzer' | 'jobs', clearFilters = false) {
+    if (clearFilters) {
+      setJobsEmailFilter('')
+      setUsersEmailFilter('')
+    }
     navigate(tab === 'benutzer' ? '#users' : tab === 'jobs' ? '#all-jobs' : '#bookings', { replace: true })
   }
 
@@ -145,7 +149,7 @@ useEffect(() => {
               {(['buchungen', 'benutzer', 'jobs'] as const).map((tab) => (
                 <button
                   key={tab}
-                  onClick={() => setActiveTab(tab)}
+                  onClick={() => setActiveTab(tab, true)}
                   className={`px-4 py-2 text-sm font-medium rounded-t-md transition-colors focus:outline-none
                     ${activeTab === tab
                       ? 'bg-brand text-white border-b-2 border-brand -mb-px'
