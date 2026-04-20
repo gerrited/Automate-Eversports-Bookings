@@ -1,8 +1,7 @@
 import os
 from datetime import date, time
-from cryptography.fernet import Fernet
 
-os.environ.setdefault("ENCRYPTION_KEY", Fernet.generate_key().decode())
+os.environ.setdefault("ENCRYPTION_KEY", os.urandom(32).hex())
 os.environ.setdefault("JWT_SECRET", "test-jwt-secret-do-not-use-in-prod")
 os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 os.environ.setdefault("FRONTEND_URL", "http://localhost:5173")
