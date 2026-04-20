@@ -102,6 +102,7 @@ def list_all_jobs(
             days_in_advance=job.days_in_advance,
             enabled=job.enabled,
             one_time=job.one_time,
+            debug=job.debug,
             created_at=job.created_at,
             user_email=user_email,
             execution_count=execution_count,
