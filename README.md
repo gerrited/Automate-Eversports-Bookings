@@ -58,7 +58,7 @@ metadata:
 type: Opaque
 stringData:
   database_url: "postgresql://user:pass@host:5432/eversports"
-  encryption_key: "<32-byte Fernet key — generate with: python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())'>"
+  encryption_key: "<AES-256-GCM key — generate with: python -c 'import os; print(os.urandom(32).hex())'>"
   jwt_secret: "<random string>"
   FRONTEND_URL: "https://your-frontend-domain"
 ```
@@ -140,7 +140,7 @@ kubectl delete job test-tuesday
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `DATABASE_URL` | yes | — | PostgreSQL connection string |
-| `ENCRYPTION_KEY` | yes | — | Fernet key for encrypting stored Eversports passwords |
+| `ENCRYPTION_KEY` | yes | — | AES-256-GCM key (64 hex chars) for encrypting stored Eversports passwords |
 | `JWT_SECRET` | yes | — | Secret for signing JWTs |
 | `FRONTEND_URL` | yes | — | Allowed CORS origin |
 
@@ -149,7 +149,7 @@ kubectl delete job test-tuesday
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `DATABASE_URL` | yes | PostgreSQL connection string (same as backend) |
-| `ENCRYPTION_KEY` | yes | Fernet key for decrypting stored passwords |
+| `ENCRYPTION_KEY` | yes | AES-256-GCM key (64 hex chars) for decrypting stored passwords |
 
 ## Standalone CronJob environment variables
 
