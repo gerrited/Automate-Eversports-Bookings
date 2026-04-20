@@ -90,7 +90,7 @@ describe('AllJobsSection', () => {
   it('pre-fills email filter from initialEmailFilter prop', async () => {
     const jobs = [
       {
-        id: 1,
+        id: '1',
         user_email: 'alice@example.com',
         weekday: 1,
         target_time: '09:00:00',
@@ -99,9 +99,12 @@ describe('AllJobsSection', () => {
         days_in_advance: 3,
         one_time: false,
         execution_count: 2,
+        facility_id: 'f1',
+        enabled: true,
+        created_at: '',
       },
       {
-        id: 2,
+        id: '2',
         user_email: 'bob@example.com',
         weekday: 2,
         target_time: '10:00:00',
@@ -110,6 +113,9 @@ describe('AllJobsSection', () => {
         days_in_advance: 2,
         one_time: false,
         execution_count: 0,
+        facility_id: 'f1',
+        enabled: true,
+        created_at: '',
       },
     ]
     vi.mocked(listAllJobs).mockResolvedValue(jobs)
