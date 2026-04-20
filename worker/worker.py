@@ -19,7 +19,7 @@ from backend.models.booking_job import BookingJob
 from backend.models.booking_log import BookingLog
 from backend.models.user import User
 from backend.core.encryption import decrypt
-from backend.core.booking import book_session
+from backend.core.booking import book_session, cancel_booking
 from worker.email import send_booking_failure_email
 
 logging.basicConfig(
@@ -111,6 +111,20 @@ def run(db: Session, now: datetime) -> None:
                 send_booking_failure_email(user.email, job, str(exc), target_date)
             except Exception as email_exc:
                 log.error("Job %s: could not send failure email — %s", job.id, email_exc)
+
+        if job.debug and log_entry.status == "success":
+            try:
+                cancel_booking(
+                    email=user.email,
+                    password=password,
+                    class_name=job.class_name,
+                    facility_id=job.facility_id,
+                )
+                log_entry.message = f"[DEBUG] booked and cancelled"
+                log.info("Job %s: debug booking cancelled", job.id)
+            except Exception as cancel_exc:
+                log_entry.message = f"[DEBUG] booked but cancel failed: {cancel_exc}"
+                log.error("Job %s: debug cancel failed — %s", job.id, cancel_exc)
 
         db.add(log_entry)
         db.commit()

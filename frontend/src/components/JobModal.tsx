@@ -5,6 +5,7 @@ import { WEEKDAY_NAMES } from '../types'
 import FacilityCombobox from './FacilityCombobox'
 import CourseCombobox from './CourseCombobox'
 import { getCourses } from '../api/facilities'
+import { isAdmin } from '../api/client'
 
 interface Props {
   job?: Job
@@ -22,6 +23,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
   const [className, setClassName] = useState(job?.class_name ?? '')
   const [daysInAdvance, setDaysInAdvance] = useState(job?.days_in_advance ?? 4)
   const [oneTime, setOneTime] = useState(job?.one_time ?? false)
+  const [debug, setDebug] = useState(job?.debug ?? false)
   const [courses, setCourses] = useState<string[]>([])
 
   useEffect(() => {
@@ -47,6 +49,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
       class_name: className,
       days_in_advance: Number(daysInAdvance),
       one_time: oneTime,
+      ...(isAdmin() ? { debug } : {}),
     })
   }
 
@@ -121,6 +124,19 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
             />
             <span className="text-slate-300 text-sm">Einmalig</span>
           </label>
+
+          {isAdmin() && (
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                aria-label="Debug"
+                type="checkbox"
+                checked={debug}
+                onChange={e => setDebug(e.target.checked)}
+                className="w-4 h-4 rounded accent-brand"
+              />
+              <span className="text-slate-300 text-sm">Debug <span className="text-slate-500 text-xs">(Buchung wird sofort storniert)</span></span>
+            </label>
+          )}
 
           {error && (
             <p className="text-red-400 text-sm">{error}</p>

@@ -36,6 +36,7 @@ export default function DashboardPage() {
   const [showSettings, setShowSettings] = useState(false)
   const [jobsEmailFilter, setJobsEmailFilter] = useState('')
   const [usersEmailFilter, setUsersEmailFilter] = useState('')
+  const [debugFilter, setDebugFilter] = useState<'all' | 'normal' | 'debug'>('all')
 
   function handleUserJobsClick(email: string) {
     setJobsEmailFilter(email)
@@ -185,13 +186,37 @@ useEffect(() => {
               Noch keine Buchung geplant.
             </p>
           )}
+          {isAdmin() && (
+            <div className="flex gap-1 mb-4">
+              {(['all', 'normal', 'debug'] as const).map(f => (
+                <button
+                  key={f}
+                  onClick={() => setDebugFilter(f)}
+                  className={`px-3 py-1 rounded-md text-sm transition-colors ${
+                    debugFilter === f
+                      ? 'bg-brand text-white'
+                      : 'bg-slate-700 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {f === 'all' ? 'Alle' : f === 'normal' ? 'Normal' : 'Debug'}
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="flex flex-col gap-3">
-            {[...jobs].sort((a, b) =>
-              a.weekday - b.weekday ||
-              a.target_time.localeCompare(b.target_time) ||
-              a.facility_name.localeCompare(b.facility_name, 'de') ||
-              a.class_name.localeCompare(b.class_name, 'de')
-            ).map(job => (
+            {[...jobs]
+              .filter(job =>
+                debugFilter === 'all' ? true :
+                debugFilter === 'debug' ? job.debug :
+                !job.debug
+              )
+              .sort((a, b) =>
+                a.weekday - b.weekday ||
+                a.target_time.localeCompare(b.target_time) ||
+                a.facility_name.localeCompare(b.facility_name, 'de') ||
+                a.class_name.localeCompare(b.class_name, 'de')
+              ).map(job => (
               <JobCard
                 key={job.id}
                 job={job}

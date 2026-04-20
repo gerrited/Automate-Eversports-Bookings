@@ -18,6 +18,7 @@ class BookingJob(Base):
     days_in_advance = Column(Integer, nullable=False)
     enabled = Column(Boolean, default=True, nullable=False)
     one_time = Column(Boolean, default=False, nullable=False)
+    debug = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     user = relationship("User", back_populates="jobs")

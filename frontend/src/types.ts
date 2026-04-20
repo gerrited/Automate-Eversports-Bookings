@@ -8,6 +8,7 @@ export interface Job {
   days_in_advance: number
   enabled: boolean
   one_time: boolean
+  debug: boolean
   created_at: string
 }
 
@@ -19,6 +20,7 @@ export interface JobFormData {
   class_name: string
   days_in_advance: number
   one_time: boolean
+  debug?: boolean
 }
 
 export interface Facility {

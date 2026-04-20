@@ -209,3 +209,54 @@ def book_session(
         raise RuntimeError(f"Order creation failed: {msgs}")
 
     return {"status": "success", "order_id": order_result["id"]}
+
+
+def cancel_booking(
+    email: str,
+    password: str,
+    class_name: str,
+    facility_id: str,
+) -> None:
+    """
+    Cancel the most recent upcoming booking matching class_name + facility_id.
+    Fetches /u to find the cancel link data attributes, then calls /api/event/cancel.
+    """
+    login_result = eversports_login(email, password)
+    if login_result is None:
+        raise RuntimeError("Eversports login failed")
+    session: requests.Session = login_result["session"]
+
+    resp = session.get(BASE_URL + "/u", timeout=TIMEOUT)
+    resp.raise_for_status()
+    soup = BeautifulSoup(resp.text, "html.parser")
+
+    numeric_facility_id = _resolve_facility_id(facility_id, session)
+
+    cancel_link = None
+    for link in soup.find_all("a", class_="cancel-link-event"):
+        if str(link.get("data-facilityid", "")) != numeric_facility_id:
+            continue
+        # Match by class name via the nearest h4
+        h4 = link.find_parent("li")
+        if h4 and class_name and class_name not in h4.get_text():
+            continue
+        cancel_link = link
+        break
+
+    if cancel_link is None:
+        raise RuntimeError(
+            f"No upcoming booking found to cancel for {class_name} at facility {facility_id}"
+        )
+
+    resp = session.post(
+        BASE_URL + "/api/event/cancel",
+        data={
+            "eventId": cancel_link["data-event"],
+            "eventParticipantId": cancel_link["data-eventparticipant"],
+            "facilityId": cancel_link["data-facilityid"],
+            "sessionId": cancel_link["data-session"],
+            "isLateCancellation": "false",
+        },
+        timeout=TIMEOUT,
+    )
+    resp.raise_for_status()
