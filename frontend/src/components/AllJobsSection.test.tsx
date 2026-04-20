@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { vi } from 'vitest'
 import AllJobsSection from './AllJobsSection'
 
@@ -85,6 +85,42 @@ describe('AllJobsSection', () => {
     await screen.findByPlaceholderText('Nach Benutzer filtern…')
     fireEvent.click(screen.getByRole('button', { name: /weiter/i }))
     expect(await screen.findByText(/Seite 2 von 3/)).toBeInTheDocument()
+  })
+
+  it('pre-fills email filter from initialEmailFilter prop', async () => {
+    const jobs = [
+      {
+        id: 1,
+        user_email: 'alice@example.com',
+        weekday: 1,
+        target_time: '09:00:00',
+        class_name: 'Yoga',
+        facility_name: 'Studio A',
+        days_in_advance: 3,
+        one_time: false,
+        execution_count: 2,
+      },
+      {
+        id: 2,
+        user_email: 'bob@example.com',
+        weekday: 2,
+        target_time: '10:00:00',
+        class_name: 'Pilates',
+        facility_name: 'Studio B',
+        days_in_advance: 2,
+        one_time: false,
+        execution_count: 0,
+      },
+    ]
+    vi.mocked(listAllJobs).mockResolvedValue(jobs)
+
+    render(<AllJobsSection initialEmailFilter="alice@example.com" />)
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('alice@example.com')).toBeInTheDocument()
+      expect(screen.getByText('alice@example.com')).toBeInTheDocument()
+      expect(screen.queryByText('bob@example.com')).not.toBeInTheDocument()
+    })
   })
 
   it('zeigt Kursname und Anzahl Durchführungen an', async () => {

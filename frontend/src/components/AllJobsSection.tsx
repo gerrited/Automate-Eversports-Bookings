@@ -5,10 +5,10 @@ import type { AdminJob } from '../types'
 
 const PAGE_SIZE = 25
 
-export default function AllJobsSection() {
+export default function AllJobsSection({ initialEmailFilter }: { initialEmailFilter?: string } = {}) {
   const [jobs, setJobs] = useState<AdminJob[]>([])
   const [loading, setLoading] = useState(true)
-  const [emailFilter, setEmailFilter] = useState('')
+  const [emailFilter, setEmailFilter] = useState(initialEmailFilter ?? '')
   const [currentPage, setCurrentPage] = useState(1)
 
   const load = useCallback(async () => {
@@ -20,6 +20,13 @@ export default function AllJobsSection() {
   }, [])
 
   useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    if (initialEmailFilter !== undefined) {
+      setEmailFilter(initialEmailFilter)
+      setCurrentPage(1)
+    }
+  }, [initialEmailFilter])
 
   function handleFilterChange(value: string) {
     setEmailFilter(value)
