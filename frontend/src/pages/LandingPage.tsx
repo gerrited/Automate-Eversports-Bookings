@@ -139,7 +139,7 @@ export default function LandingPage() {
 
           {/* Screenshot 2 */}
           <div
-            className="flex-shrink-0 w-full sm:w-72 bg-surface-card border border-slate-700/60 rounded-xl overflow-hidden cursor-zoom-in"
+            className="flex-shrink-0 w-full sm:w-100 bg-surface-card border border-slate-700/60 rounded-xl overflow-hidden cursor-zoom-in"
             onClick={() => openLightbox('/overview.png', 'Screenshot - Buchungsübersicht')}
           >
             <img src="/overview.png" alt="Screenshot - Buchungsübersicht" className="w-full h-auto" />
