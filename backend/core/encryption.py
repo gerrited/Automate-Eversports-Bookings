@@ -1,14 +1,18 @@
 import os
-from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 
-def _fernet() -> Fernet:
-    return Fernet(os.environ["ENCRYPTION_KEY"].encode())
+def _key() -> bytes:
+    return bytes.fromhex(os.environ["ENCRYPTION_KEY"])
 
 
 def encrypt(plaintext: str) -> str:
-    return _fernet().encrypt(plaintext.encode()).decode()
+    nonce = os.urandom(12)
+    ct = AESGCM(_key()).encrypt(nonce, plaintext.encode(), None)
+    return (nonce + ct).hex()
 
 
 def decrypt(ciphertext: str) -> str:
-    return _fernet().decrypt(ciphertext.encode()).decode()
+    data = bytes.fromhex(ciphertext)
+    nonce, ct = data[:12], data[12:]
+    return AESGCM(_key()).decrypt(nonce, ct, None).decode()
