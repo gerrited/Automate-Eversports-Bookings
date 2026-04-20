@@ -35,7 +35,7 @@ jobs:
           tags: |
             type=sha,prefix=
             type=raw,value=latest
-            ${{ inputs.version != '' && format('type=raw,value=v{0}', inputs.version) || '' }}
+            type=raw,value=v${{ inputs.version }},enable=${{ inputs.version != '' }}
       - uses: docker/build-push-action@v6
         with:
           context: .
@@ -67,7 +67,7 @@ jobs:
           tags: |
             type=sha,prefix=
             type=raw,value=latest
-            ${{ inputs.version != '' && format('type=raw,value=v{0}', inputs.version) || '' }}
+            type=raw,value=v${{ inputs.version }},enable=${{ inputs.version != '' }}
       - uses: docker/build-push-action@v6
         with:
           context: .
@@ -99,7 +99,7 @@ jobs:
           tags: |
             type=sha,prefix=
             type=raw,value=latest
-            ${{ inputs.version != '' && format('type=raw,value=v{0}', inputs.version) || '' }}
+            type=raw,value=v${{ inputs.version }},enable=${{ inputs.version != '' }}
       - uses: docker/build-push-action@v6
         with:
           context: .
@@ -131,7 +131,7 @@ jobs:
           tags: |
             type=sha,prefix=
             type=raw,value=latest
-            ${{ inputs.version != '' && format('type=raw,value=v{0}', inputs.version) || '' }}
+            type=raw,value=v${{ inputs.version }},enable=${{ inputs.version != '' }}
       - uses: docker/build-push-action@v6
         with:
           context: .
