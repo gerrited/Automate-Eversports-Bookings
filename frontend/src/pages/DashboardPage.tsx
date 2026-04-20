@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { clearToken, isAdmin, getEmail, getAvatarUrl } from '../api/client'
+import { clearToken, isAdmin, isActualAdmin, getEmail, getAvatarUrl } from '../api/client'
 import { listJobs, createJob, updateJob, toggleJob, deleteJob, getJobLogs } from '../api/jobs'
 import type { Job, BookingLog, JobFormData } from '../types'
 import JobCard from '../components/JobCard'
@@ -37,6 +37,14 @@ export default function DashboardPage() {
   const [jobsEmailFilter, setJobsEmailFilter] = useState('')
   const [usersEmailFilter, setUsersEmailFilter] = useState('')
   const [debugFilter, setDebugFilter] = useState<'live' | 'debug'>('live')
+
+  const [, forceUpdate] = useState(0)
+
+  useEffect(() => {
+    function onAuthChanged() { forceUpdate(n => n + 1) }
+    window.addEventListener('auth-changed', onAuthChanged)
+    return () => window.removeEventListener('auth-changed', onAuthChanged)
+  }, [])
 
   function handleUserJobsClick(email: string) {
     setJobsEmailFilter(email)
@@ -141,7 +149,14 @@ useEffect(() => {
         <div className="px-4 max-w-2xl mx-auto">
           <div className="flex justify-between items-center py-4">
             <img src="/logo.png" alt="Logo" className="h-10 w-auto sm:h-16 cursor-pointer" onClick={() => navigate('/dashboard')} />
-            <HamburgerMenu onLogout={handleLogout} onSettings={() => setShowSettings(true)} userEmail={getEmail()} userAvatar={getAvatarUrl()} />
+            <HamburgerMenu
+              onLogout={handleLogout}
+              onSettings={() => setShowSettings(true)}
+              userEmail={getEmail()}
+              userAvatar={getAvatarUrl()}
+              isActualAdmin={isActualAdmin()}
+              isAdminView={isAdmin()}
+            />
           </div>
 
           {/* Tab-Navigation – nur für Admins */}
