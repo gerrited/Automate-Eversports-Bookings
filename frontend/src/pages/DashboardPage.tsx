@@ -38,7 +38,7 @@ export default function DashboardPage() {
   const [usersEmailFilter, setUsersEmailFilter] = useState('')
   const [debugFilter, setDebugFilter] = useState<'live' | 'debug'>('live')
 
-  const [, forceUpdate] = useState(0)
+  const [tick, forceUpdate] = useState(0)
 
   useEffect(() => {
     function onAuthChanged() { forceUpdate(n => n + 1) }
@@ -87,7 +87,7 @@ useEffect(() => {
       document.removeEventListener('touchstart', onTouchStart)
       document.removeEventListener('touchend', onTouchEnd)
     }
-  }, [])
+  }, [tick])
 
   const loadJobs = useCallback(async () => {
     try {
