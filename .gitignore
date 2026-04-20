@@ -1,4 +1,5 @@
 k8s/secret.yaml
+node_modules/
 __pycache__/
 *.py[cod]
 *.pyo
