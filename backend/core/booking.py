@@ -9,11 +9,14 @@ facility_id kann sein:
 """
 from __future__ import annotations
 
+import logging
 import re
 from datetime import date, timedelta
 from typing import Optional
 
 import requests
+
+log = logging.getLogger(__name__)
 from bs4 import BeautifulSoup
 
 GRAPHQL_URL = "https://www.eversports.de/api/checkout"
@@ -107,6 +110,7 @@ def eversports_login(email: str, password: str) -> Optional[dict]:
     result = data["credentialLogin"]
     if result["__typename"] != "AuthResult":
         return None
+    log.info("eversports_login user fields: %s", result["user"])
     profile_picture = result["user"].get("profilePicture") or {}
     return {
         "user_id": result["user"]["id"],
