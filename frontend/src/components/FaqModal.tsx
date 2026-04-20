@@ -17,7 +17,7 @@ const FAQ_ITEMS = [
   {
     question: 'Wie werden meine Zugangsdaten gespeichert?',
     answer:
-      'Dein Eversports-Passwort wird verschlüsselt in der Datenbank gespeichert und nie im Klartext abgelegt. Die App verwendet deine Daten ausschließlich, um Buchungen in deinem Namen durchzuführen – sie werden nicht weitergegeben.',
+      'Dein Eversports-Passwort wird mit Fernet symmetrisch verschlüsselt und ausschließlich in verschlüsselter Form in der Datenbank abgelegt – nie im Klartext. Fernet verwendet intern AES-128-CBC zur Verschlüsselung kombiniert mit HMAC-SHA256 zur Integritätsprüfung (Encrypt-then-MAC). AES-128 ist dabei nicht frei wählbar – es ist im Fernet-Standard fest vorgegeben. AES-128 gilt nach aktuellem Stand als rechnerisch sicher; ohne HMAC wäre CBC allein manipulierbar, weshalb beides kombiniert wird. Der 32-Byte-Schlüssel (je 16 Byte für HMAC und AES) wird serverseitig als Umgebungsvariable verwaltet und ist nicht Teil der Datenbank. Zum Durchführen einer Buchung wird das Passwort temporär entschlüsselt und direkt an die Eversports-API übergeben – es verlässt den Server dabei nicht.',
   },
   {
     question: 'Welche E-Mails erhalte ich?',
