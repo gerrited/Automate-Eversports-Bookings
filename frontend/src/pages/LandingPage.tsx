@@ -22,7 +22,7 @@ export default function LandingPage() {
       {/* Navbar */}
       <nav className="fixed top-0 left-0 right-0 z-20 bg-surface-page border-b border-slate-700/60">
         <div className="px-4 max-w-5xl mx-auto flex justify-between items-center py-4">
-          <img src="/logo.png" alt="Logo" className="h-10 w-auto sm:h-14" />
+          <a href="/"><img src="/logo.png" alt="Logo" className="h-10 w-auto sm:h-14" /></a>
           <button
             onClick={openModal}
             className="bg-brand hover:bg-brand-hover text-white font-semibold rounded-lg px-5 py-2 transition-colors"
