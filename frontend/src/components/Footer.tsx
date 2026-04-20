@@ -4,7 +4,7 @@ import { getEmail } from '../api/client'
 export default function Footer() {
   const sha = import.meta.env.VITE_COMMIT_SHA as string | undefined
   const repo = import.meta.env.VITE_GITHUB_REPO as string | undefined
-  const version = import.meta.env.VITE_VERSION as string | undefined
+  const version = (import.meta.env.VITE_VERSION as string | undefined)?.replace(/^v/, '')
   const [email, setEmail] = useState<string | null>(getEmail)
 
   useEffect(() => {

@@ -53,4 +53,11 @@ describe('Footer', () => {
     expect(screen.getByText('v1.2.3')).toBeInTheDocument()
     expect(screen.queryByRole('link')).toBeNull()
   })
+
+  it('renders SHA as plain text when VITE_GITHUB_REPO is absent', () => {
+    vi.stubEnv('VITE_COMMIT_SHA', 'abc1234567890')
+    render(<Footer />)
+    expect(screen.getByText('abc1234')).toBeInTheDocument()
+    expect(screen.queryByRole('link')).toBeNull()
+  })
 })
