@@ -1,13 +1,16 @@
 import { useState, useEffect, useRef } from 'react'
+import { setRole } from '../api/client'
 
 interface Props {
   onLogout: () => void
   onSettings: () => void
   userEmail?: string | null
   userAvatar?: string | null
+  isActualAdmin?: boolean
+  isAdminView?: boolean
 }
 
-export default function HamburgerMenu({ onLogout, onSettings, userEmail, userAvatar }: Props) {
+export default function HamburgerMenu({ onLogout, onSettings, userEmail, userAvatar, isActualAdmin, isAdminView }: Props) {
   const [open, setOpen] = useState(false)
   const [tooltipVisible, setTooltipVisible] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -66,6 +69,23 @@ export default function HamburgerMenu({ onLogout, onSettings, userEmail, userAva
             >
               Einstellungen
             </button>
+            {isActualAdmin && (
+              <>
+                <div className="border-t border-slate-700" />
+                <label className="flex items-center gap-2 px-4 py-3 text-sm text-slate-200 hover:bg-slate-700 transition-colors cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isAdminView ?? false}
+                    onChange={e => {
+                      setRole(e.target.checked ? 'admin' : 'user')
+                      window.dispatchEvent(new Event('auth-changed'))
+                    }}
+                    className="accent-brand"
+                  />
+                  Admin
+                </label>
+              </>
+            )}
             <div className="border-t border-slate-700" />
             <button
               onClick={() => { setOpen(false); onLogout() }}
