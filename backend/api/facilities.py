@@ -193,8 +193,10 @@ def get_facility_courses(
     today = date.today()
     filter_by_time = weekday is not None and target_time is not None
     if filter_by_time:
-        # Fetch next week's calendar to suggest upcoming courses
-        week_start = today - timedelta(days=today.weekday()) + timedelta(days=7)
+        # Find the next occurrence of the target weekday (today or later)
+        days_ahead = (weekday - today.weekday()) % 7
+        target_date = today + timedelta(days=days_ahead)
+        week_start = target_date - timedelta(days=target_date.weekday())
     else:
         week_start = today - timedelta(days=today.weekday())
 
