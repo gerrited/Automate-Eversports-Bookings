@@ -32,11 +32,11 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
       return
     }
     let cancelled = false
-    getCourses(facility.id)
+    getCourses(facility.id, weekday, targetTime)
       .then(data => { if (!cancelled) setCourses(data) })
       .catch(() => { if (!cancelled) setCourses([]) })
     return () => { cancelled = true }
-  }, [facility?.id])
+  }, [facility?.id, weekday, targetTime])
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -65,15 +65,6 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
             <FacilityCombobox value={facility} onChange={setFacility} />
           </div>
 
-          <div className="flex flex-col gap-1">
-            <span className="text-slate-400 text-sm">Kursname</span>
-            <CourseCombobox
-              value={className}
-              onChange={setClassName}
-              facilityCourses={courses}
-            />
-          </div>
-
           <label className="flex flex-col gap-1">
             <span className="text-slate-400 text-sm">Wochentag</span>
             <select
@@ -99,6 +90,15 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
               className="bg-surface-input text-white rounded-lg px-3 py-2 outline-hidden focus:ring-2 focus:ring-brand [color-scheme:dark]"
             />
           </label>
+
+          <div className="flex flex-col gap-1">
+            <span className="text-slate-400 text-sm">Kursname</span>
+            <CourseCombobox
+              value={className}
+              onChange={setClassName}
+              facilityCourses={courses}
+            />
+          </div>
 
           <label className="flex flex-col gap-1">
             <span className="text-slate-400 text-sm">Tage im Voraus</span>

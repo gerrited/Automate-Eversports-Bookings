@@ -175,6 +175,8 @@ def search_facilities(
 @router.get("/facilities/{facility_id}/courses")
 def get_facility_courses(
     facility_id: str,
+    weekday: int | None = Query(default=None, ge=0, le=6),
+    target_time: str | None = Query(default=None),
     current_user: User = Depends(get_current_active_user),
 ) -> List[str]:
     try:
@@ -189,7 +191,16 @@ def get_facility_courses(
         return []
 
     today = date.today()
-    week_start = today - timedelta(days=today.weekday())
+    filter_by_time = weekday is not None and target_time is not None
+    if filter_by_time:
+        # Fetch next week's calendar to suggest upcoming courses
+        week_start = today - timedelta(days=today.weekday()) + timedelta(days=7)
+    else:
+        week_start = today - timedelta(days=today.weekday())
+
+    # Normalize target_time to HH:MM
+    time_filter = target_time[:5] if target_time else None
+
     names: set[str] = set()
     for event_type in ("class", "course", "training"):
         try:
@@ -212,10 +223,33 @@ def get_facility_courses(
             continue
 
         soup = BeautifulSoup(html, "html.parser")
-        names.update(
-            el.get_text(strip=True)
-            for el in soup.find_all(class_="session-name")
-            if el.get_text(strip=True)
-        )
+
+        if filter_by_time:
+            for li in soup.find_all("li"):
+                time_el = li.find(class_="session-time")
+                name_el = li.find(class_="session-name")
+                if not time_el or not name_el:
+                    continue
+                session_time = time_el.get_text(strip=True)[:5]
+                if session_time != time_filter:
+                    continue
+                if weekday is not None:
+                    data_date = li.get("data-date") or li.get("data-start")
+                    if data_date:
+                        try:
+                            session_weekday = date.fromisoformat(data_date[:10]).weekday()
+                            if session_weekday != weekday:
+                                continue
+                        except ValueError:
+                            pass
+                name = name_el.get_text(strip=True)
+                if name:
+                    names.add(name)
+        else:
+            names.update(
+                el.get_text(strip=True)
+                for el in soup.find_all(class_="session-name")
+                if el.get_text(strip=True)
+            )
 
     return sorted(names)
