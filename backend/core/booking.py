@@ -223,6 +223,9 @@ def book_session(
 
     if order_result["__typename"] == "ExpectedErrors":
         msgs = "; ".join(e["message"] for e in order_result["errors"])
+        # Free sessions have no product assigned — booking is completed at cart level
+        if any("product" in e["message"].lower() for e in order_result["errors"]):
+            return {"status": "success", "order_id": cart_id}
         raise RuntimeError(f"Order creation failed: {msgs}")
 
     return {"status": "success", "order_id": order_result["id"]}
