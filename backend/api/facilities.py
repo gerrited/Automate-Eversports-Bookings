@@ -196,62 +196,64 @@ def get_facility_courses(
         # Find the next occurrence of the target weekday (today or later)
         days_ahead = (weekday - today.weekday()) % 7
         target_date = today + timedelta(days=days_ahead)
-        week_start = target_date - timedelta(days=target_date.weekday())
+        first_week_start = target_date - timedelta(days=target_date.weekday())
+        week_starts = [first_week_start, first_week_start + timedelta(days=7)]
     else:
-        week_start = today - timedelta(days=today.weekday())
+        week_starts = [today - timedelta(days=today.weekday())]
 
     # Normalize target_time to HH:MM
     time_filter = target_time[:5] if target_time else None
 
     names: set[str] = set()
-    for event_type in ("class", "course", "training"):
-        try:
-            resp = session.get(
-                _CALENDAR_URL,
-                params={
-                    "facilityId": numeric_id,
-                    "startDate": week_start.isoformat(),
-                    "activeEventType": event_type,
-                },
-                timeout=8,
-            )
-            resp.raise_for_status()
-            html = resp.json()["data"]["html"]
-        except Exception:
-            logger.warning(
-                "Failed to fetch courses (eventType=%s) for facility %s",
-                event_type, numeric_id, exc_info=True,
-            )
-            continue
+    for week_start in week_starts:
+        for event_type in ("class", "course", "training"):
+            try:
+                resp = session.get(
+                    _CALENDAR_URL,
+                    params={
+                        "facilityId": numeric_id,
+                        "startDate": week_start.isoformat(),
+                        "activeEventType": event_type,
+                    },
+                    timeout=8,
+                )
+                resp.raise_for_status()
+                html = resp.json()["data"]["html"]
+            except Exception:
+                logger.warning(
+                    "Failed to fetch courses (eventType=%s) for facility %s",
+                    event_type, numeric_id, exc_info=True,
+                )
+                continue
 
-        soup = BeautifulSoup(html, "html.parser")
+            soup = BeautifulSoup(html, "html.parser")
 
-        if filter_by_time:
-            for li in soup.find_all("li"):
-                time_el = li.find(class_="session-time")
-                name_el = li.find(class_="session-name")
-                if not time_el or not name_el:
-                    continue
-                session_time = time_el.get_text(strip=True)[:5]
-                if session_time != time_filter:
-                    continue
-                if weekday is not None:
-                    data_date = li.get("data-date") or li.get("data-start")
-                    if data_date:
-                        try:
-                            session_weekday = date.fromisoformat(data_date[:10]).weekday()
-                            if session_weekday != weekday:
-                                continue
-                        except ValueError:
-                            pass
-                name = name_el.get_text(strip=True)
-                if name:
-                    names.add(name)
-        else:
-            names.update(
-                el.get_text(strip=True)
-                for el in soup.find_all(class_="session-name")
-                if el.get_text(strip=True)
-            )
+            if filter_by_time:
+                for li in soup.find_all("li"):
+                    time_el = li.find(class_="session-time")
+                    name_el = li.find(class_="session-name")
+                    if not time_el or not name_el:
+                        continue
+                    session_time = time_el.get_text(strip=True)[:5]
+                    if session_time != time_filter:
+                        continue
+                    if weekday is not None:
+                        data_date = li.get("data-date") or li.get("data-start")
+                        if data_date:
+                            try:
+                                session_weekday = date.fromisoformat(data_date[:10]).weekday()
+                                if session_weekday != weekday:
+                                    continue
+                            except ValueError:
+                                pass
+                    name = name_el.get_text(strip=True)
+                    if name:
+                        names.add(name)
+            else:
+                names.update(
+                    el.get_text(strip=True)
+                    for el in soup.find_all(class_="session-name")
+                    if el.get_text(strip=True)
+                )
 
     return sorted(names)
