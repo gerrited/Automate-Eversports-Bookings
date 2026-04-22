@@ -20,6 +20,7 @@ export default function HamburgerMenu({ onLogout, onSettings, onTestEmails, user
     function handleClickOutside(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
         setOpen(false)
+        setTooltipVisible(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -31,9 +32,7 @@ export default function HamburgerMenu({ onLogout, onSettings, onTestEmails, user
       {userEmail && (
         <div className="relative">
           <button
-            onMouseEnter={() => setTooltipVisible(true)}
-            onMouseLeave={() => setTooltipVisible(false)}
-            onClick={() => setTooltipVisible(v => !v)}
+            onClick={() => { setTooltipVisible(v => !v); setOpen(false) }}
             className="flex items-center justify-center w-9 h-9 rounded-full bg-slate-700 hover:bg-slate-600 transition-colors"
             aria-label={`Angemeldet als ${userEmail}`}
           >
@@ -45,8 +44,29 @@ export default function HamburgerMenu({ onLogout, onSettings, onTestEmails, user
             }
           </button>
           {tooltipVisible && (
-            <div className="absolute right-0 mt-2 px-3 py-2 rounded-lg bg-surface-card border border-slate-700 shadow-lg z-50 whitespace-nowrap text-sm text-slate-200">
-              Angemeldet als {userEmail}
+            <div className="absolute right-0 mt-2 w-56 rounded-lg bg-surface-card border border-slate-700 shadow-lg z-50 overflow-hidden">
+              <div className="px-4 py-3 text-sm text-slate-400">
+                Angemeldet als<br />
+                <span className="text-slate-200 font-medium">{userEmail}</span>
+              </div>
+              {isActualAdmin && (
+                <>
+                  <div className="border-t border-slate-700" />
+                  <label className="flex items-center gap-2 px-4 py-3 text-sm text-slate-200 hover:bg-slate-700 transition-colors cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isAdminView ?? false}
+                      onChange={e => {
+                        setRole(e.target.checked ? 'admin' : 'user')
+                        window.dispatchEvent(new Event('auth-changed'))
+                        setTooltipVisible(false)
+                      }}
+                      className="accent-brand"
+                    />
+                    Admin
+                  </label>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -70,24 +90,6 @@ export default function HamburgerMenu({ onLogout, onSettings, onTestEmails, user
             >
               Einstellungen
             </button>
-            {isActualAdmin && (
-              <>
-                <div className="border-t border-slate-700" />
-                <label className="flex items-center gap-2 px-4 py-3 text-sm text-slate-200 hover:bg-slate-700 transition-colors cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={isAdminView ?? false}
-                    onChange={e => {
-                      setRole(e.target.checked ? 'admin' : 'user')
-                      window.dispatchEvent(new Event('auth-changed'))
-                      setOpen(false)
-                    }}
-                    className="accent-brand"
-                  />
-                  Admin
-                </label>
-              </>
-            )}
             {isAdminView && (
               <>
                 <div className="border-t border-slate-700" />
