@@ -40,6 +40,7 @@ def send_new_user_notification(admin_emails: list[str], new_user_email: str) -> 
             new_user_email=new_user_email,
             now=now,
             users_url=users_url,
+            frontend_url=frontend_url,
         )
         resend.Emails.send({
             "from": sender,
@@ -65,7 +66,7 @@ def send_account_status_email(user_email: str, is_active: bool) -> None:
             html = _templates.get_template("account_activated.html").render(frontend_url=frontend_url)
         else:
             subject = "Dein Konto wurde deaktiviert"
-            html = _templates.get_template("account_deactivated.html").render()
+            html = _templates.get_template("account_deactivated.html").render(frontend_url=frontend_url)
 
         resend.Emails.send({
             "from": sender,
@@ -103,13 +104,14 @@ def send_test_email(admin_email: str, email_type: str) -> None:
             new_user_email="test@example.com",
             now=now,
             users_url=users_url,
+            frontend_url=frontend_url,
         )
     elif email_type == "account_activated":
         subject = "Dein Konto wurde freigeschaltet"
         html = _templates.get_template("account_activated.html").render(frontend_url=frontend_url)
     elif email_type == "account_deactivated":
         subject = "Dein Konto wurde deaktiviert"
-        html = _templates.get_template("account_deactivated.html").render()
+        html = _templates.get_template("account_deactivated.html").render(frontend_url=frontend_url)
     elif email_type == "booking_failure":
         dummy_date = _next_friday()
         date_str = dummy_date.strftime("%d.%m.%Y")
