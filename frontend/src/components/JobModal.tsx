@@ -108,7 +108,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
           <div className="flex flex-col gap-1">
             <span className="flex items-center gap-1.5 text-slate-400 text-sm">
               Kursname
-              <HelpIcon text="Der Name des Kurses, der gebucht werden soll." />
+              <HelpIcon text="Der Name des Kurses, der gebucht werden soll. Leer lassen, um den ersten verfügbaren Kurs zu diesem Zeitpunkt zu buchen." />
             </span>
             <CourseCombobox
               value={className}
@@ -171,7 +171,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
           <div className="flex gap-3 justify-end mt-2">
             <button
               type="submit"
-              disabled={!facility || !className}
+              disabled={!facility}
               className="px-4 py-2 bg-brand hover:bg-brand-hover text-white rounded-lg font-semibold transition-colors disabled:opacity-50"
             >
               Speichern
