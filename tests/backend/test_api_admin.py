@@ -312,3 +312,15 @@ def test_send_test_email_invalid_type_returns_422(client, db_session):
         headers=_auth_header(admin.id),
     )
     assert resp.status_code == 422
+
+
+def test_send_test_email_send_error_returns_500(client, db_session, mocker):
+    admin = _make_admin(db_session, ev_id="ev-te5", email="te5@x.com")
+    mocker.patch.dict(os.environ, {"RESEND_API_KEY": "key", "FROM_EMAIL": "from@x.com"})
+    mocker.patch("backend.api.admin.send_test_email", side_effect=Exception("Resend down"))
+    resp = client.post(
+        "/api/admin/test-email",
+        json={"type": "new_user"},
+        headers=_auth_header(admin.id),
+    )
+    assert resp.status_code == 500

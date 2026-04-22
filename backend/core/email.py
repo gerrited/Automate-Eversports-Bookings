@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import logging
 import os
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import resend
@@ -78,6 +78,12 @@ def send_account_status_email(user_email: str, is_active: bool) -> None:
 _WEEKDAYS_DE = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
 
 
+def _next_friday() -> date:
+    today = date.today()
+    days_ahead = (4 - today.weekday()) % 7 or 7
+    return today + timedelta(days=days_ahead)
+
+
 def send_test_email(admin_email: str, email_type: str) -> None:
     """Sendet eine Test-Mail an den Admin. Wirft bei Fehlern (kein best-effort)."""
     resend.api_key = os.environ["RESEND_API_KEY"]
@@ -104,7 +110,7 @@ def send_test_email(admin_email: str, email_type: str) -> None:
         subject = "Dein Konto wurde deaktiviert"
         html = "<p>Dein Konto für FOReversports wurde deaktiviert. Wende dich an einen Admin, falls du Fragen hast.</p>"
     elif email_type == "booking_failure":
-        dummy_date = date(2026, 4, 24)  # Freitag
+        dummy_date = _next_friday()
         date_str = dummy_date.strftime("%d.%m.%Y")
         weekday_str = _WEEKDAYS_DE[dummy_date.weekday()]
         subject = f"Buchung fehlgeschlagen: Yoga Basics am {date_str}"
@@ -120,7 +126,7 @@ def send_test_email(admin_email: str, email_type: str) -> None:
 <p><a href="{frontend_url}">Zur App</a></p>
 """
     elif email_type == "debug_cancel_failure":
-        dummy_date = date(2026, 4, 24)  # Freitag
+        dummy_date = _next_friday()
         date_str = dummy_date.strftime("%d.%m.%Y")
         weekday_str = _WEEKDAYS_DE[dummy_date.weekday()]
         subject = f"Debug-Stornierung fehlgeschlagen: Yoga Basics am {date_str}"
