@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { FormEvent } from 'react'
 import type { Job, JobFormData, Facility } from '../types'
 import { WEEKDAY_NAMES } from '../types'
@@ -26,6 +26,8 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
   const [debug, setDebug] = useState(job?.debug ?? false)
   const [courses, setCourses] = useState<string[]>([])
 
+  const isInitialMount = useRef(true)
+
   useEffect(() => {
     if (!facility) {
       setCourses([])
@@ -35,6 +37,8 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
     getCourses(facility.id, weekday, targetTime)
       .then(data => { if (!cancelled) setCourses(data) })
       .catch(() => { if (!cancelled) setCourses([]) })
+    if (!isInitialMount.current) setClassName('')
+    isInitialMount.current = false
     return () => { cancelled = true }
   }, [facility?.id, weekday, targetTime])
 
