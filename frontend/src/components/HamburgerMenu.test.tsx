@@ -2,8 +2,8 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { vi } from 'vitest'
 import HamburgerMenu from './HamburgerMenu'
 
-function renderMenu(onLogout = vi.fn(), onSettings = vi.fn()) {
-  return render(<HamburgerMenu onLogout={onLogout} onSettings={onSettings} />)
+function renderMenu(onLogout = vi.fn(), onSettings = vi.fn(), onTestEmails = vi.fn(), isAdminView = false) {
+  return render(<HamburgerMenu onLogout={onLogout} onSettings={onSettings} onTestEmails={onTestEmails} isAdminView={isAdminView} />)
 }
 
 afterEach(() => {
@@ -53,5 +53,26 @@ describe('HamburgerMenu', () => {
     expect(screen.getByText('Einstellungen')).toBeInTheDocument()
     fireEvent.mouseDown(document.body)
     expect(screen.queryByText('Einstellungen')).not.toBeInTheDocument()
+  })
+
+  it('shows Test-Mails when isAdminView is true', () => {
+    renderMenu(vi.fn(), vi.fn(), vi.fn(), true)
+    fireEvent.click(screen.getByLabelText('Menü öffnen'))
+    expect(screen.getByText('Test-Mails')).toBeInTheDocument()
+  })
+
+  it('hides Test-Mails when isAdminView is false', () => {
+    renderMenu(vi.fn(), vi.fn(), vi.fn(), false)
+    fireEvent.click(screen.getByLabelText('Menü öffnen'))
+    expect(screen.queryByText('Test-Mails')).not.toBeInTheDocument()
+  })
+
+  it('calls onTestEmails and closes dropdown when Test-Mails is clicked', () => {
+    const onTestEmails = vi.fn()
+    renderMenu(vi.fn(), vi.fn(), onTestEmails, true)
+    fireEvent.click(screen.getByLabelText('Menü öffnen'))
+    fireEvent.click(screen.getByText('Test-Mails'))
+    expect(onTestEmails).toHaveBeenCalledOnce()
+    expect(screen.queryByText('Test-Mails')).not.toBeInTheDocument()
   })
 })
