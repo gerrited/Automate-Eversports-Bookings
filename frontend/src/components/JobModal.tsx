@@ -158,7 +158,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
                 className="w-4 h-4 rounded accent-brand"
               />
               <span className="flex items-center gap-1.5 text-slate-300 text-sm">
-                Debug <span className="text-slate-500 text-xs">(Buchung wird sofort storniert)</span>
+                Test
                 <HelpIcon text="Testmodus — die Buchung wird sofort nach Abschluss wieder storniert." />
               </span>
             </label>
