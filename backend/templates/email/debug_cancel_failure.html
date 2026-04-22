@@ -1,0 +1,9 @@
+<p><strong>Die Debug-Buchung für {{ class_name }} wurde erfolgreich gebucht, konnte aber nicht automatisch storniert werden.</strong></p>
+<ul>
+  <li><strong>Kurs:</strong> {{ class_name }} — {{ time_str }} Uhr</li>
+  <li><strong>Tag:</strong> {{ weekday_str }}, {{ date_str }}</li>
+  <li><strong>Facility:</strong> {{ facility_name }}</li>
+</ul>
+<p><strong>Fehler:</strong> <code>{{ error_message }}</code></p>
+<p>Bitte storniere die Buchung manuell auf Eversports.</p>
+<p><a href="{{ frontend_url }}">Zur App</a></p>

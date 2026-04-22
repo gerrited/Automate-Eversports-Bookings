@@ -6,12 +6,19 @@ from __future__ import annotations
 import logging
 import os
 from datetime import date
+from pathlib import Path
 
 import resend
+from jinja2 import Environment, FileSystemLoader
 
 log = logging.getLogger(__name__)
 
 WEEKDAYS_DE = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
+
+_templates = Environment(
+    loader=FileSystemLoader(Path(__file__).parent / "templates" / "email"),
+    autoescape=True,
+)
 
 
 def send_booking_failure_email(user_email: str, job, error_message: str, target_date: date) -> None:
@@ -28,17 +35,15 @@ def send_booking_failure_email(user_email: str, job, error_message: str, target_
         sender = f"FOReversports <{from_email}>"
 
         subject = f"Buchung fehlgeschlagen: {job.class_name} am {date_str}"
-        html = f"""
-<p><strong>Deine Buchung für {job.class_name} ist fehlgeschlagen.</strong></p>
-<ul>
-  <li><strong>Kurs:</strong> {job.class_name} — {time_str} Uhr</li>
-  <li><strong>Tag:</strong> {weekday_str}, {date_str}</li>
-  <li><strong>Facility:</strong> {job.facility_name}</li>
-</ul>
-<p><strong>Fehler:</strong> <code>{error_message}</code></p>
-<p>Der Job ist weiterhin aktiv und wird beim nächsten Versuch erneut ausgeführt.</p>
-<p><a href="{frontend_url}">Zur App</a></p>
-"""
+        html = _templates.get_template("booking_failure.html").render(
+            class_name=job.class_name,
+            time_str=time_str,
+            weekday_str=weekday_str,
+            date_str=date_str,
+            facility_name=job.facility_name,
+            error_message=error_message,
+            frontend_url=frontend_url,
+        )
 
         resend.Emails.send({
             "from": sender,
@@ -65,17 +70,15 @@ def send_debug_cancel_failure_email(user_email: str, job, error_message: str, ta
         sender = f"FOReversports <{from_email}>"
 
         subject = f"Debug-Stornierung fehlgeschlagen: {job.class_name} am {date_str}"
-        html = f"""
-<p><strong>Die Debug-Buchung für {job.class_name} wurde erfolgreich gebucht, konnte aber nicht automatisch storniert werden.</strong></p>
-<ul>
-  <li><strong>Kurs:</strong> {job.class_name} — {time_str} Uhr</li>
-  <li><strong>Tag:</strong> {weekday_str}, {date_str}</li>
-  <li><strong>Facility:</strong> {job.facility_name}</li>
-</ul>
-<p><strong>Fehler:</strong> <code>{error_message}</code></p>
-<p>Bitte storniere die Buchung manuell auf Eversports.</p>
-<p><a href="{frontend_url}">Zur App</a></p>
-"""
+        html = _templates.get_template("debug_cancel_failure.html").render(
+            class_name=job.class_name,
+            time_str=time_str,
+            weekday_str=weekday_str,
+            date_str=date_str,
+            facility_name=job.facility_name,
+            error_message=error_message,
+            frontend_url=frontend_url,
+        )
 
         resend.Emails.send({
             "from": sender,

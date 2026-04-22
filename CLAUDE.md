@@ -87,6 +87,22 @@ pytest tests/ -x
 cd frontend && npm test
 ```
 
+## E-Mail-Templates
+
+E-Mail-Templates werden als Jinja2-HTML-Dateien gespeichert (`{{ variable }}`-Syntax, autoescape aktiviert).
+
+| Template-Datei | Verwendet in | Variablen |
+|---|---|---|
+| `backend/templates/email/new_user_notification.html` | Backend + Test-Mail | `new_user_email`, `now`, `users_url` |
+| `backend/templates/email/account_activated.html` | Backend + Test-Mail | `frontend_url` |
+| `backend/templates/email/account_deactivated.html` | Backend + Test-Mail | — |
+| `backend/templates/email/booking_failure.html` | Test-Mail | `class_name`, `time_str`, `weekday_str`, `date_str`, `facility_name`, `error_message`, `frontend_url` |
+| `backend/templates/email/debug_cancel_failure.html` | Test-Mail | wie `booking_failure` |
+| `worker/templates/email/booking_failure.html` | Worker | wie oben |
+| `worker/templates/email/debug_cancel_failure.html` | Worker | wie oben |
+
+Neue E-Mails: Template unter `backend/templates/email/` oder `worker/templates/email/` anlegen, dann in `backend/core/email.py` bzw. `worker/email.py` mit `_templates.get_template("name.html").render(...)` rendern.
+
 ## Umgebungsvariablen
 
 | Variable | Pflicht | Beschreibung |

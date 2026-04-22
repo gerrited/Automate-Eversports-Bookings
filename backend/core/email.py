@@ -6,13 +6,20 @@ from __future__ import annotations
 import logging
 import os
 from datetime import date, datetime, timedelta
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import resend
+from jinja2 import Environment, FileSystemLoader
 
 log = logging.getLogger(__name__)
 
 BERLIN = ZoneInfo("Europe/Berlin")
+
+_templates = Environment(
+    loader=FileSystemLoader(Path(__file__).parent.parent / "templates" / "email"),
+    autoescape=True,
+)
 
 
 def send_new_user_notification(admin_emails: list[str], new_user_email: str) -> None:
@@ -26,17 +33,14 @@ def send_new_user_notification(admin_emails: list[str], new_user_email: str) -> 
 
         frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:5173")
         users_url = f"{frontend_url}/dashboard#users"
-
         now = datetime.now(BERLIN).strftime("%d.%m.%Y %H:%M")
+
         subject = f"Neuer User: {new_user_email}"
-        html = f"""
-<p>Ein neuer User hat sich registriert und wartet auf Freigabe.</p>
-<ul>
-  <li><strong>Email:</strong> {new_user_email}</li>
-  <li><strong>Registriert am:</strong> {now} Uhr</li>
-</ul>
-<p><a href="{users_url}">Zur Benutzerverwaltung</a></p>
-"""
+        html = _templates.get_template("new_user_notification.html").render(
+            new_user_email=new_user_email,
+            now=now,
+            users_url=users_url,
+        )
         resend.Emails.send({
             "from": sender,
             "to": admin_emails,
@@ -58,10 +62,10 @@ def send_account_status_email(user_email: str, is_active: bool) -> None:
 
         if is_active:
             subject = "Dein Konto wurde freigeschaltet"
-            html = f'<p>Dein Konto für FOReversports wurde freigeschaltet. Du kannst dich ab sofort <a href="{frontend_url}">anmelden</a>.</p>'
+            html = _templates.get_template("account_activated.html").render(frontend_url=frontend_url)
         else:
             subject = "Dein Konto wurde deaktiviert"
-            html = "<p>Dein Konto für FOReversports wurde deaktiviert. Wende dich an einen Admin, falls du Fragen hast.</p>"
+            html = _templates.get_template("account_deactivated.html").render()
 
         resend.Emails.send({
             "from": sender,
@@ -95,52 +99,45 @@ def send_test_email(admin_email: str, email_type: str) -> None:
         now = datetime.now(BERLIN).strftime("%d.%m.%Y %H:%M")
         users_url = f"{frontend_url}/dashboard#users"
         subject = "Neuer User: test@example.com"
-        html = f"""
-<p>Ein neuer User hat sich registriert und wartet auf Freigabe.</p>
-<ul>
-  <li><strong>Email:</strong> test@example.com</li>
-  <li><strong>Registriert am:</strong> {now} Uhr</li>
-</ul>
-<p><a href="{users_url}">Zur Benutzerverwaltung</a></p>
-"""
+        html = _templates.get_template("new_user_notification.html").render(
+            new_user_email="test@example.com",
+            now=now,
+            users_url=users_url,
+        )
     elif email_type == "account_activated":
         subject = "Dein Konto wurde freigeschaltet"
-        html = f'<p>Dein Konto für FOReversports wurde freigeschaltet. Du kannst dich ab sofort <a href="{frontend_url}">anmelden</a>.</p>'
+        html = _templates.get_template("account_activated.html").render(frontend_url=frontend_url)
     elif email_type == "account_deactivated":
         subject = "Dein Konto wurde deaktiviert"
-        html = "<p>Dein Konto für FOReversports wurde deaktiviert. Wende dich an einen Admin, falls du Fragen hast.</p>"
+        html = _templates.get_template("account_deactivated.html").render()
     elif email_type == "booking_failure":
         dummy_date = _next_friday()
         date_str = dummy_date.strftime("%d.%m.%Y")
         weekday_str = _WEEKDAYS_DE[dummy_date.weekday()]
         subject = f"Buchung fehlgeschlagen: Yoga Basics am {date_str}"
-        html = f"""
-<p><strong>Deine Buchung für Yoga Basics ist fehlgeschlagen.</strong></p>
-<ul>
-  <li><strong>Kurs:</strong> Yoga Basics — 18:00 Uhr</li>
-  <li><strong>Tag:</strong> {weekday_str}, {date_str}</li>
-  <li><strong>Facility:</strong> FitnessPark Mitte</li>
-</ul>
-<p><strong>Fehler:</strong> <code>Kurs bereits ausgebucht</code></p>
-<p>Der Job ist weiterhin aktiv und wird beim nächsten Versuch erneut ausgeführt.</p>
-<p><a href="{frontend_url}">Zur App</a></p>
-"""
+        html = _templates.get_template("booking_failure.html").render(
+            class_name="Yoga Basics",
+            time_str="18:00",
+            weekday_str=weekday_str,
+            date_str=date_str,
+            facility_name="FitnessPark Mitte",
+            error_message="Kurs bereits ausgebucht",
+            frontend_url=frontend_url,
+        )
     elif email_type == "debug_cancel_failure":
         dummy_date = _next_friday()
         date_str = dummy_date.strftime("%d.%m.%Y")
         weekday_str = _WEEKDAYS_DE[dummy_date.weekday()]
         subject = f"Debug-Stornierung fehlgeschlagen: Yoga Basics am {date_str}"
-        html = f"""
-<p><strong>Die Debug-Buchung für Yoga Basics wurde erfolgreich gebucht, konnte aber nicht automatisch storniert werden.</strong></p>
-<ul>
-  <li><strong>Kurs:</strong> Yoga Basics — 18:00 Uhr</li>
-  <li><strong>Tag:</strong> {weekday_str}, {date_str}</li>
-  <li><strong>Facility:</strong> FitnessPark Mitte</li>
-</ul>
-<p><strong>Fehler:</strong> <code>Verbindung fehlgeschlagen</code></p>
-<p>Bitte storniere die Buchung manuell auf Eversports.</p>
-<p><a href="{frontend_url}">Zur App</a></p>
-"""
+        html = _templates.get_template("debug_cancel_failure.html").render(
+            class_name="Yoga Basics",
+            time_str="18:00",
+            weekday_str=weekday_str,
+            date_str=date_str,
+            facility_name="FitnessPark Mitte",
+            error_message="Verbindung fehlgeschlagen",
+            frontend_url=frontend_url,
+        )
     else:
         raise ValueError(f"Unknown email type: {email_type}")
 

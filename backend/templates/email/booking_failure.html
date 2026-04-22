@@ -1,0 +1,9 @@
+<p><strong>Deine Buchung für {{ class_name }} ist fehlgeschlagen.</strong></p>
+<ul>
+  <li><strong>Kurs:</strong> {{ class_name }} — {{ time_str }} Uhr</li>
+  <li><strong>Tag:</strong> {{ weekday_str }}, {{ date_str }}</li>
+  <li><strong>Facility:</strong> {{ facility_name }}</li>
+</ul>
+<p><strong>Fehler:</strong> <code>{{ error_message }}</code></p>
+<p>Der Job ist weiterhin aktiv und wird beim nächsten Versuch erneut ausgeführt.</p>
+<p><a href="{{ frontend_url }}">Zur App</a></p>
