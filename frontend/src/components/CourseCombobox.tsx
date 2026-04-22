@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react'
-import { getRecentCourses } from '../api/facilities'
 
 interface Props {
   value: string
@@ -10,14 +9,12 @@ interface Props {
 export default function CourseCombobox({ value, onChange, facilityCourses }: Props) {
   const [query, setQuery] = useState('')
   const [isOpen, setIsOpen] = useState(false)
-  const [recentCourses, setRecentCourses] = useState<string[]>([])
-  const [loading, setLoading] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const inFilterMode = isOpen && query.length >= 3
-  const displayedResults = inFilterMode
-    ? facilityCourses.filter(c => c.toLowerCase().includes(query.toLowerCase()))
-    : recentCourses
+  const sorted = [...facilityCourses].sort((a, b) => a.localeCompare(b, 'de'))
+  const displayedResults = query
+    ? sorted.filter(c => c.toLowerCase().includes(query.toLowerCase()))
+    : sorted
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -28,15 +25,6 @@ export default function CourseCombobox({ value, onChange, facilityCourses }: Pro
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
-
-  useEffect(() => {
-    if (!isOpen) return
-    setLoading(true)
-    getRecentCourses()
-      .then(setRecentCourses)
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [isOpen])
 
   function handleSelect(course: string) {
     onChange(course)
@@ -64,19 +52,11 @@ export default function CourseCombobox({ value, onChange, facilityCourses }: Pro
       />
 
       {isOpen && (
-        <div className="absolute z-10 mt-1 w-full bg-surface-card rounded-lg shadow-lg overflow-hidden">
-          {loading && (
-            <div className="px-3 py-2 text-slate-400 text-sm">Laden…</div>
+        <div className="absolute z-10 mt-1 w-full bg-surface-card rounded-lg shadow-lg overflow-hidden max-h-60 overflow-y-auto">
+          {displayedResults.length === 0 && (
+            <div className="px-3 py-2 text-slate-500 text-sm">Keine Kurse gefunden</div>
           )}
-          {!loading && query.length > 0 && query.length < 3 && (
-            <div className="px-3 py-2 text-slate-500 text-sm">
-              Mindestens 3 Zeichen zum Filtern
-            </div>
-          )}
-          {!loading && displayedResults.length === 0 && (query.length === 0 || query.length >= 3) && (
-            <div className="px-3 py-2 text-slate-500 text-sm">Keine Ergebnisse</div>
-          )}
-          {!loading && displayedResults.map(course => (
+          {displayedResults.map(course => (
             <button
               key={course}
               type="button"
