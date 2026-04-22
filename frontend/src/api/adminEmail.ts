@@ -8,7 +8,7 @@ export type TestEmailType =
   | 'debug_cancel_failure'
 
 export async function sendTestEmail(type: TestEmailType): Promise<void> {
-  await apiFetch<{ detail: string }>('/api/admin/test-email', {
+  await apiFetch<void>('/api/admin/test-email', {
     method: 'POST',
     body: JSON.stringify({ type }),
   })
