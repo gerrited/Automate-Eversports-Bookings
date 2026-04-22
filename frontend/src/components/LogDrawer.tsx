@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { Job, BookingLog } from '../types'
 import { WEEKDAY_NAMES } from '../types'
 
@@ -21,6 +22,8 @@ const statusLabel: Record<string, string> = {
 }
 
 export default function LogDrawer({ job, logs, loading, onClose }: Props) {
+  const [activeMessage, setActiveMessage] = useState<string | null>(null)
+
   return (
     <>
       {/* Backdrop */}
@@ -63,7 +66,12 @@ export default function LogDrawer({ job, logs, loading, onClose }: Props) {
                 </span>
               </div>
               {log.message && (
-                <p className="text-slate-400 text-xs mt-1 font-mono break-all">{log.message}</p>
+                <button
+                  onClick={() => setActiveMessage(log.message)}
+                  className="text-slate-500 text-xs mt-1 hover:text-slate-300 underline underline-offset-2 text-left"
+                >
+                  Details anzeigen
+                </button>
               )}
               <p className="text-slate-600 text-xs mt-1">
                 {new Date(log.executed_at).toLocaleString('de-DE')}
@@ -72,6 +80,38 @@ export default function LogDrawer({ job, logs, loading, onClose }: Props) {
           ))}
         </div>
       </div>
+
+      {/* Error detail dialog */}
+      {activeMessage && (
+        <div
+          className="fixed inset-0 bg-black/60 z-60 flex items-center justify-center p-4"
+          onClick={() => setActiveMessage(null)}
+        >
+          <div
+            className="bg-surface-card rounded-xl shadow-2xl w-full max-w-md p-5 flex flex-col gap-4"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center">
+              <p className="text-white font-semibold">Fehlermeldung</p>
+              <button
+                onClick={() => setActiveMessage(null)}
+                className="text-slate-400 hover:text-white text-xl leading-none"
+              >
+                ✕
+              </button>
+            </div>
+            <pre className="text-slate-300 text-xs font-mono whitespace-pre-wrap break-all bg-slate-900 rounded-lg p-3 max-h-64 overflow-y-auto">
+              {activeMessage}
+            </pre>
+            <button
+              onClick={() => setActiveMessage(null)}
+              className="self-end text-sm text-slate-400 hover:text-white"
+            >
+              Schließen
+            </button>
+          </div>
+        </div>
+      )}
     </>
   )
 }

@@ -40,6 +40,11 @@ _SESSION_HEADERS = {
 }
 
 
+def _http_error(resp: requests.Response) -> RuntimeError:
+    snippet = resp.text[:300].strip() if resp.text else ""
+    return RuntimeError(f"HTTP {resp.status_code} from Eversports: {snippet}")
+
+
 def _gql(session: requests.Session, operation: str, query: str, variables: dict) -> dict:
     resp = session.post(
         GRAPHQL_URL,
@@ -47,7 +52,8 @@ def _gql(session: requests.Session, operation: str, query: str, variables: dict)
         headers={"Content-Type": "application/json"},
         timeout=TIMEOUT,
     )
-    resp.raise_for_status()
+    if not resp.ok:
+        raise _http_error(resp)
     body = resp.json()
     if "errors" in body:
         raise RuntimeError(f"GraphQL error: {body['errors']}")
@@ -63,7 +69,8 @@ def _resolve_facility_id(facility_id: str, session: requests.Session) -> str:
     if facility_id.isdigit():
         return facility_id
     resp = session.get(BASE_URL + "/scl/" + facility_id, timeout=TIMEOUT)
-    resp.raise_for_status()
+    if not resp.ok:
+        raise _http_error(resp)
     match = _DATA_ID_RE.search(resp.text)
     if not match:
         raise RuntimeError(f"Numeric facility ID not found for slug '{facility_id}'")
@@ -152,7 +159,8 @@ def book_session(
         },
         timeout=TIMEOUT,
     )
-    resp.raise_for_status()
+    if not resp.ok:
+        raise _http_error(resp)
     calendar_html = resp.json()["data"]["html"]
 
     soup = BeautifulSoup(calendar_html, "html.parser")
@@ -247,7 +255,8 @@ def cancel_booking(
     session: requests.Session = login_result["session"]
 
     resp = session.get(BASE_URL + "/u", timeout=TIMEOUT)
-    resp.raise_for_status()
+    if not resp.ok:
+        raise _http_error(resp)
     soup = BeautifulSoup(resp.text, "html.parser")
 
     numeric_facility_id = _resolve_facility_id(facility_id, session)
@@ -279,4 +288,5 @@ def cancel_booking(
         },
         timeout=TIMEOUT,
     )
-    resp.raise_for_status()
+    if not resp.ok:
+        raise _http_error(resp)
