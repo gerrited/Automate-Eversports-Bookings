@@ -31,7 +31,7 @@ export default function HelpIcon({ text }: Props) {
         ?
       </button>
       {open && (
-        <div className="absolute top-full right-0 mt-1 w-56 bg-[#1e293b] border border-slate-700 rounded-lg p-3 shadow-xl z-50">
+        <div className="absolute top-full left-0 mt-1 w-56 max-w-[calc(100vw-2rem)] bg-[#1e293b] border border-slate-700 rounded-lg p-3 shadow-xl z-50">
           <p className="text-slate-300 text-xs leading-relaxed">{text}</p>
         </div>
       )}
