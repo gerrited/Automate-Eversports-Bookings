@@ -23,13 +23,15 @@ describe('JobModal', () => {
 
   it('renders all form fields', () => {
     render(<JobModal onSave={onSave} onClose={onClose} />)
-    // Check for form input fields by aria-label
-    expect(screen.getByLabelText('Anbieter suchen')).toBeInTheDocument()
-    expect(screen.getByLabelText('Wochentag')).toBeInTheDocument()
+    // Check that all form controls are rendered
+    const facilityCombos = screen.getAllByRole('textbox')
+    const anbieterInput = facilityCombos.find(el => (el as HTMLInputElement).placeholder?.includes('Anbieter'))
+    expect(anbieterInput).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: 'Wochentag' })).toBeInTheDocument()
     expect(screen.getByLabelText('Uhrzeit')).toBeInTheDocument()
     expect(screen.getByLabelText('Kursname')).toBeInTheDocument()
-    expect(screen.getByLabelText('Tage im Voraus')).toBeInTheDocument()
-    expect(screen.getByLabelText('Einmalig')).toBeInTheDocument()
+    expect(screen.getByRole('spinbutton', { name: 'Tage im Voraus' })).toBeInTheDocument()
+    expect(screen.getByRole('checkbox', { name: 'Einmalig' })).toBeInTheDocument()
   })
 
   it('renders einmalig checkbox unchecked by default', () => {
