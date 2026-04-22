@@ -1,12 +1,14 @@
 import logging
-from typing import List
+import os
+from typing import List, Literal
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from backend.api.deps import require_admin
-from backend.core.email import send_account_status_email
+from backend.core.email import send_account_status_email, send_test_email
 from backend.db import get_db
 from backend.models.booking_job import BookingJob
 from backend.models.booking_log import BookingLog
@@ -109,3 +111,28 @@ def list_all_jobs(
         )
         for job, user_email, execution_count in rows
     ]
+
+
+class TestEmailRequest(BaseModel):
+    type: Literal[
+        "new_user",
+        "account_activated",
+        "account_deactivated",
+        "booking_failure",
+        "debug_cancel_failure",
+    ]
+
+
+@router.post("/admin/test-email")
+def send_test_email_endpoint(
+    body: TestEmailRequest,
+    current_user: User = Depends(require_admin),
+):
+    if not os.environ.get("RESEND_API_KEY") or not os.environ.get("FROM_EMAIL"):
+        raise HTTPException(status_code=503, detail="E-Mail nicht konfiguriert")
+    try:
+        send_test_email(current_user.email, body.type)
+    except Exception as exc:
+        log.error("Failed to send test email: %s", exc)
+        raise HTTPException(status_code=500, detail="E-Mail konnte nicht gesendet werden")
+    return {"detail": "Test-Mail gesendet"}

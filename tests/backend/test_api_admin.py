@@ -265,3 +265,50 @@ def test_list_all_jobs_sorted_by_weekday_time_email(client, db_session):
     weekday_0_jobs = [j for j in jobs if j["weekday"] == 0]
     times = [j["target_time"] for j in weekday_0_jobs]
     assert times == sorted(times)
+
+
+# --- /admin/test-email ---
+
+def test_send_test_email_requires_admin(client, db_session):
+    user = _make_user(db_session, ev_id="ev-te1", email="te1@x.com")
+    resp = client.post(
+        "/api/admin/test-email",
+        json={"type": "new_user"},
+        headers=_auth_header(user.id),
+    )
+    assert resp.status_code == 403
+
+
+def test_send_test_email_no_config_returns_503(client, db_session, monkeypatch):
+    admin = _make_admin(db_session, ev_id="ev-te2", email="te2@x.com")
+    monkeypatch.delenv("RESEND_API_KEY", raising=False)
+    monkeypatch.delenv("FROM_EMAIL", raising=False)
+    resp = client.post(
+        "/api/admin/test-email",
+        json={"type": "new_user"},
+        headers=_auth_header(admin.id),
+    )
+    assert resp.status_code == 503
+
+
+def test_send_test_email_calls_send_test_email(client, db_session, mocker):
+    admin = _make_admin(db_session, ev_id="ev-te3", email="te3@x.com")
+    mocker.patch.dict(os.environ, {"RESEND_API_KEY": "key", "FROM_EMAIL": "from@x.com"})
+    mock_fn = mocker.patch("backend.api.admin.send_test_email")
+    resp = client.post(
+        "/api/admin/test-email",
+        json={"type": "booking_failure"},
+        headers=_auth_header(admin.id),
+    )
+    assert resp.status_code == 200
+    mock_fn.assert_called_once_with("te3@x.com", "booking_failure")
+
+
+def test_send_test_email_invalid_type_returns_422(client, db_session):
+    admin = _make_admin(db_session, ev_id="ev-te4", email="te4@x.com")
+    resp = client.post(
+        "/api/admin/test-email",
+        json={"type": "nonexistent_type"},
+        headers=_auth_header(admin.id),
+    )
+    assert resp.status_code == 422
