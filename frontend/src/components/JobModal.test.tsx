@@ -2,6 +2,8 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { vi } from 'vitest'
 import JobModal from './JobModal'
 
+// apiFetch is mocked here because FacilityCombobox (rendered inside JobModal)
+// imports from '../api/facilities', which imports apiFetch from '../api/client'.
 vi.mock('../api/client', () => ({
   isAdmin: vi.fn(() => false),
   apiFetch: vi.fn(),
@@ -28,14 +30,8 @@ describe('JobModal', () => {
     const anbieterInput = facilityCombos.find(el => (el as HTMLInputElement).placeholder?.includes('Anbieter'))
     expect(anbieterInput).toBeInTheDocument()
     expect(screen.getByRole('combobox', { name: 'Wochentag' })).toBeInTheDocument()
-    // Time input has aria-label, get the input element directly
-    const timeInputs = screen.getAllByLabelText('Uhrzeit')
-    const timeInput = timeInputs.find(el => el.tagName === 'INPUT')
-    expect(timeInput).toBeInTheDocument()
-    // Kursname
-    const kursInputs = screen.getAllByLabelText('Kursname')
-    const kursInput = kursInputs.find(el => el.tagName === 'INPUT')
-    expect(kursInput).toBeInTheDocument()
+    expect(screen.getByLabelText('Uhrzeit', { selector: 'input' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Kursname', { selector: 'input' })).toBeInTheDocument()
     expect(screen.getByRole('spinbutton', { name: 'Tage im Voraus' })).toBeInTheDocument()
     expect(screen.getByRole('checkbox', { name: 'Einmalig' })).toBeInTheDocument()
   })
@@ -70,11 +66,9 @@ describe('JobModal', () => {
       enabled: true, one_time: true, created_at: '', debug: false,
     }
     render(<JobModal job={job} onSave={onSave} onClose={onClose} />)
-    const kursInputs = screen.getAllByLabelText('Kursname')
-    const kursInput = kursInputs.find(el => el.tagName === 'INPUT') as HTMLInputElement
+    const kursInput = screen.getByLabelText('Kursname', { selector: 'input' }) as HTMLInputElement
     expect(kursInput.value).toBe('Yoga')
-    const daysInputs = screen.getAllByLabelText('Tage im Voraus')
-    const daysInput = daysInputs.find(el => el.tagName === 'INPUT') as HTMLInputElement
+    const daysInput = screen.getByRole('spinbutton', { name: 'Tage im Voraus' }) as HTMLInputElement
     expect(daysInput.value).toBe('3')
     expect((screen.getByRole('checkbox', { name: 'Einmalig' }) as HTMLInputElement).checked).toBe(true)
   })
