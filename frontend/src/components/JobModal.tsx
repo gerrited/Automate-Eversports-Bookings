@@ -4,6 +4,7 @@ import type { Job, JobFormData, Facility } from '../types'
 import { WEEKDAY_NAMES } from '../types'
 import FacilityCombobox from './FacilityCombobox'
 import CourseCombobox from './CourseCombobox'
+import HelpIcon from './HelpIcon'
 import { getCourses } from '../api/facilities'
 import { isAdmin } from '../api/client'
 
@@ -65,12 +66,18 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
         </h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
-            <span className="text-slate-400 text-sm">Anbieter</span>
+            <span className="flex items-center gap-1.5 text-slate-400 text-sm">
+              Anbieter
+              <HelpIcon text="Der Sportanbieter, bei dem du den Kurs buchen möchtest." />
+            </span>
             <FacilityCombobox value={facility} onChange={setFacility} />
           </div>
 
           <label className="flex flex-col gap-1">
-            <span className="text-slate-400 text-sm">Wochentag</span>
+            <span className="flex items-center gap-1.5 text-slate-400 text-sm">
+              Wochentag
+              <HelpIcon text="Der Wochentag, an dem der Kurs regelmäßig stattfindet." />
+            </span>
             <select
               aria-label="Wochentag"
               value={weekday}
@@ -84,7 +91,10 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
           </label>
 
           <label className="flex flex-col gap-1">
-            <span className="text-slate-400 text-sm">Uhrzeit</span>
+            <span className="flex items-center gap-1.5 text-slate-400 text-sm">
+              Uhrzeit
+              <HelpIcon text="Die Startzeit des Kurses. Wird auch genutzt, um passende Kurse in der Auswahl zu filtern." />
+            </span>
             <input
               aria-label="Uhrzeit"
               type="time"
@@ -96,7 +106,10 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
           </label>
 
           <div className="flex flex-col gap-1">
-            <span className="text-slate-400 text-sm">Kursname</span>
+            <span className="flex items-center gap-1.5 text-slate-400 text-sm">
+              Kursname
+              <HelpIcon text="Der Name des Kurses, der gebucht werden soll. Leer lassen, um den ersten verfügbaren Kurs zu diesem Zeitpunkt zu buchen." />
+            </span>
             <CourseCombobox
               value={className}
               onChange={setClassName}
@@ -105,7 +118,10 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
           </div>
 
           <label className="flex flex-col gap-1">
-            <span className="text-slate-400 text-sm">Tage im Voraus</span>
+            <span className="flex items-center gap-1.5 text-slate-400 text-sm">
+              Tage im Voraus
+              <HelpIcon text="Wie viele Tage vor dem Kurs soll die Buchung ausgelöst werden? Eversports öffnet Buchungsslots typischerweise einige Tage im Voraus — stelle den Wert passend zum Anbieter ein." />
+            </span>
             <input
               aria-label="Tage im Voraus"
               type="number"
@@ -126,7 +142,10 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
               onChange={e => setOneTime(e.target.checked)}
               className="w-4 h-4 rounded accent-brand"
             />
-            <span className="text-slate-300 text-sm">Einmalig</span>
+            <span className="flex items-center gap-1.5 text-slate-300 text-sm">
+              Einmalig
+              <HelpIcon text="Aktiviert: nur einmal ausführen, dann automatisch löschen. Deaktiviert: jede Woche wiederholen." />
+            </span>
           </label>
 
           {isAdmin() && (
@@ -138,7 +157,10 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
                 onChange={e => setDebug(e.target.checked)}
                 className="w-4 h-4 rounded accent-brand"
               />
-              <span className="text-slate-300 text-sm">Debug <span className="text-slate-500 text-xs">(Buchung wird sofort storniert)</span></span>
+              <span className="flex items-center gap-1.5 text-slate-300 text-sm">
+                Debug <span className="text-slate-500 text-xs">(Buchung wird sofort storniert)</span>
+                <HelpIcon text="Testmodus — die Buchung wird sofort nach Abschluss wieder storniert." />
+              </span>
             </label>
           )}
 
