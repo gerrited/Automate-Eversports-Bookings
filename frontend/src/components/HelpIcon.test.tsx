@@ -4,7 +4,7 @@ import HelpIcon from './HelpIcon'
 describe('HelpIcon', () => {
   it('renders the ? button', () => {
     render(<HelpIcon text="Hilfetext hier" />)
-    expect(screen.getByRole('button', { name: /hilfe/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /hilfe anzeigen/i })).toBeInTheDocument()
   })
 
   it('popup is hidden by default', () => {
@@ -14,14 +14,14 @@ describe('HelpIcon', () => {
 
   it('shows popup on button click', () => {
     render(<HelpIcon text="Hilfetext hier" />)
-    fireEvent.click(screen.getByRole('button', { name: /hilfe/i }))
+    fireEvent.click(screen.getByRole('button', { name: /hilfe anzeigen/i }))
     expect(screen.getByText('Hilfetext hier')).toBeInTheDocument()
   })
 
   it('hides popup on second button click', () => {
     render(<HelpIcon text="Hilfetext hier" />)
-    fireEvent.click(screen.getByRole('button', { name: /hilfe/i }))
-    fireEvent.click(screen.getByRole('button', { name: /hilfe/i }))
+    fireEvent.click(screen.getByRole('button', { name: /hilfe anzeigen/i }))
+    fireEvent.click(screen.getByRole('button', { name: /hilfe anzeigen/i }))
     expect(screen.queryByText('Hilfetext hier')).not.toBeInTheDocument()
   })
 
@@ -32,7 +32,7 @@ describe('HelpIcon', () => {
         <div data-testid="outside">Außen</div>
       </div>
     )
-    fireEvent.click(screen.getByRole('button', { name: /hilfe/i }))
+    fireEvent.click(screen.getByRole('button', { name: /hilfe anzeigen/i }))
     expect(screen.getByText('Hilfetext hier')).toBeInTheDocument()
     fireEvent.mouseDown(screen.getByTestId('outside'))
     expect(screen.queryByText('Hilfetext hier')).not.toBeInTheDocument()
