@@ -10,6 +10,7 @@ import UserManagementSection from '../components/UserManagementSection'
 import AllJobsSection from '../components/AllJobsSection'
 import HamburgerMenu from '../components/HamburgerMenu'
 import SettingsModal from '../components/SettingsModal'
+import TestEmailModal from '../components/TestEmailModal'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
@@ -34,6 +35,7 @@ export default function DashboardPage() {
   const [logsLoading, setLogsLoading] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [showSettings, setShowSettings] = useState(false)
+  const [showTestEmailModal, setShowTestEmailModal] = useState(false)
   const [jobsEmailFilter, setJobsEmailFilter] = useState('')
   const [usersEmailFilter, setUsersEmailFilter] = useState('')
   const [debugFilter, setDebugFilter] = useState<'live' | 'debug'>('live')
@@ -152,6 +154,7 @@ useEffect(() => {
             <HamburgerMenu
               onLogout={handleLogout}
               onSettings={() => setShowSettings(true)}
+              onTestEmails={() => setShowTestEmailModal(true)}
               userEmail={getEmail()}
               userAvatar={getAvatarUrl()}
               isActualAdmin={isActualAdmin()}
@@ -266,6 +269,10 @@ useEffect(() => {
 
       {/* Settings modal */}
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+
+      {showTestEmailModal && (
+        <TestEmailModal onClose={() => setShowTestEmailModal(false)} />
+      )}
     </div>
     </div>
   )

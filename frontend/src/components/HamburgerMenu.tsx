@@ -4,13 +4,14 @@ import { setRole } from '../api/client'
 interface Props {
   onLogout: () => void
   onSettings: () => void
+  onTestEmails: () => void
   userEmail?: string | null
   userAvatar?: string | null
   isActualAdmin?: boolean
   isAdminView?: boolean
 }
 
-export default function HamburgerMenu({ onLogout, onSettings, userEmail, userAvatar, isActualAdmin, isAdminView }: Props) {
+export default function HamburgerMenu({ onLogout, onSettings, onTestEmails, userEmail, userAvatar, isActualAdmin, isAdminView }: Props) {
   const [open, setOpen] = useState(false)
   const [tooltipVisible, setTooltipVisible] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -85,6 +86,17 @@ export default function HamburgerMenu({ onLogout, onSettings, userEmail, userAva
                   />
                   Admin
                 </label>
+              </>
+            )}
+            {isAdminView && (
+              <>
+                <div className="border-t border-slate-700" />
+                <button
+                  onClick={() => { setOpen(false); onTestEmails() }}
+                  className="w-full text-left px-4 py-3 text-sm text-slate-200 hover:bg-slate-700 transition-colors"
+                >
+                  Test-Mails
+                </button>
               </>
             )}
             <div className="border-t border-slate-700" />
