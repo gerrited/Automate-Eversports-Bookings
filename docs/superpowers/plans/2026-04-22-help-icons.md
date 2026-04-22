@@ -231,14 +231,14 @@ to:
 </span>
 ```
 
-**Debug** (line ~134, Admin only) — change:
+**Test** (line ~134, Admin only) — change:
 ```tsx
-<span className="text-slate-300 text-sm">Debug <span className="text-slate-500 text-xs">(Buchung wird sofort storniert)</span></span>
+<span className="text-slate-300 text-sm">Test <span className="text-slate-500 text-xs">(Buchung wird sofort storniert)</span></span>
 ```
 to:
 ```tsx
 <span className="flex items-center gap-1.5 text-slate-300 text-sm">
-  Debug <span className="text-slate-500 text-xs">(Buchung wird sofort storniert)</span>
+  Test <span className="text-slate-500 text-xs">(Buchung wird sofort storniert)</span>
   <HelpIcon text="Testmodus — die Buchung wird sofort nach Abschluss wieder storniert." />
 </span>
 ```

@@ -7,7 +7,7 @@
 
 ## Kontext
 
-Das bestehende System bucht CrossFit-Kurse bei Eversports über hartcodierte K8s CronJobs mit festen Umgebungsvariablen. Ziel ist es, daraus eine Multi-User-Plattform zu bauen: Nutzer loggen sich mit ihren Eversports-Zugangsdaten ein, verwalten ihre eigenen Buchungs-Jobs über ein Web-Frontend, und ein stündlicher Worker führt fällige Buchungen automatisch durch.
+Das bestehende System bucht CrossFit-Kurse bei Eversports über hartcodierte K8s CronJobs mit festen Umgebungsvariablen. Ziel ist es, daraus eine Multi-User-Plattform zu bauen: Benutzer loggen sich mit ihren Eversports-Zugangsdaten ein, verwalten ihre eigenen Buchungen über ein Web-Frontend, und ein Worker führt fällige Buchungen alle 15 Minuten automatisch durch.
 
 Das Projekt wird als Sub-Projekt 1 von 3 behandelt. Dieser Spec umfasst das gesamte System (Backend, Frontend, Worker), da alle Teile eng gekoppelt sind.
 
@@ -21,7 +21,7 @@ Das Projekt wird als Sub-Projekt 1 von 3 behandelt. Dieser Spec umfasst das gesa
 |-----------|-------------|---------------|
 | `frontend` | React + Vite + Tailwind, nginx | Deployment + Service + Ingress |
 | `backend` | Python 3.12, FastAPI, SQLAlchemy | Deployment + Service |
-| `worker` | Python 3.12, nutzt `backend/core/` | CronJob (`0 * * * *`) |
+| `worker` | Python 3.13, nutzt `backend/core/` | CronJob (`*/15 * * * *`) |
 
 **Externe Dienste:**
 - PostgreSQL (extern gehostet) — verbunden per `DATABASE_URL` K8s Secret
@@ -50,7 +50,7 @@ k8s/
   cronjob.yaml              # bestehend, bleibt für Standalone-Betrieb
   backend-deployment.yaml
   frontend-deployment.yaml
-  worker-cronjob.yaml       # schedule: "0 * * * *"
+  worker-cronjob.yaml       # schedule: "*/15 * * * *"
 book.py                     # bestehend, bleibt als Standalone-Script
 ```
 
@@ -121,12 +121,12 @@ Alle Endpunkte außer `/api/auth/login` erfordern einen gültigen JWT.
 | Methode | Endpunkt | Beschreibung |
 |---------|----------|--------------|
 | `POST` | `/api/auth/login` | Eversports-Login → JWT |
-| `GET` | `/api/jobs` | Alle Jobs des eingeloggten Users |
-| `POST` | `/api/jobs` | Job erstellen |
-| `PUT` | `/api/jobs/{id}` | Job bearbeiten |
-| `PATCH` | `/api/jobs/{id}/toggle` | Job aktivieren / deaktivieren |
-| `DELETE` | `/api/jobs/{id}` | Job löschen |
-| `GET` | `/api/jobs/{id}/logs` | Letzte 20 Ausführungen eines Jobs |
+| `GET` | `/api/jobs` | Alle Buchungen des eingeloggten Benutzers |
+| `POST` | `/api/jobs` | Buchung erstellen |
+| `PUT` | `/api/jobs/{id}` | Buchung bearbeiten |
+| `PATCH` | `/api/jobs/{id}/toggle` | Buchung aktivieren / deaktivieren |
+| `DELETE` | `/api/jobs/{id}` | Buchung löschen |
+| `GET` | `/api/jobs/{id}/logs` | Letzte 20 Ausführungen einer Buchung |
 
 Ownership-Prüfung: Vor jedem Zugriff auf einen Job wird `job.user_id == current_user.id` geprüft, sonst `403`.
 
@@ -134,7 +134,7 @@ Ownership-Prüfung: Vor jedem Zugriff auf einen Job wird `job.user_id == current
 
 ## Worker
 
-Der Worker ist ein eigenständiges Python-Script (`worker/worker.py`), das als K8s CronJob stündlich (`0 * * * *`) läuft. Er importiert die Buchungslogik aus `backend/core/`.
+Der Worker ist ein eigenständiges Python-Script (`worker/worker.py`), das als K8s CronJob alle 15 Minuten (`*/15 * * * *`) läuft. Er importiert die Buchungslogik aus `backend/core/`.
 
 **Ablauf pro Lauf:**
 1. Alle aktiven Jobs laden: `SELECT * FROM booking_jobs WHERE enabled = true`
@@ -146,7 +146,7 @@ Der Worker ist ein eigenständiges Python-Script (`worker/worker.py`), das als K
 7. Passwort entschlüsseln → `login()` → `find_session_uuid()` → `create_cart()` → `confirm_booking()`
 8. Ergebnis in `booking_logs` schreiben (`success` + Order-ID, `already_booked`, oder `failed` + Fehlermeldung)
 
-Der Worker bricht bei einem Fehler in einem Job nicht ab — er loggt den Fehler und fährt mit dem nächsten Job fort.
+Der Worker bricht bei einem Fehler in einer Buchung nicht ab — er loggt den Fehler und fährt mit der nächsten Buchung fort.
 
 ---
 
@@ -157,20 +157,20 @@ Der Worker bricht bei einem Fehler in einem Job nicht ab — er loggt den Fehler
 | Route | Beschreibung |
 |-------|--------------|
 | `/login` | E-Mail + Passwort Formular, leitet nach Login zu `/dashboard` |
-| `/dashboard` | Job-Cards, "+ Buchung hinzufügen"-Button, Logout |
+| `/dashboard` | Buchungskarten, "+ Buchung hinzufügen"-Button, Logout |
 
 **Komponenten:**
 
 - **`JobCard`** — zeigt Wochentag, Uhrzeit, Kursname, letzten Status (✓ / ✗), Enable/Disable-Toggle, Edit- und Delete-Buttons. Klick auf die Karte öffnet den `LogDrawer`.
-- **`JobModal`** — Modal-Dialog für Erstellen und Bearbeiten eines Jobs. Felder: Wochentag (Dropdown), Uhrzeit, Kursname, Facility ID, Tage im Voraus.
-- **`LogDrawer`** — Seitlicher Drawer mit den letzten 20 Ausführungen des Jobs (Datum, Status, Meldung).
+- **`JobModal`** — Modal-Dialog für Erstellen und Bearbeiten einer Buchung. Felder: Wochentag (Dropdown), Uhrzeit, Kursname, Facility ID, Tage im Voraus.
+- **`LogDrawer`** — Seitlicher Drawer mit den letzten 20 Ausführungen der Buchung (Datum, Status, Meldung).
 - **`LoginForm`** — E-Mail + Passwort, Fehleranzeige bei fehlgeschlagenem Eversports-Login.
 
 ---
 
 ## Sicherheit
 
-- **Passwort-Verschlüsselung:** AES-256 (Fernet/cryptography-Bibliothek). `ENCRYPTION_KEY` als K8s Secret, gemountet in Backend und Worker.
+- **Passwort-Verschlüsselung:** AES-256-GCM (AESGCM/cryptography-Bibliothek). `ENCRYPTION_KEY` als K8s Secret (32 Bytes als Hex-String), gemountet in Backend und Worker.
 - **JWT:** HS256, 24h TTL. Secret als K8s Secret `JWT_SECRET`.
 - **Datenisolierung:** Jeder API-Endpunkt prüft `user_id` — kein User kann Jobs anderer User sehen oder bearbeiten.
 - **HTTPS:** Via K8s Ingress (TLS-Terminierung).
@@ -184,7 +184,7 @@ Der Worker bricht bei einem Fehler in einem Job nicht ab — er loggt den Fehler
 |-------|-----------|
 | `k8s/backend-deployment.yaml` | Deployment + Service, env: `DATABASE_URL`, `ENCRYPTION_KEY`, `JWT_SECRET` |
 | `k8s/frontend-deployment.yaml` | Deployment + Service + Ingress |
-| `k8s/worker-cronjob.yaml` | CronJob `0 * * * *`, env: `DATABASE_URL`, `ENCRYPTION_KEY` |
+| `k8s/worker-cronjob.yaml` | CronJob `*/15 * * * *`, env: `DATABASE_URL`, `ENCRYPTION_KEY` |
 
 Die bestehende `k8s/cronjob.yaml` bleibt unverändert für den Standalone-Betrieb.
 
@@ -194,6 +194,6 @@ Die bestehende `k8s/cronjob.yaml` bleibt unverändert für den Standalone-Betrie
 
 1. **Backend lokal:** `uvicorn backend.main:app --reload` → `POST /api/auth/login` mit echten Eversports-Credentials testen
 2. **Worker lokal:** `python worker/worker.py` → prüfen ob Jobs korrekt erkannt und gebucht werden
-3. **Frontend lokal:** `npm run dev` in `frontend/` → Login-Flow, Job anlegen, Toggle, Log-Drawer testen
-4. **K8s:** `kubectl apply -f k8s/` → alle drei Deployments laufen, Worker-CronJob wird stündlich ausgeführt
-5. **End-to-End:** Job anlegen für `today + days_in_advance`, Worker manuell triggern (`kubectl create job --from=cronjob/eversports-worker test-run`), Ergebnis in Log-Drawer prüfen
+3. **Frontend lokal:** `npm run dev` in `frontend/` → Login-Flow, Buchung anlegen, Toggle, Log-Drawer testen
+4. **K8s:** `kubectl apply -f k8s/` → alle drei Deployments laufen, Worker-CronJob läuft alle 15 Minuten
+5. **End-to-End:** Buchung anlegen für `today + days_in_advance`, Worker manuell triggern (`kubectl create job --from=cronjob/eversports-worker test-run`), Ergebnis in Log-Drawer prüfen

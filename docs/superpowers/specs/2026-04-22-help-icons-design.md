@@ -39,7 +39,7 @@ Neben jedem Eingabefeld im JobModal (Erstellen und Bearbeiten von geplanten Buch
 | Kursname | "Der Name des Kurses, der gebucht werden soll. Leer lassen, um den ersten verfügbaren Kurs zu diesem Zeitpunkt zu buchen." |
 | Tage im Voraus | "Wie viele Tage vor dem Kurs soll die Buchung ausgelöst werden? Eversports öffnet Buchungsslots typischerweise einige Tage im Voraus — stelle den Wert passend zum Anbieter ein." |
 | Einmalig | "Aktiviert: nur einmal ausführen, dann automatisch löschen. Deaktiviert: jede Woche wiederholen." |
-| Debug (Admin) | "Testmodus — die Buchung wird sofort nach Abschluss wieder storniert." |
+| Test (Admin) | "Testmodus — die Buchung wird sofort nach Abschluss wieder storniert." |
 
 ## Nicht im Scope
 

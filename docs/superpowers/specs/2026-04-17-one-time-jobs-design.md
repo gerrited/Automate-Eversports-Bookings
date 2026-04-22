@@ -4,7 +4,7 @@
 
 ## Übersicht
 
-Jobs können als "einmalig" markiert werden. Nach erfolgreicher Ausführung werden sie automatisch gelöscht. Der Default ist ein dauerhafter Job. Bei fehlgeschlagener Ausführung bleibt der Job bestehen und wird beim nächsten fälligen Termin erneut versucht.
+Buchungen können als "einmalig" markiert werden. Nach erfolgreicher Ausführung werden sie automatisch gelöscht. Der Default ist eine dauerhafte Buchung. Bei fehlgeschlagener Ausführung bleibt die Buchung bestehen und wird beim nächsten fälligen Termin erneut versucht.
 
 ---
 
@@ -63,7 +63,7 @@ Keine neuen Endpoints. Die bestehenden Endpoints `POST /jobs` und `PUT /jobs/{jo
 
 ### JobCard (`frontend/src/components/JobCard.tsx`)
 
-- Einmalige Jobs erhalten ein kleines Badge/Label (z.B. "Einmalig"), damit sie auf einen Blick erkennbar sind.
+- Einmalige Buchungen erhalten ein kleines Badge/Label (z.B. "Einmalig"), damit sie auf einen Blick erkennbar sind.
 
 ### Types (`frontend/src/types.ts`)
 
@@ -74,7 +74,7 @@ Keine neuen Endpoints. Die bestehenden Endpoints `POST /jobs` und `PUT /jobs/{jo
 
 ## Duplikat-Prüfung
 
-Die bestehende Duplikat-Prüfung in `backend/api/jobs.py` bleibt unverändert. Sie verhindert identische Jobs anhand von Wochentag, Uhrzeit, Einrichtung und Kursname — unabhängig von `one_time`. Ein einmaliger und ein dauerhafter Job mit denselben Feldern gelten als Duplikat.
+Die bestehende Duplikat-Prüfung in `backend/api/jobs.py` bleibt unverändert. Sie verhindert identische Buchungen anhand von Wochentag, Uhrzeit, Anbieter und Kursname — unabhängig von `one_time`. Eine einmalige und eine dauerhafte Buchung mit denselben Feldern gelten als Duplikat.
 
 ---
 

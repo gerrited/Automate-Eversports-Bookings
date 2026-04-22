@@ -1,45 +1,45 @@
-# ADR-004: Worker Scheduling and Idempotency
+# ADR-004: Worker-Zeitplanung und Idempotenz
 
-**Date:** 2026-04-11  
-**Status:** Accepted
+**Datum:** 2026-04-11  
+**Status:** Akzeptiert
 
-## Context
+## Kontext
 
-Bookings must be placed a configurable number of days before the class. The booking window on Eversports typically opens exactly N days ahead. The worker needs to run frequently enough to not miss the window, but bookings must never be placed twice.
+Buchungen müssen eine konfigurierbare Anzahl von Tagen vor dem Kurs ausgelöst werden. Das Buchungsfenster bei Eversports öffnet sich typischerweise genau N Tage im Voraus. Der Worker muss häufig genug laufen, um das Fenster nicht zu verpassen, darf aber Buchungen niemals doppelt durchführen.
 
-## Decision
+## Entscheidung
 
-### Schedule
+### Zeitplan
 
-The worker runs as a Kubernetes CronJob every hour (`0 * * * *`, `timeZone: Europe/Berlin`). `concurrencyPolicy: Forbid` prevents overlapping runs.
+Der Worker läuft als Kubernetes CronJob alle 15 Minuten (`*/15 * * * *`, `timeZone: Europe/Berlin`). `concurrencyPolicy: Forbid` verhindert parallele Ausführungen.
 
-### Due-date calculation
+### Fälligkeitsberechnung
 
-For each enabled job, the worker computes:
+Für jede aktive Buchung berechnet der Worker:
 
 ```
 target_date = today + days_in_advance
 due = (target_date.weekday() == job.weekday)
 ```
 
-A job with `weekday=1` (Tuesday) and `days_in_advance=4` is due on Fridays: Friday + 4 days = Tuesday.
+Eine Buchung mit `weekday=1` (Dienstag) und `days_in_advance=4` ist freitags fällig: Freitag + 4 Tage = Dienstag.
 
-### Idempotency
+### Idempotenz
 
-Before executing any booking, the worker queries `booking_logs` for an existing entry with:
+Vor jeder Buchungsausführung prüft der Worker `booking_logs` auf einen bestehenden Eintrag mit:
 - `job_id = job.id`
 - `target_date = target_date`
 - `status = 'success'`
 
-If such a row exists, the job is skipped. This makes the worker safe to re-run or restart mid-execution — a crash after a successful booking will not cause a duplicate booking on the next run.
+Existiert eine solche Zeile, wird die Buchung übersprungen. Damit ist der Worker sicher neu startbar — ein Absturz nach einer erfolgreichen Buchung führt beim nächsten Lauf nicht zu einer Doppelbuchung.
 
-### Error isolation
+### Fehlerisolierung
 
-An exception in one job does not abort the worker. Each job is wrapped in a `try/except`; failures are written to `booking_logs` with `status='failed'` and the error message, then execution continues with the next job.
+Eine Exception in einer Buchung bricht den Worker nicht ab. Jede Buchung ist in einem `try/except` gekapselt; Fehler werden als `booking_logs`-Eintrag mit `status='failed'` und Fehlermeldung gespeichert, danach läuft der Worker mit der nächsten Buchung weiter.
 
-## Consequences
+## Konsequenzen
 
-- A booking placed in hour H will be detected and skipped in hour H+1, H+2, etc. No double-bookings.
-- If the Eversports API is briefly unavailable during one hour, the next hourly run will retry automatically (the failed log entry has `status='failed'`, not `'success'`, so the idempotency check does not block the retry).
-- The worker must have access to `DATABASE_URL` and `ENCRYPTION_KEY` secrets — it does not need `JWT_SECRET` or `FRONTEND_URL`.
-- Manual trigger for testing: `kubectl create job --from=cronjob/eversports-worker worker-test-run`.
+- Eine durchgeführte Buchung wird bei jedem Folgelauf erkannt und übersprungen. Keine Doppelbuchungen.
+- Ist die Eversports-API kurzzeitig nicht erreichbar, versucht der nächste Lauf (15 Minuten später) automatisch erneut (der fehlgeschlagene Log-Eintrag hat `status='failed'`, nicht `'success'`, sodass die Idempotenz-Prüfung den Retry nicht blockiert).
+- Der Worker benötigt Zugriff auf die Secrets `DATABASE_URL` und `ENCRYPTION_KEY` — er braucht weder `JWT_SECRET` noch `FRONTEND_URL`.
+- Manueller Trigger zum Testen: `kubectl create job --from=cronjob/eversports-worker worker-test-run`.

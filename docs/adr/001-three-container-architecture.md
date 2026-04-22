@@ -1,31 +1,31 @@
-# ADR-001: Three-Container Architecture on Kubernetes
+# ADR-001: Drei-Container-Architektur auf Kubernetes
 
-**Date:** 2026-04-11  
-**Status:** Accepted
+**Datum:** 2026-04-11  
+**Status:** Akzeptiert
 
-## Context
+## Kontext
 
-The original system was a single Python script (`book.py`) running as a hardcoded Kubernetes CronJob. We needed to evolve it into a multi-user platform where users can manage their own booking schedules via a web UI while automated bookings continue to run in the background.
+Das ursprüngliche System war ein einzelnes Python-Script (`book.py`), das als hartcodierter Kubernetes CronJob lief. Es musste zu einer Multi-User-Plattform weiterentwickelt werden, auf der Benutzer ihre eigenen Buchungsplanungen über eine Web-UI verwalten können, während automatische Buchungen weiterhin im Hintergrund laufen.
 
-## Decision
+## Entscheidung
 
-The system is split into three containers deployed on the existing Kubernetes cluster:
+Das System wird in drei Container aufgeteilt, die auf dem bestehenden Kubernetes-Cluster betrieben werden:
 
-| Container | Technology | K8s resource |
+| Container | Technologie | K8s-Ressource |
 |---|---|---|
-| `frontend` | React + Vite + TypeScript, served by nginx | Deployment + Service + Ingress |
+| `frontend` | React + Vite + TypeScript, ausgeliefert via nginx | Deployment + Service + Ingress |
 | `backend` | Python 3.13, FastAPI, SQLAlchemy | Deployment + Service |
-| `worker` | Python 3.13, shares `backend/core/` | CronJob (`0 * * * *`) |
+| `worker` | Python 3.13, nutzt `backend/core/` | CronJob (`*/15 * * * *`) |
 
-External dependencies:
-- **PostgreSQL** — externally hosted (e.g. Supabase), connected via `DATABASE_URL` secret
-- **Eversports API** — GraphQL + calendar endpoint at `https://www.eversports.de/api/`
+Externe Abhängigkeiten:
+- **PostgreSQL** — extern gehostet (z.B. Supabase), verbunden via `DATABASE_URL` Secret
+- **Eversports API** — GraphQL + Kalender-Endpunkt unter `https://www.eversports.de/api/`
 
-The worker imports directly from `backend/core/` (booking logic, encryption) rather than duplicating code. This is possible because both the backend Dockerfile and the worker Dockerfile copy the `backend/` directory into the image.
+Der Worker importiert direkt aus `backend/core/` (Buchungslogik, Verschlüsselung) statt Code zu duplizieren. Das ist möglich, weil sowohl das Backend-Dockerfile als auch das Worker-Dockerfile das Verzeichnis `backend/` ins Image kopieren.
 
-## Consequences
+## Konsequenzen
 
-- The original `book.py` and `k8s/cronjob.yaml` remain untouched for standalone operation.
-- `backend/core/booking.py` is the single source of truth for Eversports API interaction.
-- Scaling the worker independently from the backend is possible (different CronJob schedule, resource limits).
-- Frontend has no direct database access — all data flows through the backend API.
+- Das ursprüngliche `book.py` und `k8s/cronjob.yaml` bleiben für den Standalone-Betrieb unverändert.
+- `backend/core/booking.py` ist die einzige Quelle der Wahrheit für die Eversports-API-Interaktion.
+- Der Worker kann unabhängig vom Backend skaliert werden (unterschiedlicher CronJob-Zeitplan, eigene Ressourcenlimits).
+- Das Frontend hat keinen direkten Datenbankzugriff — alle Daten laufen über die Backend-API.

@@ -35,7 +35,7 @@ No routing changes needed. No new pages. Footer is already rendered globally in 
 
 | # | Frage | Antwort |
 |---|-------|---------|
-| 1 | Wie viele Buchungen kann ich planen? | Du kannst beliebig viele Buchungen (Jobs) anlegen. Jeder Job steht für einen wiederkehrenden Termin – z.B. jeden Montag um 18 Uhr Yoga bei Anbieter X. Es gibt keine Obergrenze. |
+| 1 | Wie viele Buchungen kann ich planen? | Du kannst beliebig viele Buchungen anlegen. Jede Buchung steht für einen wiederkehrenden Termin – z.B. jeden Montag um 18 Uhr Yoga bei Anbieter X. Es gibt keine Obergrenze. |
 | 2 | Werden alle Anbieter, Kurse und Klassen bei Eversports unterstützt? | Die App funktioniert mit allen Anbietern und Kursen, die über Eversports buchbar sind. Voraussetzung ist, dass du bei dem jeweiligen Anbieter bereits ein Konto hast und eine gültige Mitgliedschaft oder ausreichend Credits besitzt – die App bucht in deinem Namen, kann aber keine fehlenden Berechtigungen umgehen. |
 | 3 | Was sind einmalige Buchungen? | Bei einer einmaligen Buchung wird der Job nach der ersten erfolgreichen Buchung automatisch gelöscht. Das ist nützlich, wenn du nur einen einzelnen Termin automatisieren möchtest, ohne einen dauerhaften wiederkehrenden Job anzulegen. |
 | 4 | Wie werden meine Zugangsdaten gespeichert? | Dein Eversports-Passwort wird verschlüsselt in der Datenbank gespeichert und nie im Klartext abgelegt. Die App verwendet deine Daten ausschließlich, um Buchungen in deinem Namen durchzuführen – sie werden nicht weitergegeben. |

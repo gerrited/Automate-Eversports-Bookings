@@ -1,36 +1,36 @@
-# ADR-005: Frontend UI Design — Cards, Modal, Log Drawer
+# ADR-005: Frontend-UI-Design — Karten, Modal, Log-Drawer
 
-**Date:** 2026-04-11  
-**Status:** Accepted
+**Datum:** 2026-04-11  
+**Status:** Akzeptiert
 
-## Context
+## Kontext
 
-The dashboard needs to display a user's booking jobs and give them controls to add, edit, enable/disable, delete, and inspect the history of each job. Two layout options were considered:
+Das Dashboard muss die Buchungen eines Benutzers anzeigen und Bedienelemente zum Hinzufügen, Bearbeiten, Aktivieren/Deaktivieren, Löschen und Einsehen des Ausführungsverlaufs jeder Buchung bieten. Zwei Layoutoptionen wurden geprüft:
 
-**Option A — Card per job:** One card per job, toggle visible inline, edit/delete buttons at the bottom of each card.  
-**Option B — Table:** All jobs in a table, more compact but less scannable at a glance.
+**Option A — Karte pro Buchung:** Eine Karte pro Buchung, Toggle inline sichtbar, Bearbeiten/Löschen-Buttons am unteren Rand jeder Karte.  
+**Option B — Tabelle:** Alle Buchungen in einer Tabelle, kompakter, aber auf einen Blick schwerer erfassbar.
 
-## Decision
+## Entscheidung
 
-**Option A (cards) was chosen.** Each `JobCard` shows weekday, time, class name, facility, toggle, and edit/delete actions. Clicking the card body opens a `LogDrawer`.
+**Option A (Karten) wurde gewählt.** Jede `JobCard` zeigt Wochentag, Uhrzeit, Kursname, Anbieter, Toggle sowie Bearbeiten/Löschen-Aktionen. Ein Klick auf den Kartenkörper öffnet den `LogDrawer`.
 
-### Component breakdown
+### Komponentenübersicht
 
-- **`LoginPage`** — Email + password form. Delegates authentication to the Eversports backend. Redirects to `/dashboard` on success, shows an `role="alert"` error on failure.
-- **`JobCard`** — Displays one job. The toggle (`role="switch"`) calls `onToggle` without navigating away. Edit and delete buttons call their respective handlers. The card body (`data-testid="job-card-body"`) calls `onSelect` to open the log drawer.
-- **`JobModal`** — Modal dialog for creating and editing jobs. Pre-fills all fields when an existing job is passed. Fields: weekday (dropdown), time, class name, facility ID, days in advance.
-- **`LogDrawer`** — Slide-in panel from the right showing the last 20 executions for a job. Status is colour-coded: green for `success`, red for `failed`, grey for `already_booked`. Closes via backdrop click or ✕ button.
-- **`DashboardPage`** — Orchestrates all of the above. Holds state for modal visibility, selected job, and log data. Calls the API client on every mutation and refreshes the job list.
-- **`App`** — BrowserRouter with a `RequireAuth` guard that redirects unauthenticated users to `/login`.
+- **`LoginPage`** — E-Mail + Passwort-Formular. Delegiert Authentifizierung ans Eversports-Backend. Leitet bei Erfolg zu `/dashboard` weiter, zeigt bei Fehler eine `role="alert"`-Meldung.
+- **`JobCard`** — Zeigt eine Buchung an. Der Toggle (`role="switch"`) ruft `onToggle` auf, ohne zu navigieren. Bearbeiten- und Löschen-Buttons rufen ihre jeweiligen Handler auf. Der Kartenkörper (`data-testid="job-card-body"`) ruft `onSelect` auf, um den Log-Drawer zu öffnen.
+- **`JobModal`** — Modal-Dialog zum Erstellen und Bearbeiten von Buchungen. Füllt alle Felder vor, wenn eine bestehende Buchung übergeben wird. Felder: Wochentag (Dropdown), Uhrzeit, Kursname, Anbieter-ID, Tage im Voraus.
+- **`LogDrawer`** — Einfahrendes Panel von rechts, das die letzten 20 Ausführungen einer Buchung zeigt. Status ist farbcodiert: grün für `success`, rot für `failed`, grau für `already_booked`. Schließt über Backdrop-Klick oder ✕-Button.
+- **`DashboardPage`** — Orchestriert alles obige. Verwaltet State für Modal-Sichtbarkeit, ausgewählte Buchung und Log-Daten. Ruft den API-Client bei jeder Mutation auf und aktualisiert die Buchungsliste.
+- **`App`** — BrowserRouter mit einem `RequireAuth`-Guard, der unauthentifizierte Benutzer zu `/login` weiterleitet.
 
-### API communication
+### API-Kommunikation
 
-No external state library. All API calls use a thin `apiFetch` wrapper (`src/api/client.ts`) that injects the JWT from `localStorage` and redirects to `/login` on a `401` response.
+Keine externe State-Bibliothek. Alle API-Calls verwenden einen schlanken `apiFetch`-Wrapper (`src/api/client.ts`), der das JWT aus `localStorage` injiziert und bei einer `401`-Antwort zu `/login` weiterleitet.
 
-In production, nginx proxies `/api/` to the backend Kubernetes service — no CORS configuration required. In local development, Vite proxies `/api/` to `localhost:8000`.
+In der Produktion proxied nginx `/api/` zum Backend-Kubernetes-Service — keine CORS-Konfiguration erforderlich. In der lokalen Entwicklung proxied Vite `/api/` zu `localhost:8000`.
 
-## Consequences
+## Konsequenzen
 
-- The card layout is slightly more verbose than a table for users with many jobs, but was preferred for legibility and mobile friendliness.
-- `localStorage` JWT storage is acceptable for this internal tool. A more security-sensitive application should prefer `httpOnly` cookies.
-- There is no optimistic UI update — every mutation awaits the API response and then re-fetches the full job list. This keeps client state simple at the cost of an extra round-trip per action.
+- Das Kartenlayout ist bei vielen Buchungen etwas gesprächiger als eine Tabelle, wurde aber wegen besserer Lesbarkeit und Mobile-Freundlichkeit bevorzugt.
+- JWT-Speicherung in `localStorage` ist für dieses interne Tool akzeptabel. Eine sicherheitssensitivere Anwendung sollte `httpOnly`-Cookies bevorzugen.
+- Es gibt keine optimistische UI-Aktualisierung — jede Mutation wartet auf die API-Antwort und lädt danach die vollständige Buchungsliste neu. Das hält den Client-State einfach auf Kosten eines zusätzlichen Round-Trips pro Aktion.

@@ -1,19 +1,19 @@
 # Admin "Alle Buchungen" – Design Spec
 
-**Date:** 2026-04-19  
-**Status:** Approved
+**Datum:** 2026-04-19  
+**Status:** Genehmigt
 
-## Overview
+## Übersicht
 
-Add a new read-only admin tab "Alle Buchungen" to the dashboard that lists all configured jobs across all users, filterable by username (email), paginated at 25 per page.
+Einen neuen read-only Admin-Tab "Alle Buchungen" im Dashboard hinzufügen, der alle konfigurierten Buchungen aller Benutzer auflistet, filterbar nach Benutzername (E-Mail), paginiert mit 25 Einträgen pro Seite.
 
 ## Backend
 
-### New Endpoint
+### Neuer Endpoint
 
-`GET /admin/jobs` in `backend/api/admin.py`, protected with `require_admin`.
+`GET /admin/jobs` in `backend/api/admin.py`, geschützt mit `require_admin`.
 
-Returns all `BookingJob` records joined with their owning `User` and a log execution count:
+Gibt alle `BookingJob`-Datensätze zurück, gejoint mit dem zugehörigen `User` und einer Ausführungsanzahl aus den Logs:
 
 ```python
 db.query(
@@ -28,9 +28,9 @@ db.query(
 .all()
 ```
 
-### New Schema
+### Neues Schema
 
-`AdminJobResponse` in `backend/schemas/job.py`, extending the existing `JobResponse` fields:
+`AdminJobResponse` in `backend/schemas/job.py`, erweitert die bestehenden `JobResponse`-Felder:
 
 | Field | Type | Source |
 |-------|------|--------|
@@ -49,7 +49,7 @@ db.query(
 
 ## Frontend
 
-### New Type
+### Neuer Typ
 
 `AdminJob` in `frontend/src/types.ts`:
 
@@ -60,7 +60,7 @@ export interface AdminJob extends Job {
 }
 ```
 
-### New API Function
+### Neue API-Funktion
 
 `listAllJobs(): Promise<AdminJob[]>` in `frontend/src/api/adminJobs.ts`:
 
@@ -72,15 +72,15 @@ export const listAllJobs = (): Promise<AdminJob[]> =>
   apiFetch('/api/admin/jobs')
 ```
 
-### New Component: `AllJobsSection`
+### Neue Komponente: `AllJobsSection`
 
-Location: `frontend/src/components/AllJobsSection.tsx`
+Datei: `frontend/src/components/AllJobsSection.tsx`
 
-Behavior mirrors `UserManagementSection`:
-- Fetches all jobs on mount via `listAllJobs()`
-- Text filter input: filters by `user_email` (case-insensitive, clientside)
-- Pagination: `PAGE_SIZE = 25`, same Zurück/Weiter controls
-- Shows summary line: `N von M Jobs · Seite X von Y`
+Verhält sich analog zu `UserManagementSection`:
+- Lädt alle Buchungen beim Mount via `listAllJobs()`
+- Textfilter: filtert nach `user_email` (case-insensitive, clientseitig)
+- Paginierung: `PAGE_SIZE = 25`, gleiche Zurück/Weiter-Controls
+- Zeigt Zusammenfassung: `N von M Buchungen · Seite X von Y`
 
 Each row displays:
 - **Line 1 (bold):** `user_email`
@@ -90,24 +90,24 @@ Each row displays:
 
 No edit/delete/toggle actions (read-only).
 
-### Tab Integration
+### Tab-Integration
 
 In `DashboardPage.tsx`:
 
-- Extend tab type to `'buchungen' | 'benutzer' | 'alle-buchungen'`
-- Add hash `#all-jobs` for the new tab
-- Add tab button "Alle Buchungen" (only visible to admins, same as existing tabs)
-- Render `<AllJobsSection />` when `activeTab === 'alle-buchungen'`
-- Swipe gesture (touchstart/touchend) extended to cycle through all three tabs
+- Tab-Typ erweitern auf `'buchungen' | 'benutzer' | 'alle-buchungen'`
+- Hash `#all-jobs` für den neuen Tab hinzufügen
+- Tab-Button "Alle Buchungen" hinzufügen (nur für Admins sichtbar, wie bestehende Tabs)
+- `<AllJobsSection />` rendern wenn `activeTab === 'alle-buchungen'`
+- Swipe-Geste (touchstart/touchend) auf alle drei Tabs erweitern
 
-## Error Handling
+## Fehlerbehandlung
 
-- Loading state: show "Lädt…" text (same as other sections)
-- Empty state: "Keine Buchungen gefunden." centered text
-- API errors: silently swallowed (consistent with existing pattern in the codebase)
+- Ladezustand: "Lädt…"-Text anzeigen (wie andere Sektionen)
+- Leerzustand: "Keine Buchungen gefunden." zentriert
+- API-Fehler: stillschweigend ignoriert (konsistent mit bestehendem Muster im Code)
 
-## Out of Scope
+## Nicht im Scope
 
-- Admin editing/deleting/toggling jobs from this view
-- Server-side pagination or filtering
-- Sorting controls
+- Admins bearbeiten/löschen/togglen Buchungen aus dieser Ansicht
+- Server-seitige Paginierung oder Filterung
+- Sortiercontrols

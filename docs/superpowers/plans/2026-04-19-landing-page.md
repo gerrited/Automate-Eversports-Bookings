@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Zeige unangemeldeten Nutzern eine Landing Page mit Hero, Video und zwei Screenshots; das Login-Formular öffnet sich als Modal.
+**Goal:** Zeige unangemeldeten Benutzern eine Landing Page mit Hero, Video und zwei Screenshots; das Login-Formular öffnet sich als Modal.
 
 **Architecture:** `LoginPage` wird aufgelöst — die Login-Logik zieht in `LoginModal`. Eine neue `LandingPage` baut die öffentliche Seite auf und verwaltet den Modal-State. `App.tsx` bekommt angepasste Routen: `/` → LandingPage (öffentlich), `/dashboard` → RequireAuth (Redirect zu `/`).
 
@@ -531,7 +531,7 @@ git commit -m "feat: remove LoginPage, login is now handled via LoginModal on La
 
 - [ ] `npx vitest run` — alle Tests grün
 - [ ] `npx tsc -b --noEmit` — keine TypeScript-Fehler
-- [ ] Unangemeldete Nutzer sehen die Landing Page auf `/`
+- [ ] Unangemeldete Benutzer sehen die Landing Page auf `/`
 - [ ] Klick auf jeden „Anmelden"-Button öffnet das Login-Modal
 - [ ] Erfolgreicher Login navigiert zu `/dashboard`
 - [ ] Direktaufruf von `/dashboard` ohne Token redirectet zu `/`

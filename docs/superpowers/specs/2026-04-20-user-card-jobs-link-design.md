@@ -1,40 +1,40 @@
-# Design: User Card Jobs Link
+# Design: Benutzer-Karte Buchungen-Link
 
-**Date:** 2026-04-20
+**Datum:** 2026-04-20
 
 ## Feature
 
-Clicking "x Jobs" on a user card in the Benutzer tab navigates to the Jobs tab and pre-fills the email filter with that user's email address.
+Ein Klick auf "x Buchungen" auf einer Benutzer-Karte im Benutzer-Tab wechselt zum Buchungen-Tab und füllt den E-Mail-Filter mit der E-Mail-Adresse des Benutzers vor.
 
-## Architecture
+## Architektur
 
-### State Flow
+### State-Flow
 
-`DashboardPage` owns the cross-tab filter state. Clicking "x Jobs" in `UserManagementSection` calls a callback that sets both the active tab and the email filter in `DashboardPage`, which then passes the filter down to `AllJobsSection` as a prop.
+`DashboardPage` verwaltet den Tab-übergreifenden Filter-State. Ein Klick auf "x Buchungen" in `UserManagementSection` ruft einen Callback auf, der sowohl den aktiven Tab als auch den E-Mail-Filter in `DashboardPage` setzt, welcher dann als Prop an `AllJobsSection` weitergegeben wird.
 
-### Changes per Component
+### Änderungen pro Komponente
 
 **`DashboardPage`**
-- Add state: `const [jobsEmailFilter, setJobsEmailFilter] = useState('')`
-- Add handler:
+- State hinzufügen: `const [jobsEmailFilter, setJobsEmailFilter] = useState('')`
+- Handler hinzufügen:
   ```ts
   function handleUserJobsClick(email: string) {
     setJobsEmailFilter(email)
     setActiveTab('jobs')
   }
   ```
-- Pass `onJobsClick={handleUserJobsClick}` to `<UserManagementSection>`
-- Pass `initialEmailFilter={jobsEmailFilter}` to `<AllJobsSection>`
+- `onJobsClick={handleUserJobsClick}` an `<UserManagementSection>` übergeben
+- `initialEmailFilter={jobsEmailFilter}` an `<AllJobsSection>` übergeben
 
 **`UserManagementSection`**
-- Add optional prop: `onJobsClick?: (email: string) => void`
-- Render `{user.job_count} Jobs` as a `<button>` when `onJobsClick` is defined and `job_count > 0`
-- Button styling: `text-brand underline cursor-pointer` to indicate interactivity
-- When `job_count === 0`: keep as plain text (not clickable, nothing to navigate to)
+- Optionales Prop hinzufügen: `onJobsClick?: (email: string) => void`
+- `{user.job_count} Buchungen` als `<button>` rendern, wenn `onJobsClick` definiert und `job_count > 0`
+- Button-Styling: `text-brand underline cursor-pointer` zur Anzeige der Interaktivität
+- Bei `job_count === 0`: als Plain Text belassen (nicht klickbar, nichts zu navigieren)
 
 **`AllJobsSection`**
-- Add optional prop: `initialEmailFilter?: string`
-- Add `useEffect` that syncs internal `emailFilter` state when `initialEmailFilter` changes:
+- Optionales Prop hinzufügen: `initialEmailFilter?: string`
+- `useEffect` hinzufügen, der den internen `emailFilter`-State synchronisiert, wenn sich `initialEmailFilter` ändert:
   ```ts
   useEffect(() => {
     if (initialEmailFilter !== undefined) {
@@ -44,27 +44,27 @@ Clicking "x Jobs" on a user card in the Benutzer tab navigates to the Jobs tab a
   }, [initialEmailFilter])
   ```
 
-## Data Flow
+## Datenfluss
 
 ```
 UserManagementSection
-  └─ button click → onJobsClick(email)
+  └─ Button-Klick → onJobsClick(email)
         ↓
 DashboardPage
   ├─ setJobsEmailFilter(email)
   └─ setActiveTab('jobs')
         ↓
 AllJobsSection
-  └─ initialEmailFilter prop → syncs internal emailFilter state
+  └─ initialEmailFilter prop → synchronisiert internen emailFilter-State
 ```
 
-## Edge Cases
+## Randfälle
 
-- `job_count === 0`: "0 Jobs" bleibt Plain Text, kein klickbarer Button
-- Filter wird beim Tab-Wechsel zurückgesetzt: Nein — der Filter bleibt bis der Nutzer ihn manuell löscht oder eine andere Email auswählt
+- `job_count === 0`: "0 Buchungen" bleibt Plain Text, kein klickbarer Button
+- Filter wird beim Tab-Wechsel zurückgesetzt: Nein — der Filter bleibt bis der Benutzer ihn manuell löscht oder eine andere E-Mail auswählt
 - `initialEmailFilter` ändert sich von außen: `useEffect` in `AllJobsSection` reagiert darauf und setzt Filter + Seite zurück
 
-## Out of Scope
+## Nicht im Scope
 
-- Zurücknavigieren vom Jobs-Tab zur Userkarte
+- Zurücknavigieren vom Buchungen-Tab zur Benutzer-Karte
 - Filter-State in URL persistieren

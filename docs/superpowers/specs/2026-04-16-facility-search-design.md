@@ -5,7 +5,7 @@
 
 ## Kontext
 
-Die Facility-Auswahl im JobModal ist aktuell auf zwei hartcodierte Einträge in `frontend/src/types.ts` beschränkt. Nutzer können keine anderen Eversports-Facilities auswählen. Ziel ist eine dynamische Suche über die Eversports-Marketplace-API sowie die Anzeige der 5 zuletzt genutzten Facilities beim Öffnen der Auswahl.
+Die Facility-Auswahl im JobModal ist aktuell auf zwei hartcodierte Einträge in `frontend/src/types.ts` beschränkt. Benutzer können keine anderen Eversports-Facilities auswählen. Ziel ist eine dynamische Suche über die Eversports-Marketplace-API sowie die Anzeige der 5 zuletzt genutzten Facilities beim Öffnen der Auswahl.
 
 ---
 
@@ -37,7 +37,7 @@ Vor der Implementierung: Eversports-Marketplace im Browser öffnen, in DevTools 
 
 ### Neuer Endpoint: `GET /api/facilities/recent`
 
-- **Logik:** Liest aus `booking_jobs` die letzten 5 eindeutigen Facilities des eingeloggten Nutzers
+- **Logik:** Liest aus `booking_jobs` die letzten 5 eindeutigen Facilities des eingeloggten Benutzers
 - **SQL-Logik:** `GROUP BY facility_id, facility_name ORDER BY MAX(created_at) DESC LIMIT 5`
 - **Response:** `[{ "id": string, "name": string }]`
 - **Datei:** `backend/api/facilities.py` (selbe Datei wie oben)
@@ -109,7 +109,7 @@ facility_name: str  (nullable=False)
 1. **Backend-Endpoints testen:**
    - `GET /api/facilities/search?q=cross` → HTTP 400 (zu kurz)
    - `GET /api/facilities/search?q=crossfit` → Eversports-Ergebnisse
-   - `GET /api/facilities/recent` → Letzte 5 Facilities des Nutzers (oder leer bei neuem Konto)
+   - `GET /api/facilities/recent` → Letzte 5 Facilities des Benutzers (oder leer bei neuem Konto)
 
 2. **Frontend-Fluss testen:**
    - JobModal öffnen → letzte Facilities erscheinen sofort

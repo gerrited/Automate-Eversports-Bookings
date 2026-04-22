@@ -1,34 +1,34 @@
-# ADR-002: Eversports as the Sole Identity Provider
+# ADR-002: Eversports als einziger Identity Provider
 
-**Date:** 2026-04-11  
-**Status:** Accepted
+**Datum:** 2026-04-11  
+**Status:** Akzeptiert
 
-## Context
+## Kontext
 
-The platform needs user authentication. Users already have Eversports accounts, and the booking system fundamentally requires valid Eversports credentials to operate. We considered three options:
+Die Plattform benötigt Benutzerauthentifizierung. Benutzer haben bereits Eversports-Konten, und das Buchungssystem erfordert zwingend gültige Eversports-Zugangsdaten. Es wurden drei Optionen geprüft:
 
-1. Build a separate username/password system and store Eversports credentials independently.
-2. Use Eversports as the identity provider — forward credentials to Eversports on login, issue our own JWT on success.
-3. OAuth / SSO with a third-party provider (Google, etc.) — not viable since Eversports credentials are still required regardless.
+1. Ein eigenes Benutzername/Passwort-System aufbauen und Eversports-Zugangsdaten unabhängig speichern.
+2. Eversports als Identity Provider verwenden — Zugangsdaten bei Login an Eversports weiterleiten, bei Erfolg eigenes JWT ausstellen.
+3. OAuth / SSO mit einem Drittanbieter (Google etc.) — nicht praktikabel, da Eversports-Zugangsdaten in jedem Fall benötigt werden.
 
-## Decision
+## Entscheidung
 
-**Eversports is the only authentication anchor.** There is no separate password system.
+**Eversports ist der einzige Authentifizierungsanker.** Es gibt kein eigenes Passwort-System.
 
-Login flow:
-1. User submits email + password via `POST /api/auth/login`.
-2. Backend forwards credentials to the Eversports GraphQL mutation `LoginCredentialLogin`.
-3. On failure: return `401` to the frontend.
-4. On success: extract `user.id` from the Eversports response, upsert the user in our database, store the AES-256 encrypted password, and issue a 24-hour HS256 JWT.
-5. The frontend stores the JWT in `localStorage` and sends it as `Authorization: Bearer <token>` on every subsequent request.
+Login-Flow:
+1. Benutzer sendet E-Mail + Passwort via `POST /api/auth/login`.
+2. Backend leitet Zugangsdaten an die Eversports-GraphQL-Mutation `LoginCredentialLogin` weiter.
+3. Bei Fehler: `401` ans Frontend zurückgeben.
+4. Bei Erfolg: `user.id` aus der Eversports-Response entnehmen, Benutzer in der Datenbank anlegen oder aktualisieren, AES-256-GCM-verschlüsseltes Passwort speichern und ein 24-stündiges HS256-JWT ausstellen.
+5. Das Frontend speichert das JWT im `localStorage` und sendet es als `Authorization: Bearer <token>` bei jedem Folge-Request.
 
-The encrypted password is stored so the **worker** can later perform bookings without requiring the user to be logged in at booking time.
+Das verschlüsselte Passwort wird gespeichert, damit der **Worker** später Buchungen durchführen kann, ohne dass der Benutzer zum Buchungszeitpunkt eingeloggt sein muss.
 
-On every login, the encrypted password in the database is refreshed. This means password changes on the Eversports side are automatically picked up at the next login.
+Bei jedem Login wird das verschlüsselte Passwort in der Datenbank aktualisiert. Passwortänderungen auf Eversports-Seite werden damit beim nächsten Login automatisch übernommen.
 
-## Consequences
+## Konsequenzen
 
-- No password reset flow needed — users manage their password entirely on Eversports.
-- If a user's Eversports password changes and they do not log in again, the worker will fail to book until the next login.
-- The `ENCRYPTION_KEY` Kubernetes secret must be present in both the backend and the worker — it is the single point of failure for credential storage. Rotating it requires re-encryption of all stored passwords.
-- JWT expiry is 24 hours. There is no refresh token mechanism; users re-authenticate by logging in again.
+- Kein eigener Passwort-Reset-Flow nötig — Benutzer verwalten ihr Passwort vollständig bei Eversports.
+- Ändert ein Benutzer sein Eversports-Passwort und loggt sich nicht erneut ein, schlägt der Worker bei der nächsten Buchung fehl.
+- Das Kubernetes-Secret `ENCRYPTION_KEY` muss sowohl im Backend als auch im Worker vorhanden sein — es ist der Single Point of Failure für die Zugangsdatenspeicherung. Eine Rotation erfordert die Neuverschlüsselung aller gespeicherten Passwörter.
+- Das JWT läuft nach 24 Stunden ab. Es gibt keinen Refresh-Token-Mechanismus; Benutzer authentifizieren sich erneut durch erneuten Login.

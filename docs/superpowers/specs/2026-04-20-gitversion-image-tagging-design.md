@@ -1,29 +1,29 @@
-# GitVersion Image Tagging & Footer Version Display
+# GitVersion Image-Tagging & Footer-Versionsanzeige
 
-**Date:** 2026-04-20  
-**Status:** Approved
+**Datum:** 2026-04-20  
+**Status:** Genehmigt
 
-## Goal
+## Ziel
 
-Use GitVersion to produce semantic version tags for container images. Only git-tagged commits (`v*`) receive a SemVer tag. All commits to `main` continue to receive `latest`. The frontend footer displays both the semantic version (linked to the GitHub release) and the commit SHA (linked to the commit).
+GitVersion zur Erzeugung semantischer Versions-Tags für Container-Images verwenden. Nur git-getaggte Commits (`v*`) erhalten einen SemVer-Tag. Alle Commits auf `main` erhalten weiterhin `latest`. Der Frontend-Footer zeigt sowohl die semantische Version (verlinkt zum GitHub-Release) als auch den Commit-SHA (verlinkt zum Commit).
 
-## Branching Strategy
+## Branching-Strategie
 
-GitHub Flow: `main` + feature branches. Git tags are the sole source of release versions. No pre-release suffixes for untagged commits.
+GitHub Flow: `main` + Feature-Branches. Git-Tags sind die einzige Quelle für Release-Versionen. Keine Pre-Release-Suffixe für nicht getaggte Commits.
 
-## File Changes
+## Dateiänderungen
 
 ```
-GitVersion.yml                             # new — GitVersion configuration
-.github/workflows/docker.yml               # renamed → ci.yml
-.github/workflows/ci.yml                   # renamed from docker.yml — unchanged behavior
-.github/workflows/release.yml              # new — tag-triggered release workflow
-.github/workflows/build-images.yml         # new — reusable build workflow
-frontend/src/components/Footer.tsx         # updated — show version + SHA
-Dockerfile.frontend                        # updated — accept VERSION build arg
+GitVersion.yml                             # neu — GitVersion-Konfiguration
+.github/workflows/docker.yml               # umbenannt → ci.yml
+.github/workflows/ci.yml                   # umbenannt aus docker.yml — unverändertes Verhalten
+.github/workflows/release.yml              # neu — Tag-getriggerter Release-Workflow
+.github/workflows/build-images.yml         # neu — wiederverwendbarer Build-Workflow
+frontend/src/components/Footer.tsx         # aktualisiert — Version + SHA anzeigen
+Dockerfile.frontend                        # aktualisiert — VERSION Build-Arg akzeptieren
 ```
 
-## GitVersion Configuration (`GitVersion.yml`)
+## GitVersion-Konfiguration (`GitVersion.yml`)
 
 ```yaml
 mode: ContinuousDelivery
@@ -33,42 +33,42 @@ branches:
     increment: Patch
 ```
 
-Tags are the source of truth. A tag `v1.2.0` on `main` causes GitVersion to output `1.2.0`. No pre-release suffix is used — untagged builds do not receive a SemVer image tag.
+Tags sind die Quelle der Wahrheit. Ein Tag `v1.2.0` auf `main` veranlasst GitVersion, `1.2.0` auszugeben. Kein Pre-Release-Suffix — nicht getaggte Builds erhalten keinen SemVer-Image-Tag.
 
-## Reusable Workflow (`.github/workflows/build-images.yml`)
+## Wiederverwendbarer Workflow (`.github/workflows/build-images.yml`)
 
-Triggered via `workflow_call`. Inputs:
+Ausgelöst via `workflow_call`. Inputs:
 
-| Input | Type | Required | Description |
+| Input | Typ | Pflicht | Beschreibung |
 |---|---|---|---|
-| `version` | string | no | SemVer string (e.g. `1.2.3`). When set, images are tagged `v{version}` in addition to `latest`. |
+| `version` | string | nein | SemVer-String (z.B. `1.2.3`). Wenn gesetzt, werden Images zusätzlich zu `latest` mit `v{version}` getaggt. |
 
-The four build jobs (cronjob, backend, worker, frontend) are defined here and shared between `ci.yml` and `release.yml`. No duplication.
+Die vier Build-Jobs (cronjob, backend, worker, frontend) sind hier definiert und werden zwischen `ci.yml` und `release.yml` geteilt. Keine Duplikation.
 
-For the frontend job, `VERSION` is passed as an additional `build-arg` alongside the existing `COMMIT_SHA`.
+Für den Frontend-Job wird `VERSION` als zusätzliches `build-arg` neben dem bestehenden `COMMIT_SHA` übergeben.
 
-Image tags produced:
+Erzeugte Image-Tags:
 
-| Caller | Tags pushed |
+| Aufrufer | Gepushte Tags |
 |---|---|
-| `ci.yml` (push to main) | `latest`, `sha-{short}` |
-| `release.yml` (push tag `v*`) | `v{semver}`, `latest`, `sha-{short}` |
+| `ci.yml` (Push auf main) | `latest`, `sha-{short}` |
+| `release.yml` (Push Tag `v*`) | `v{semver}`, `latest`, `sha-{short}` |
 
-## CI Workflow (`.github/workflows/ci.yml`)
+## CI-Workflow (`.github/workflows/ci.yml`)
 
 - Trigger: `push: branches: [main]`
-- Steps: run tests → call `build-images.yml` without `version` input
-- Renamed from `docker.yml`; behavior unchanged
+- Schritte: Tests ausführen → `build-images.yml` ohne `version`-Input aufrufen
+- Umbenannt aus `docker.yml`; Verhalten unverändert
 
-## Release Workflow (`.github/workflows/release.yml`)
+## Release-Workflow (`.github/workflows/release.yml`)
 
 - Trigger: `push: tags: ['v*']`
-- Steps:
-  1. `actions/checkout@v4` with `fetch-depth: 0` (GitVersion requires full history)
-  2. `gittools/actions/gitversion/setup@v3` — installs GitVersion
-  3. `gittools/actions/gitversion/execute@v3` — outputs `semVer` (e.g. `1.2.3`)
-  4. Run tests
-  5. Call `build-images.yml` with `version: ${{ steps.gitversion.outputs.semVer }}`
+- Schritte:
+  1. `actions/checkout@v4` mit `fetch-depth: 0` (GitVersion benötigt vollständige History)
+  2. `gittools/actions/gitversion/setup@v3` — installiert GitVersion
+  3. `gittools/actions/gitversion/execute@v3` — gibt `semVer` aus (z.B. `1.2.3`)
+  4. Tests ausführen
+  5. `build-images.yml` mit `version: ${{ steps.gitversion.outputs.semVer }}` aufrufen
 
 ## Frontend Dockerfile
 
@@ -79,28 +79,28 @@ ENV VITE_COMMIT_SHA=$COMMIT_SHA
 ENV VITE_VERSION=$VERSION
 ```
 
-Both args are optional. When `VERSION` is absent (CI builds), `VITE_VERSION` is empty and the footer omits the version link.
+Beide Args sind optional. Wenn `VERSION` fehlt (CI-Builds), ist `VITE_VERSION` leer und der Footer lässt den Versionslink weg.
 
 ## Frontend Footer
 
-`Footer.tsx` reads:
-- `VITE_VERSION` → display as `v1.2.3`, link to `https://github.com/{repo}/releases/tag/v{version}`
-- `VITE_COMMIT_SHA` → display as short SHA (7 chars), link to commit (existing behavior)
+`Footer.tsx` liest:
+- `VITE_VERSION` → anzeigen als `v1.2.3`, verlinkt auf `https://github.com/{repo}/releases/tag/v{version}`
+- `VITE_COMMIT_SHA` → anzeigen als kurzer SHA (7 Zeichen), verlinkt auf den Commit (bestehendes Verhalten)
 
-Display format when both are present:
+Anzeigeformat wenn beide vorhanden:
 ```
 v1.2.3 · a3f2c1b
 ```
 
-When only SHA is available (CI builds without a tag):
+Wenn nur SHA verfügbar (CI-Builds ohne Tag):
 ```
 a3f2c1b
 ```
 
-The footer is hidden when neither version nor SHA nor email is available (existing behavior preserved).
+Der Footer wird ausgeblendet, wenn weder Version noch SHA noch E-Mail verfügbar sind (bestehendes Verhalten bleibt erhalten).
 
-## Out of Scope
+## Nicht im Scope
 
-- Automatic version increment via commit message conventions (Conventional Commits)
-- Pre-release image tags for untagged commits
-- Changes to backend, worker, or cronjob containers beyond image tagging
+- Automatischer Versionsinkrement via Commit-Message-Konventionen (Conventional Commits)
+- Pre-Release-Image-Tags für nicht getaggte Commits
+- Änderungen an Backend-, Worker- oder Cronjob-Containern über das Image-Tagging hinaus

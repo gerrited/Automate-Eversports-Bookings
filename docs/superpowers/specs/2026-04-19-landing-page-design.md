@@ -4,13 +4,13 @@
 
 ## Ziel
 
-Eine Landing Page anzeigen, wenn der Nutzer nicht eingeloggt ist. Sie erklärt die App mit zwei Screenshots und einem Video und ermöglicht die Anmeldung über ein Modal.
+Eine Landing Page anzeigen, wenn der Benutzer nicht eingeloggt ist. Sie erklärt die App mit zwei Screenshots und einem Video und ermöglicht die Anmeldung über ein Modal.
 
 ---
 
 ## Routing & Auth-Guard
 
-Die aktuelle `App.tsx` leitet unangemeldete Nutzer direkt zu `/login` weiter. Das wird geändert:
+Die aktuelle `App.tsx` leitet unangemeldete Benutzer direkt zu `/login` weiter. Das wird geändert:
 
 - `/` → `LandingPage` (immer öffentlich)
 - `/dashboard` → `DashboardPage` (nur mit Token; sonst Redirect zu `/`)

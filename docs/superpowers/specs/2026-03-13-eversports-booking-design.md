@@ -1,44 +1,44 @@
-# Eversports Booking Automation — Design Spec
+# Eversports Buchungsautomatisierung — Design Spec
 
-**Date:** 2026-03-13
-**Status:** Approved
-
----
-
-## Overview
-
-Automate the weekly booking of the 18:00 CrossFit class at CrossFit Rabbit Hole on Eversports. A GitHub Action runs every Friday at exactly 18:00 Europe/Berlin time (DST-aware) and books the CrossFit class for the following Tuesday (4 days later) using the Eversports internal GraphQL API — no browser required.
+**Datum:** 2026-03-13  
+**Status:** Genehmigt
 
 ---
 
-## Discovered API
+## Übersicht
 
-All Eversports API calls use a single GraphQL endpoint:
+Automatisierung der wöchentlichen Buchung des CrossFit-Kurses um 18:00 Uhr bei CrossFit Rabbit Hole auf Eversports. Eine GitHub Action läuft jeden Freitag um genau 18:00 Uhr Europe/Berlin (DST-aware) und bucht den CrossFit-Kurs für den darauffolgenden Dienstag (4 Tage später) über die interne Eversports-GraphQL-API — kein Browser erforderlich.
+
+---
+
+## Entdeckte API
+
+Alle Eversports-API-Calls nutzen einen einzigen GraphQL-Endpunkt:
 
 ```
 POST https://www.eversports.de/api/checkout
 Content-Type: application/json
 ```
 
-Authentication is **session-cookie based**: the login mutation sets an HttpOnly session cookie which `requests.Session()` forwards automatically on all subsequent requests. The `apiToken` field returned in the login response body is for the mobile app and is not used by this script.
+Authentifizierung ist **session-cookie-basiert**: Die Login-Mutation setzt ein HttpOnly-Session-Cookie, das `requests.Session()` bei allen Folge-Requests automatisch mitsendet. Das `apiToken`-Feld in der Login-Antwort ist für die Mobile-App und wird von diesem Script nicht verwendet.
 
-### Constants
+### Konstanten
 
-| Key | Value |
-|-----|-------|
+| Key | Wert |
+|-----|------|
 | Base URL | `https://www.eversports.de` |
-| GraphQL endpoint | `https://www.eversports.de/api/checkout` |
-| Calendar endpoint | `https://www.eversports.de/api/eventsession/calendar` |
-| Facility ID | `73041` |
-| Target class | CrossFit at 18:00 |
+| GraphQL-Endpunkt | `https://www.eversports.de/api/checkout` |
+| Kalender-Endpunkt | `https://www.eversports.de/api/eventsession/calendar` |
+| Anbieter-ID | `73041` |
+| Zielkurs | CrossFit um 18:00 |
 
 ---
 
-## Booking Flow (4 steps)
+## Buchungsablauf (4 Schritte)
 
-All HTTP requests use a `timeout=30` (seconds) and `Content-Type: application/json`.
+Alle HTTP-Requests verwenden `timeout=30` (Sekunden) und `Content-Type: application/json`.
 
-### Step 1 — Login
+### Schritt 1 — Login
 
 **Mutation:** `LoginCredentialLogin`
 
@@ -59,7 +59,7 @@ mutation LoginCredentialLogin($params: AuthParamsInput!, $credentials: Credentia
 }
 ```
 
-**Variables:**
+**Variablen:**
 ```json
 {
   "credentials": { "email": "<EMAIL>", "password": "<PASSWORD>" },
@@ -73,50 +73,50 @@ mutation LoginCredentialLogin($params: AuthParamsInput!, $credentials: Credentia
 }
 ```
 
-**Success check:** HTTP 200 + no top-level `errors` key + `data.credentialLogin.__typename == "AuthResult"`. If `ExpectedErrors`, raise with the error message.
+**Erfolgsprüfung:** HTTP 200 + kein `errors`-Key auf oberster Ebene + `data.credentialLogin.__typename == "AuthResult"`. Bei `ExpectedErrors`: Exception mit der Fehlermeldung werfen.
 
-→ Session cookie is set automatically by the response.
+→ Das Session-Cookie wird automatisch durch die Response gesetzt.
 
 ---
 
-### Step 2 — Find Tuesday 18:00 CrossFit session UUID
+### Schritt 2 — Dienstag 18:00 CrossFit Session-UUID finden
 
 ```
 GET https://www.eversports.de/api/eventsession/calendar?facilityId=73041&startDate=YYYY-MM-DD&activeEventType=class
 ```
 
-`startDate` = Monday of the week containing the target Tuesday (`target_tuesday - timedelta(days=1)`).
+`startDate` = Montag der Woche, die den Ziel-Dienstag enthält (`target_tuesday - timedelta(days=1)`).
 
-The response body is **HTML** (confirmed from live API inspection — the endpoint returns a rendered HTML fragment, not JSON). Parse with `BeautifulSoup(html, "html.parser")` (stdlib parser).
+Die Response ist **HTML** (aus Live-API-Inspektion bestätigt — der Endpunkt gibt ein gerendertes HTML-Fragment zurück, kein JSON). Parsen mit `BeautifulSoup(html, "html.parser")` (stdlib-Parser).
 
-**HTML structure** (from live inspection):
+**HTML-Struktur** (aus Live-Inspektion):
 ```html
-<!-- One <ul> per day. All sessions for a day are <li> items in the same <ul>. -->
+<!-- Eine <ul> pro Tag. Alle Sessions eines Tages sind <li>-Items in derselben <ul>. -->
 <ul class="calendar__slot-list">
-  <li><h3 data-day="2026-03-17" class="calendar__day-header">Tu., 17/03</h3></li>
+  <li><h3 data-day="2026-03-17" class="calendar__day-header">Di., 17/03</h3></li>
   <li class="sr-only"><h3>Tuesday, 17/03/2026</h3></li>
   <li data-uuid="33f6254a-..." class="calendar__slot">
     <div class="session-time">18:00 ● 60 Min</div>
     <div class="session-name">CrossFit</div>
   </li>
-  <!-- more session <li> items for the same day -->
+  <!-- weitere Session-<li>-Items desselben Tages -->
 </ul>
 ```
 
-**Parsing logic:**
-1. Find all `<ul>` elements that contain an `<h3 data-day="YYYY-MM-DD">` where the date equals `target_tuesday.isoformat()`. These `<ul>` elements group all sessions for that day.
-2. Within those `<ul>` elements, find all `<li data-uuid>` items.
-3. Filter to those where `.session-time` text starts with `18:00` and `.session-name` text == `CrossFit`.
-4. If zero matches → `raise RuntimeError(f"CrossFit 18:00 not found for {target_tuesday}")`.
-5. If multiple matches → take the first (multiple identical slots are unexpected).
+**Parse-Logik:**
+1. Alle `<ul>`-Elemente finden, die ein `<h3 data-day="YYYY-MM-DD">` enthalten, dessen Datum `target_tuesday.isoformat()` entspricht.
+2. Innerhalb dieser `<ul>`-Elemente alle `<li data-uuid>`-Items finden.
+3. Auf jene filtern, bei denen `.session-time`-Text mit `18:00` beginnt und `.session-name`-Text `CrossFit` ist.
+4. Null Treffer → `raise RuntimeError(f"CrossFit 18:00 not found for {target_tuesday}")`.
+5. Mehrere Treffer → ersten nehmen (mehrere identische Slots sind nicht erwartet).
 
-**`startDate` parameter:** The API requires the Monday of the target week as the anchor. Confirmed from live inspection — passing Monday returns the full week including Tuesday. Other week-anchor dates were not tested.
+**`startDate`-Parameter:** Die API erwartet den Montag der Zielwoche als Anker. Bestätigt aus Live-Inspektion — die Übergabe von Montag gibt die vollständige Woche inklusive Dienstag zurück.
 
-→ Returns the `data-uuid` value as `bookableItemId`.
+→ Gibt den `data-uuid`-Wert als `bookableItemId` zurück.
 
 ---
 
-### Step 3 — Create cart
+### Schritt 3 — Warenkorb erstellen
 
 **Mutation:** `UseCartCreationHandlerCreateCartFromEventBookableItem`
 
@@ -138,29 +138,28 @@ mutation UseCartCreationHandlerCreateCartFromEventBookableItem(
 }
 ```
 
-**Variables:**
+**Variablen:**
 ```json
 {
-  "bookableItemId": "<UUID from step 2>",
+  "bookableItemId": "<UUID aus Schritt 2>",
   "origin": "ORIGIN_MARKETPLACE",
   "clientMetadata": null
 }
 ```
 
-**Success check:** HTTP 200 + no top-level `errors` + `__typename == "Cart"` → extract `id` as `cartId`.
+**Erfolgsprüfung:** HTTP 200 + kein `errors` auf oberster Ebene + `__typename == "Cart"` → `id` als `cartId` entnehmen.
 
-**"Already booked" / sold out handling:**
-- If `__typename == "ExpectedErrors"`: check each error's `message` field.
-  - If any message contains `already` or `bereits` (German equivalent) → log "Already booked — nothing to do" and **exit 0** (idempotent).
-  - If any message contains `sold out`, `ausgebucht`, or `no spots` → **exit non-zero** (class is full, booking failed).
-  - Any other error → raise with the full message.
-- Note: The Eversports API error `id` field was not captured for these cases during live inspection. Message-based detection is used as the discriminator.
+**Behandlung "Bereits gebucht" / Ausgebucht:**
+- Bei `__typename == "ExpectedErrors"`: jedes `message`-Feld der Fehler prüfen.
+  - Enthält eine Meldung `already` oder `bereits` → "Already booked — nothing to do" loggen und **exit 0** (idempotent).
+  - Enthält eine Meldung `sold out`, `ausgebucht` oder `no spots` → **exit non-zero** (Kurs voll, Buchung fehlgeschlagen).
+  - Jeder andere Fehler → Exception mit vollständiger Meldung werfen.
 
-→ Returns `cartId`. The existing membership is auto-selected by the server.
+→ Gibt `cartId` zurück. Die bestehende Mitgliedschaft wird automatisch vom Server ausgewählt.
 
 ---
 
-### Step 4 — Confirm booking
+### Schritt 4 — Buchung bestätigen
 
 **Mutation:** `SummaryButtonCreateOrderFromCart`
 
@@ -181,40 +180,40 @@ mutation SummaryButtonCreateOrderFromCart($cartId: ID!) {
 }
 ```
 
-**Variables:** `{ "cartId": "<cartId from step 3>" }`
+**Variablen:** `{ "cartId": "<cartId aus Schritt 3>" }`
 
-**Success check:** HTTP 200 + no top-level `errors` + `__typename == "Order"`. If `ExpectedErrors`, raise.
+**Erfolgsprüfung:** HTTP 200 + kein `errors` auf oberster Ebene + `__typename == "Order"`. Bei `ExpectedErrors`: Exception werfen.
 
-→ Script prints the order ID and exits 0.
-
----
-
-## Error Handling
-
-Every response is validated for:
-1. HTTP status code == 200 (raise `requests.HTTPError` otherwise).
-2. Absence of a top-level `errors` key in the JSON body (GraphQL always returns HTTP 200 even for server errors).
-3. The expected `__typename` in the union result.
-
-Specific cases:
-- **Login failure** → raise with error message → Action fails.
-- **Session not found in calendar** → raise `RuntimeError` → Action fails.
-- **Already booked** (step 3) → log + exit 0 → Action passes (idempotent).
-- **Class full / sold out** → raise → Action fails (expected — booking not possible).
-- **Any other API error** → raise → Action fails.
-- **Timeout (30s)** → `requests.Timeout` raised → Action fails.
-
-No retry logic. On failure the GitHub Action fails and GitHub sends a failure email.
+→ Script gibt die Order-ID aus und beendet sich mit Exit 0.
 
 ---
 
-## File Structure
+## Fehlerbehandlung
+
+Jede Response wird geprüft auf:
+1. HTTP-Statuscode == 200 (sonst `requests.HTTPError` werfen).
+2. Kein `errors`-Key auf oberster Ebene im JSON-Body (GraphQL gibt immer HTTP 200 zurück, auch bei Server-Fehlern).
+3. Erwartetes `__typename` im Union-Result.
+
+Spezifische Fälle:
+- **Login-Fehler** → Exception mit Fehlermeldung → Action schlägt fehl.
+- **Session nicht im Kalender gefunden** → `RuntimeError` werfen → Action schlägt fehl.
+- **Bereits gebucht** (Schritt 3) → loggen + exit 0 → Action erfolgreich (idempotent).
+- **Kurs voll / ausgebucht** → Exception werfen → Action schlägt fehl (erwartet — Buchung nicht möglich).
+- **Jeder andere API-Fehler** → Exception werfen → Action schlägt fehl.
+- **Timeout (30s)** → `requests.Timeout` wird geworfen → Action schlägt fehl.
+
+Keine Retry-Logik. Bei Fehler schlägt die GitHub Action fehl und GitHub sendet eine Fehler-E-Mail.
+
+---
+
+## Dateistruktur
 
 ```
-book.py                          # Main booking script
+book.py                          # Haupt-Buchungsscript
 .github/
   workflows/
-    book.yml                     # GitHub Action: cron Friday 17:00 UTC
+    book.yml                     # GitHub Action: cron Freitag 17:00 UTC
 ```
 
 ---
@@ -225,11 +224,11 @@ book.py                          # Main booking script
 name: Book CrossFit Tuesday 18:00
 on:
   schedule:
-    - cron: '0 16 * * 5'   # Friday 16:00 UTC — earliest possible so sleep step can reach 18:00 Berlin in both CET and CEST
+    - cron: '0 16 * * 5'   # Freitag 16:00 UTC — frühestmöglich, damit der Sleep-Schritt 18:00 Berlin in CET und CEST erreichen kann
   workflow_dispatch:
     inputs:
       target_date:
-        description: 'Target Tuesday date (YYYY-MM-DD). Defaults to today+4.'
+        description: 'Ziel-Dienstag Datum (YYYY-MM-DD). Standard: heute+4.'
         required: false
 
 jobs:
@@ -240,7 +239,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Wait until 18:00 Europe/Berlin
+      - name: Warten bis 18:00 Europe/Berlin
         run: |
           BERLIN_HOUR=$(TZ="Europe/Berlin" date +%H)
           BERLIN_MIN=$(TZ="Europe/Berlin" date +%M)
@@ -258,15 +257,15 @@ jobs:
           EVERSPORTS_EMAIL: ${{ secrets.EVERSPORTS_EMAIL }}
           EVERSPORTS_PASSWORD: ${{ secrets.EVERSPORTS_PASSWORD }}
           TARGET_DATE: ${{ inputs.target_date }}
-          # Note: when input is not provided, this evaluates to empty string "".
-          # The script uses `if override:` (falsy check) which correctly treats "" as absent.
+          # Hinweis: wenn kein Input angegeben, ergibt das einen leeren String "".
+          # Das Script nutzt `if override:` (Falsy-Prüfung), was "" korrekt als nicht vorhanden behandelt.
 ```
 
-**Cron note:** `0 16 * * 5` = 16:00 UTC. In CET (UTC+1, winter) this is 17:00 Berlin; the sleep step waits 1 hour until 18:00. In CEST (UTC+2, summer) this is 18:00 Berlin; the sleep step is skipped. The booking is always executed at exactly 18:00 Europe/Berlin regardless of DST.
+**Cron-Hinweis:** `0 16 * * 5` = 16:00 UTC. In CET (UTC+1, Winter) entspricht das 17:00 Berlin; der Sleep-Schritt wartet 1 Stunde bis 18:00. In CEST (UTC+2, Sommer) entspricht das 18:00 Berlin; der Sleep-Schritt wird übersprungen. Die Buchung wird unabhängig von der Sommerzeit immer genau um 18:00 Europe/Berlin ausgeführt.
 
 ---
 
-## Date Logic
+## Datumslogik
 
 ```python
 import os
@@ -281,25 +280,25 @@ def get_target_tuesday() -> date:
         if d <= datetime.now(timezone.utc).date():
             raise ValueError(f"TARGET_DATE {override} is not in the future")
         return d
-    # UTC date on the runner (cron fires Friday 16:00 UTC → still Friday)
+    # UTC-Datum auf dem Runner (cron feuert Freitag 16:00 UTC → noch Freitag)
     return datetime.now(timezone.utc).date() + timedelta(days=4)
 
 def get_week_start(d: date) -> date:
-    return d - timedelta(days=d.weekday())  # Monday of that week
+    return d - timedelta(days=d.weekday())  # Montag dieser Woche
 ```
 
 ---
 
-## Secrets Required
+## Benötigte Secrets
 
-| Secret | Description |
-|--------|-------------|
-| `EVERSPORTS_EMAIL` | Eversports account email |
-| `EVERSPORTS_PASSWORD` | Eversports account password |
+| Secret | Beschreibung |
+|--------|--------------|
+| `EVERSPORTS_EMAIL` | Eversports-Konto-E-Mail |
+| `EVERSPORTS_PASSWORD` | Eversports-Konto-Passwort |
 
 ---
 
-## Dependencies
+## Abhängigkeiten
 
-- `requests` — HTTP client with automatic cookie and session handling
-- `beautifulsoup4` — HTML parsing for calendar response (uses stdlib `html.parser`, no lxml needed)
+- `requests` — HTTP-Client mit automatischer Cookie- und Session-Verwaltung
+- `beautifulsoup4` — HTML-Parsing der Kalender-Response (nutzt stdlib `html.parser`, kein lxml nötig)

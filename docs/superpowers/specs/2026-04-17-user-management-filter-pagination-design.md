@@ -4,7 +4,7 @@
 
 ## Kontext
 
-Die Benutzerverwaltung im Admin-Dashboard zeigt aktuell alle registrierten User in einer unlimitierten Liste. Bei wachsender Nutzerzahl wird die Liste unübersichtlich. Gewünscht sind:
+Die Benutzerverwaltung im Admin-Dashboard zeigt aktuell alle registrierten User in einer unlimitierten Liste. Bei wachsender Benutzerzahl wird die Liste unübersichtlich. Gewünscht sind:
 
 1. Ein Live-Filter nach E-Mail-Adresse
 2. Seitenweise Anzeige mit maximal 25 Usern pro Seite

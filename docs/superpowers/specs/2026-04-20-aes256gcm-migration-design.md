@@ -1,6 +1,7 @@
 # Design: Migration Fernet → AES-256-GCM
 
-Reviewed: 2026-04-20
+Reviewed: 2026-04-20  
+**Status:** Abgeschlossen — Migration von Fernet auf AES-256-GCM ist implementiert.
 
 ## Kontext
 

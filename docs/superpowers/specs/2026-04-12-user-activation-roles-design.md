@@ -1,93 +1,93 @@
-# User Activation & Roles — Design Spec
+# Benutzeraktivierung & Rollen — Design Spec
 
-**Date:** 2026-04-12
-**Status:** Approved
+**Datum:** 2026-04-12  
+**Status:** Genehmigt
 
-## Overview
+## Übersicht
 
-New accounts require admin approval before they can use the app. A simple two-role system (`user` / `admin`) controls who can manage accounts. The first registered user becomes admin automatically. Admins can activate and deactivate users from the dashboard.
+Neue Konten erfordern eine Admin-Freischaltung, bevor sie die App nutzen können. Ein einfaches Zwei-Rollen-System (`user` / `admin`) steuert, wer Konten verwalten darf. Der erste registrierte Benutzer wird automatisch Admin. Admins können Benutzer vom Dashboard aus aktivieren und deaktivieren.
 
 ---
 
-## 1. Database Changes
+## 1. Datenbankänderungen
 
-Two new columns on the `users` table:
+Zwei neue Spalten in der `users`-Tabelle:
 
-| Column | Type | Default | Notes |
-|--------|------|---------|-------|
-| `active` | Boolean | `False` | Whether the account is approved |
-| `role` | String | `"user"` | Either `"user"` or `"admin"` |
+| Spalte | Typ | Standard | Hinweise |
+|--------|-----|---------|-------|
+| `active` | Boolean | `False` | Ob das Konto freigegeben ist |
+| `role` | String | `"user"` | Entweder `"user"` oder `"admin"` |
 
-**Alembic migration:** Adds both columns. Existing users in the DB receive `active=True` and `role="user"` as migration values so no one is locked out.
+**Alembic-Migration:** Fügt beide Spalten hinzu. Bestehende Benutzer in der DB erhalten als Migrationswerte `active=True` und `role="user"`, damit niemand ausgesperrt wird.
 
 ---
 
 ## 2. Backend
 
-### Login endpoint (`POST /auth/login`)
+### Login-Endpunkt (`POST /auth/login`)
 
-- **New user (first in DB):** Created with `active=True`, `role="admin"`
-- **New user (not first):** Created with `active=False`, `role="user"`
-- **Existing user, `active=False`:** Returns HTTP 403 with `"Account nicht freigegeben"`
-- **Existing user, `active=True`:** Login succeeds, returns `{access_token, role}`
+- **Neuer Benutzer (erster in der DB):** Angelegt mit `active=True`, `role="admin"`
+- **Neuer Benutzer (nicht der erste):** Angelegt mit `active=False`, `role="user"`
+- **Bestehender Benutzer, `active=False`:** Gibt HTTP 403 zurück mit `"Account nicht freigegeben"`
+- **Bestehender Benutzer, `active=True`:** Login erfolgreich, gibt `{access_token, role}` zurück
 
-The `TokenResponse` schema gains a `role: str` field.
+Das `TokenResponse`-Schema erhält ein `role: str`-Feld.
 
 ### Dependencies
 
-**`get_current_active_user`**
-Extends `get_current_user`. Additionally checks `user.active == True`. Returns 403 if inactive. All existing protected routes switch to this dependency.
+**`get_current_active_user`**  
+Erweitert `get_current_user`. Prüft zusätzlich `user.active == True`. Gibt 403 zurück bei inaktivem Benutzer. Alle bestehenden geschützten Routen wechseln zu dieser Dependency.
 
-**`require_admin`**
-Extends `get_current_active_user`. Additionally checks `user.role == "admin"`. Returns 403 if not admin. Used exclusively on admin routes.
+**`require_admin`**  
+Erweitert `get_current_active_user`. Prüft zusätzlich `user.role == "admin"`. Gibt 403 zurück bei fehlender Admin-Rolle. Wird ausschließlich auf Admin-Routen verwendet.
 
-### Admin routes (`/admin/users`)
+### Admin-Routen (`/admin/users`)
 
-All routes require `require_admin` dependency.
+Alle Routen erfordern die `require_admin`-Dependency.
 
-| Method | Path | Description |
+| Methode | Pfad | Beschreibung |
 |--------|------|-------------|
-| `GET` | `/admin/users` | Returns list of all users: `id`, `email`, `active`, `role`, `created_at` |
-| `PATCH` | `/admin/users/{id}/active` | Sets `active` on the given user. Returns 400 if admin attempts to deactivate themselves. |
+| `GET` | `/admin/users` | Gibt Liste aller Benutzer zurück: `id`, `email`, `active`, `role`, `created_at` |
+| `PATCH` | `/admin/users/{id}/active` | Setzt `active` für den angegebenen Benutzer. Gibt 400 zurück, wenn ein Admin versucht, sich selbst zu deaktivieren. |
 
 ---
 
 ## 3. Frontend
 
-### Login flow
+### Login-Flow
 
-- `api/auth.ts`: After successful login, stores both `token` and `role` in `localStorage`
-- On logout: both `token` and `role` are removed from `localStorage`
-- On 403 from login: `LoginPage` shows error message `"Dein Account wartet auf Freigabe"`
+- `api/auth.ts`: Nach erfolgreichem Login werden `token` und `role` im `localStorage` gespeichert
+- Beim Logout: Beide Werte werden aus `localStorage` entfernt
+- Bei 403 vom Login: `LoginPage` zeigt Fehlermeldung `"Dein Account wartet auf Freigabe"`
 
 ### Dashboard
 
-- New helper `isAdmin()` reads `role` from `localStorage`
-- Below the job list: if `isAdmin()` is true, renders a new `UserManagementSection` component
-- `UserManagementSection` fetches all users via `GET /admin/users` and renders them as a list with email and an activate/deactivate toggle
-- The toggle for the admin's own account is `disabled` (UX protection; backend is the authoritative guard)
+- Neue Hilfsfunktion `isAdmin()` liest `role` aus `localStorage`
+- Unterhalb der Buchungsliste: Wenn `isAdmin()` `true` ist, wird eine neue `UserManagementSection`-Komponente gerendert
+- `UserManagementSection` lädt alle Benutzer via `GET /admin/users` und stellt sie als Liste mit E-Mail und einem Aktivieren/Deaktivieren-Toggle dar
+- Der Toggle für das eigene Admin-Konto ist `disabled` (UX-Schutz; das Backend ist die maßgebliche Absicherung)
 
-### New API file `api/users.ts`
+### Neue API-Datei `api/users.ts`
 
 - `listUsers()` → `GET /admin/users`
 - `setUserActive(id: string, active: boolean)` → `PATCH /admin/users/{id}/active`
 
 ---
 
-## 4. Error Handling
+## 4. Fehlerbehandlung
 
-| Scenario | Backend | Frontend |
+| Szenario | Backend | Frontend |
 |----------|---------|----------|
-| Inactive user logs in | 403 `"Account nicht freigegeben"` | Error shown on login page |
-| Non-admin calls admin route | 403 | — (button not shown to non-admins) |
-| Admin tries to deactivate self | 400 | Toggle is disabled in UI |
-| Inactive user calls any protected route | 403 | — (can't reach dashboard) |
+| Inaktiver Benutzer loggt sich ein | 403 `"Account nicht freigegeben"` | Fehlermeldung auf der Login-Seite |
+| Nicht-Admin ruft Admin-Route auf | 403 | — (Button nicht für Nicht-Admins angezeigt) |
+| Admin versucht sich selbst zu deaktivieren | 400 | Toggle ist deaktiviert |
+| Inaktiver Benutzer ruft geschützte Route auf | 403 | — (kann Dashboard nicht erreichen) |
 
 ---
 
-## 5. Out of Scope
+## 5. Nicht im Scope
 
-- Role promotion (admins cannot make other users admins)
-- Email notifications on activation
-- Password reset flow
-- First admin setup via env variable or seed script (manual DB edit for initial admin)
+- Rollenerhöhung (Admins können andere Benutzer nicht zu Admins machen)
+- E-Mail-Benachrichtigungen bei Aktivierung
+- Passwort-Reset-Flow
+- Erster Admin via Env-Variable oder Seed-Script (manueller DB-Eintrag für initialen Admin)
