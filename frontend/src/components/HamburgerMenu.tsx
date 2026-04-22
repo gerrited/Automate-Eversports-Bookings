@@ -44,15 +44,15 @@ export default function HamburgerMenu({ onLogout, onSettings, onTestEmails, user
             }
           </button>
           {tooltipVisible && (
-            <div className="absolute right-0 mt-2 w-56 rounded-lg bg-surface-card border border-slate-700 shadow-lg z-50 overflow-hidden">
-              <div className="px-4 py-3 text-sm text-slate-400">
+            <div className="absolute right-0 mt-2 w-56 rounded-lg bg-[#1e293b] border border-slate-700 shadow-xl z-50 overflow-hidden">
+              <div className="px-3 py-3 text-xs text-slate-400 leading-relaxed">
                 Angemeldet als<br />
-                <span className="text-slate-200 font-medium">{userEmail}</span>
+                <span className="text-slate-300 font-medium">{userEmail}</span>
               </div>
               {isActualAdmin && (
                 <>
                   <div className="border-t border-slate-700" />
-                  <label className="flex items-center gap-2 px-4 py-3 text-sm text-slate-200 hover:bg-slate-700 transition-colors cursor-pointer">
+                  <label className="flex items-center gap-2 px-3 py-3 text-xs text-slate-300 hover:bg-slate-700 transition-colors cursor-pointer">
                     <input
                       type="checkbox"
                       checked={isAdminView ?? false}
