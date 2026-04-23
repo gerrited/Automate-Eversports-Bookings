@@ -49,7 +49,7 @@ export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect, onE
     } finally {
       if (mountedRef.current) {
         setExecuting(false)
-        timerRef.current = setTimeout(() => setFeedback(null), 4000)
+        timerRef.current = setTimeout(() => setFeedback(null), 10000)
       }
     }
   }
