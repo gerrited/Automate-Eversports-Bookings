@@ -21,7 +21,7 @@ from backend.models.booking_log import BookingLog
 from backend.models.user import User
 from backend.core.encryption import decrypt
 from backend.core.booking import book_session, cancel_booking
-from worker.email import send_booking_failure_email, send_admin_booking_failure_email, send_debug_cancel_failure_email
+from worker.email import send_booking_failure_email, send_admin_booking_failure_email, send_debug_cancel_failure_email, send_waitlist_notification
 
 logging.basicConfig(
     level=logging.INFO,
@@ -101,6 +101,11 @@ def process_job(job_id: str, now: datetime, session_factory, admin_emails: list[
             if result["status"] == "success" and result.get("event_type") and job.event_type != result["event_type"]:
                 job.event_type = result["event_type"]
                 db.add(job)
+            if result["status"] == "waitlist":
+                try:
+                    send_waitlist_notification(user.email, job, target_date)
+                except Exception as email_exc:
+                    log.error("Job %s: could not send waitlist notification — %s", job.id, email_exc)
         except Exception as exc:
             log_entry = BookingLog(
                 job_id=job.id,

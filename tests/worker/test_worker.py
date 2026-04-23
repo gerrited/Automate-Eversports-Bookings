@@ -449,3 +449,50 @@ def test_run_sends_admin_email_to_all_active_admins(db_session, session_factory,
     mock_admin_email.assert_called_once()
     admin_emails_arg = mock_admin_email.call_args[0][0]
     assert set(admin_emails_arg) == {"admin3a@b.com", "admin3b@b.com"}
+
+
+def test_process_job_logs_waitlist_status(db_session, session_factory, mocker):
+    _user(db_session, uid="wl1", ev="ev_wl1", email="wl1@b.com")
+    _job(db_session, jid="jwl1", uid="wl1", weekday=1, days=4)
+
+    mocker.patch("worker.worker.decrypt", return_value="pass")
+    mocker.patch("worker.worker.book_session", return_value={"status": "waitlist", "order_id": None, "event_type": "class"})
+    mock_waitlist_email = mocker.patch("worker.worker.send_waitlist_notification")
+    mock_failure_email = mocker.patch("worker.worker.send_booking_failure_email")
+
+    process_job("jwl1", datetime(2026, 4, 10, 18, 0), session_factory, [])
+
+    log_entry = db_session.query(BookingLog).filter(BookingLog.job_id == "jwl1").first()
+    assert log_entry.status == "waitlist"
+    mock_waitlist_email.assert_called_once()
+    mock_failure_email.assert_not_called()
+
+
+def test_run_sends_waitlist_email_on_waitlist_status(db_session, session_factory, mocker):
+    _user(db_session, uid="wl2", ev="ev_wl2", email="wl2@b.com")
+    _job(db_session, jid="jwl2", uid="wl2", weekday=1, days=4)
+    friday_18 = datetime(2026, 4, 10, 18, 0)
+
+    mocker.patch("worker.worker.decrypt", return_value="pass")
+    mocker.patch("worker.worker.book_session", return_value={"status": "waitlist", "order_id": None, "event_type": "class"})
+    mock_waitlist_email = mocker.patch("worker.worker.send_waitlist_notification")
+
+    run(friday_18, session_factory)
+
+    mock_waitlist_email.assert_called_once()
+    log_entry = db_session.query(BookingLog).filter(BookingLog.job_id == "jwl2").first()
+    assert log_entry.status == "waitlist"
+
+
+def test_one_time_job_not_deleted_on_waitlist(db_session, session_factory, mocker):
+    _user(db_session, uid="wl3", ev="ev_wl3", email="wl3@b.com")
+    _job(db_session, jid="jwl3", uid="wl3", weekday=1, days=4, one_time=True)
+
+    mocker.patch("worker.worker.decrypt", return_value="pass")
+    mocker.patch("worker.worker.book_session", return_value={"status": "waitlist", "order_id": None, "event_type": "class"})
+    mocker.patch("worker.worker.send_waitlist_notification")
+
+    process_job("jwl3", datetime(2026, 4, 10, 18, 0), session_factory, [])
+
+    remaining = db_session.query(BookingJob).filter(BookingJob.id == "jwl3").first()
+    assert remaining is not None
