@@ -122,3 +122,22 @@ def test_worker_admin_booking_failure_renders():
     assert "user@example.com" in html
     assert "job-42" in html
     assert "#004349" in html
+
+
+def test_worker_booking_waitlist_renders():
+    html = _env(WORKER_DIR).get_template("booking_waitlist.html").render(
+        class_name="CrossFit",
+        time_str="18:00",
+        weekday_str="Freitag",
+        date_str="10.04.2026",
+        facility_name="Sport-Club Hundsmühlen e.V.",
+        frontend_url=FRONTEND_URL,
+    )
+    assert "CrossFit" in html
+    assert "18:00" in html
+    assert "Freitag" in html
+    assert "10.04.2026" in html
+    assert "Sport-Club Hundsmühlen e.V." in html
+    assert "Warteliste" in html
+    assert FRONTEND_URL in html
+    assert "#004349" in html
