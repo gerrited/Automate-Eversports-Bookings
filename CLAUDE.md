@@ -99,6 +99,7 @@ E-Mail-Templates werden als Jinja2-HTML-Dateien gespeichert (`{{ variable }}`-Sy
 | `backend/templates/email/booking_failure.html` | Test-Mail | `class_name`, `time_str`, `weekday_str`, `date_str`, `facility_name`, `error_message`, `frontend_url` |
 | `backend/templates/email/debug_cancel_failure.html` | Test-Mail | wie `booking_failure` |
 | `worker/templates/email/booking_failure.html` | Worker | wie oben |
+| `worker/templates/email/admin_booking_failure.html` | Worker | `user_email`, `job_id`, wie `booking_failure` |
 | `worker/templates/email/debug_cancel_failure.html` | Worker | wie oben |
 
 Neue E-Mails: Template unter `backend/templates/email/` oder `worker/templates/email/` anlegen, dann in `backend/core/email.py` bzw. `worker/email.py` mit `_templates.get_template("name.html").render(...)` rendern.
