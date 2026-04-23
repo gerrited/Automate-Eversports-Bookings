@@ -21,7 +21,7 @@ from backend.models.booking_log import BookingLog
 from backend.models.user import User
 from backend.core.encryption import decrypt
 from backend.core.booking import book_session, cancel_booking
-from worker.email import send_booking_failure_email, send_debug_cancel_failure_email
+from worker.email import send_booking_failure_email, send_admin_booking_failure_email, send_debug_cancel_failure_email
 
 logging.basicConfig(
     level=logging.INFO,
@@ -59,7 +59,7 @@ def already_booked(db: Session, job: BookingJob, target_date: date) -> bool:
     )
 
 
-def process_job(job_id: str, now: datetime, session_factory) -> None:
+def process_job(job_id: str, now: datetime, session_factory, admin_emails: list[str]) -> None:
     """Processes a single booking job in its own DB session. Designed to run in a thread."""
     db = session_factory()
     try:
@@ -109,6 +109,11 @@ def process_job(job_id: str, now: datetime, session_factory) -> None:
                 send_booking_failure_email(user.email, job, str(exc), target_date)
             except Exception as email_exc:
                 log.error("Job %s: could not send failure email — %s", job.id, email_exc)
+            if admin_emails:
+                try:
+                    send_admin_booking_failure_email(admin_emails, user.email, job, str(exc), target_date)
+                except Exception as email_exc:
+                    log.error("Job %s: could not send admin failure email — %s", job.id, email_exc)
 
         if job.debug and log_entry.status == "success":
             try:
@@ -152,12 +157,15 @@ def run(now: datetime, session_factory=None) -> None:
             .all()
         )
         due_job_ids = [j.id for j in jobs if is_due(j, now)]
-        log.info("Found %d active jobs, %d due", len(jobs), len(due_job_ids))
+        admin_emails = [
+            u.email for u in db.query(User).filter(User.role == "admin", User.active.is_(True)).all()
+        ]
+        log.info("Found %d active jobs, %d due, %d admins", len(jobs), len(due_job_ids), len(admin_emails))
     finally:
         db.close()
 
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        futures = {executor.submit(process_job, jid, now, session_factory): jid for jid in due_job_ids}
+        futures = {executor.submit(process_job, jid, now, session_factory, admin_emails): jid for jid in due_job_ids}
         for future in as_completed(futures):
             try:
                 future.result()

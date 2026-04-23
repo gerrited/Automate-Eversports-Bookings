@@ -103,3 +103,22 @@ def test_worker_debug_cancel_failure_renders():
     )
     assert "Yoga Basics" in html
     assert "#004349" in html
+
+
+def test_worker_admin_booking_failure_renders():
+    html = _env(WORKER_DIR).get_template("admin_booking_failure.html").render(
+        class_name="Yoga Basics",
+        time_str="18:00",
+        weekday_str="Montag",
+        date_str="28.04.2026",
+        facility_name="FitnessPark Mitte",
+        error_message="Kurs bereits ausgebucht",
+        frontend_url=FRONTEND_URL,
+        user_email="user@example.com",
+        job_id="job-42",
+    )
+    assert "Yoga Basics" in html
+    assert "Kurs bereits ausgebucht" in html
+    assert "user@example.com" in html
+    assert "job-42" in html
+    assert "#004349" in html

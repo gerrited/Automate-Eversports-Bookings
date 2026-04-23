@@ -4,6 +4,7 @@ from backend.models.booking_job import BookingJob
 from backend.models.booking_log import BookingLog
 from backend.models.user import User
 from worker.worker import MAX_WORKERS, already_booked, is_due, process_job, run
+from worker.email import send_admin_booking_failure_email
 
 
 def _user(db, uid="u1", ev="ev1", email="a@b.com", active=True):
@@ -85,7 +86,7 @@ def test_process_job_books_and_writes_success_log(db_session, session_factory, m
     mocker.patch("worker.worker.decrypt", return_value="plainpass")
     mocker.patch("worker.worker.book_session", return_value={"status": "success", "order_id": "ord-pj1"})
 
-    process_job("jpj1", friday_18, session_factory)
+    process_job("jpj1", friday_18, session_factory, [])
 
     log = db_session.query(BookingLog).filter(BookingLog.job_id == "jpj1").first()
     assert log is not None
@@ -103,7 +104,7 @@ def test_process_job_skips_already_booked(db_session, session_factory, mocker):
     db_session.commit()
 
     mock_book = mocker.patch("worker.worker.book_session")
-    process_job("jpj2", datetime(2026, 4, 10, 18, 0), session_factory)
+    process_job("jpj2", datetime(2026, 4, 10, 18, 0), session_factory, [])
     mock_book.assert_not_called()
 
 
@@ -115,7 +116,7 @@ def test_process_job_logs_failure_and_sends_email(db_session, session_factory, m
     mocker.patch("worker.worker.book_session", side_effect=RuntimeError("Class full"))
     mock_email = mocker.patch("worker.worker.send_booking_failure_email")
 
-    process_job("jpj3", datetime(2026, 4, 10, 18, 0), session_factory)
+    process_job("jpj3", datetime(2026, 4, 10, 18, 0), session_factory, [])
 
     log = db_session.query(BookingLog).filter(BookingLog.job_id == "jpj3").first()
     assert log.status == "failed"
@@ -130,7 +131,7 @@ def test_process_job_deletes_one_time_job_after_success(db_session, session_fact
     mocker.patch("worker.worker.decrypt", return_value="pass")
     mocker.patch("worker.worker.book_session", return_value={"status": "success", "order_id": "ord-pj4"})
 
-    process_job("jpj4", datetime(2026, 4, 10, 18, 0), session_factory)
+    process_job("jpj4", datetime(2026, 4, 10, 18, 0), session_factory, [])
 
     remaining = db_session.query(BookingJob).filter(BookingJob.id == "jpj4").first()
     assert remaining is None
@@ -370,3 +371,81 @@ def test_run_keeps_regular_job_after_success(db_session, session_factory, mocker
 
     remaining = db_session.query(BookingJob).filter(BookingJob.id == "jot4").first()
     assert remaining is not None
+
+
+# --- admin failure notifications ---
+
+def _admin(db, uid="a1", ev="ev_a1", email="admin@b.com"):
+    u = User(id=uid, eversports_user_id=ev, email=email, encrypted_password="enc", active=True, role="admin")
+    db.add(u)
+    db.commit()
+    return u
+
+
+def test_run_sends_admin_failure_email_when_booking_fails(db_session, session_factory, mocker):
+    _admin(db_session, uid="adm1", ev="ev_adm1", email="admin@b.com")
+    _user(db_session, uid="usr1", ev="ev_usr1", email="user@b.com")
+    _job(db_session, jid="jadm1", uid="usr1", weekday=1, days=4)
+    friday_18 = datetime(2026, 4, 10, 18, 0)
+
+    mocker.patch("worker.worker.decrypt", return_value="pass")
+    mocker.patch("worker.worker.book_session", side_effect=RuntimeError("Class full"))
+    mocker.patch("worker.worker.send_booking_failure_email")
+    mock_admin_email = mocker.patch("worker.worker.send_admin_booking_failure_email")
+
+    run(friday_18, session_factory)
+
+    mock_admin_email.assert_called_once()
+    args = mock_admin_email.call_args[0]
+    assert args[0] == ["admin@b.com"]
+    assert args[1] == "user@b.com"
+    assert "Class full" in args[3]
+
+
+def test_run_does_not_send_admin_failure_email_on_success(db_session, session_factory, mocker):
+    _admin(db_session, uid="adm2", ev="ev_adm2", email="admin2@b.com")
+    _user(db_session, uid="usr2", ev="ev_usr2", email="user2@b.com")
+    _job(db_session, jid="jadm2", uid="usr2", weekday=1, days=4)
+    friday_18 = datetime(2026, 4, 10, 18, 0)
+
+    mocker.patch("worker.worker.decrypt", return_value="pass")
+    mocker.patch("worker.worker.book_session", return_value={"status": "success", "order_id": "ord-1"})
+    mock_admin_email = mocker.patch("worker.worker.send_admin_booking_failure_email")
+
+    run(friday_18, session_factory)
+
+    mock_admin_email.assert_not_called()
+
+
+def test_run_does_not_send_admin_failure_email_when_no_admins(db_session, session_factory, mocker):
+    _user(db_session, uid="usr3", ev="ev_usr3", email="user3@b.com")
+    _job(db_session, jid="jadm3", uid="usr3", weekday=1, days=4)
+    friday_18 = datetime(2026, 4, 10, 18, 0)
+
+    mocker.patch("worker.worker.decrypt", return_value="pass")
+    mocker.patch("worker.worker.book_session", side_effect=RuntimeError("Class full"))
+    mocker.patch("worker.worker.send_booking_failure_email")
+    mock_admin_email = mocker.patch("worker.worker.send_admin_booking_failure_email")
+
+    run(friday_18, session_factory)
+
+    mock_admin_email.assert_not_called()
+
+
+def test_run_sends_admin_email_to_all_active_admins(db_session, session_factory, mocker):
+    _admin(db_session, uid="adm3a", ev="ev_adm3a", email="admin3a@b.com")
+    _admin(db_session, uid="adm3b", ev="ev_adm3b", email="admin3b@b.com")
+    _user(db_session, uid="usr4", ev="ev_usr4", email="user4@b.com")
+    _job(db_session, jid="jadm4", uid="usr4", weekday=1, days=4)
+    friday_18 = datetime(2026, 4, 10, 18, 0)
+
+    mocker.patch("worker.worker.decrypt", return_value="pass")
+    mocker.patch("worker.worker.book_session", side_effect=RuntimeError("Class full"))
+    mocker.patch("worker.worker.send_booking_failure_email")
+    mock_admin_email = mocker.patch("worker.worker.send_admin_booking_failure_email")
+
+    run(friday_18, session_factory)
+
+    mock_admin_email.assert_called_once()
+    admin_emails_arg = mock_admin_email.call_args[0][0]
+    assert set(admin_emails_arg) == {"admin3a@b.com", "admin3b@b.com"}
