@@ -8,16 +8,15 @@ os.environ.setdefault("FRONTEND_URL", "http://localhost:5173")
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 from backend.db import Base
 
 
 @pytest.fixture(scope="function")
-def engine():
+def engine(tmp_path):
+    db_file = tmp_path / "test.db"
     eng = create_engine(
-        "sqlite:///:memory:",
+        f"sqlite:///{db_file}",
         connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
     )
     Base.metadata.create_all(bind=eng)
     yield eng
