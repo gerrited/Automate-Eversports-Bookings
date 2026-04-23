@@ -38,12 +38,12 @@ afterEach(() => {
 describe('AllJobsSection', () => {
   it('zeigt ein Filterfeld an', async () => {
     render(<AllJobsSection />)
-    expect(await screen.findByPlaceholderText('Nach Benutzer filtern…')).toBeInTheDocument()
+    expect(await screen.findByPlaceholderText('Nach E-Mail filtern…')).toBeInTheDocument()
   })
 
   it('zeigt ohne Filter maximal 25 Jobs an (Seite 1)', async () => {
     render(<AllJobsSection />)
-    await screen.findByPlaceholderText('Nach Benutzer filtern…')
+    await screen.findByPlaceholderText('Nach E-Mail filtern…')
     expect(screen.getAllByText(/user\d+@example\.com/).length).toBe(25)
   })
 
@@ -54,7 +54,7 @@ describe('AllJobsSection', () => {
       { id: '3', user_email: 'anna@test.de', weekday: 2, target_time: '18:00:00', facility_id: 'f1', facility_name: 'Studio B', class_name: 'Boxing', days_in_advance: 3, enabled: false, one_time: true, created_at: '', success_count: 5, failed_count: 0, already_booked_count: 0 },
     ])
     render(<AllJobsSection />)
-    const input = await screen.findByPlaceholderText('Nach Benutzer filtern…')
+    const input = await screen.findByPlaceholderText('Nach E-Mail filtern…')
     fireEvent.change(input, { target: { value: 'anna' } })
     expect(screen.getAllByText(/anna@/).length).toBe(2)
     expect(screen.queryByText('bernd@xyz.org')).not.toBeInTheDocument()
@@ -62,7 +62,7 @@ describe('AllJobsSection', () => {
 
   it('filter setzt Seite auf 1 zurück', async () => {
     render(<AllJobsSection />)
-    const input = await screen.findByPlaceholderText('Nach Benutzer filtern…')
+    const input = await screen.findByPlaceholderText('Nach E-Mail filtern…')
     fireEvent.click(screen.getByRole('button', { name: /weiter/i }))
     expect(await screen.findByText(/Seite 2 von/)).toBeInTheDocument()
     fireEvent.change(input, { target: { value: 'user' } })
@@ -71,20 +71,20 @@ describe('AllJobsSection', () => {
 
   it('"Zurück"-Button ist auf Seite 1 deaktiviert', async () => {
     render(<AllJobsSection />)
-    await screen.findByPlaceholderText('Nach Benutzer filtern…')
+    await screen.findByPlaceholderText('Nach E-Mail filtern…')
     expect(screen.getByRole('button', { name: /zurück/i })).toBeDisabled()
   })
 
   it('"Weiter"-Button ist auf der letzten Seite deaktiviert', async () => {
     vi.mocked(listAllJobs).mockResolvedValue(makeJobs(10))
     render(<AllJobsSection />)
-    await screen.findByPlaceholderText('Nach Benutzer filtern…')
+    await screen.findByPlaceholderText('Nach E-Mail filtern…')
     expect(screen.getByRole('button', { name: /weiter/i })).toBeDisabled()
   })
 
   it('"Weiter" navigiert zur nächsten Seite', async () => {
     render(<AllJobsSection />)
-    await screen.findByPlaceholderText('Nach Benutzer filtern…')
+    await screen.findByPlaceholderText('Nach E-Mail filtern…')
     fireEvent.click(screen.getByRole('button', { name: /weiter/i }))
     expect(await screen.findByText(/Seite 2 von 3/)).toBeInTheDocument()
   })
@@ -140,7 +140,7 @@ describe('AllJobsSection', () => {
       { id: '1', user_email: 'anna@firma.de', weekday: 0, target_time: '08:00:00', facility_id: 'f1', facility_name: 'Studio A', class_name: 'Yoga', days_in_advance: 3, enabled: true, one_time: false, created_at: '', success_count: 5, failed_count: 1, already_booked_count: 2 },
     ])
     render(<AllJobsSection />)
-    await screen.findByPlaceholderText('Nach Benutzer filtern…')
+    await screen.findByPlaceholderText('Nach E-Mail filtern…')
     expect(screen.getByText('Yoga')).toBeInTheDocument()
     expect(screen.getByText(/8.*gesamt/i)).toBeInTheDocument()
   })

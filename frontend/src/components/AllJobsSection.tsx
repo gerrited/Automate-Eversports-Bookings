@@ -53,7 +53,7 @@ export default function AllJobsSection({ initialEmailFilter, onUserClick }: { in
             type="text"
             value={emailFilter}
             onChange={e => handleFilterChange(e.target.value)}
-            placeholder="Nach Benutzer filtern…"
+            placeholder="Nach E-Mail filtern…"
             className="flex-1 bg-surface-card border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-slate-500"
           />
           <p className="text-slate-500 text-xs">
