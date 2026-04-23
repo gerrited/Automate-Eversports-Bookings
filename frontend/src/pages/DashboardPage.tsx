@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { clearToken, isAdmin, isActualAdmin, getEmail, getAvatarUrl } from '../api/client'
-import { listJobs, createJob, updateJob, toggleJob, deleteJob, getJobLogs } from '../api/jobs'
+import { listJobs, createJob, updateJob, toggleJob, deleteJob, getJobLogs, executeJob } from '../api/jobs'
 import type { Job, BookingLog, JobFormData } from '../types'
 import JobCard from '../components/JobCard'
 import JobModal from '../components/JobModal'
@@ -144,6 +144,10 @@ useEffect(() => {
     }
   }
 
+  async function handleExecute(id: string) {
+    return await executeJob(id)
+  }
+
   return (
     <div className="min-h-screen bg-surface-page">
       {/* Fixed Header */}
@@ -235,6 +239,7 @@ useEffect(() => {
                 onEdit={j => { setEditingJob(j); setShowModal(true) }}
                 onDelete={handleDelete}
                 onSelect={handleSelect}
+                onExecute={isAdmin() ? handleExecute : undefined}
               />
             ))}
           </div>
