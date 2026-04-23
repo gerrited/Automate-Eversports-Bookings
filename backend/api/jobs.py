@@ -1,19 +1,21 @@
 from __future__ import annotations
 
+from datetime import date, timedelta
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from backend.api.deps import get_current_active_user
+from backend.core.booking import book_session, cancel_booking
+from backend.core.encryption import decrypt
 from backend.db import get_db
 from backend.models.booking_job import BookingJob
 from backend.models.booking_log import BookingLog
 from backend.models.user import User
 from backend.schemas.job import JobCreate, JobUpdate, JobResponse
 from backend.schemas.log import LogResponse
-
-router = APIRouter()
 
 
 def _find_duplicate(
@@ -44,6 +46,22 @@ def _get_owned_job(job_id: str, current_user: User, db: Session) -> BookingJob:
     if job.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not your job")
     return job
+
+
+def _next_weekday(weekday: int) -> date:
+    """Nächstes Datum ab heute mit dem gegebenen Wochentag (0=Mo … 6=So).
+    Gibt heute zurück, wenn der Wochentag übereinstimmt."""
+    today = date.today()
+    days_ahead = (weekday - today.weekday()) % 7
+    return today + timedelta(days=days_ahead)
+
+
+class ExecuteJobResponse(BaseModel):
+    status: str   # "success" | "already_booked" | "failed"
+    message: str
+
+
+router = APIRouter()
 
 
 @router.get("/jobs", response_model=List[JobResponse])
@@ -125,3 +143,50 @@ def get_job_logs(
         .limit(20)
         .all()
     )
+
+
+@router.post("/jobs/{job_id}/execute", response_model=ExecuteJobResponse)
+def execute_job(
+    job_id: str,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    job = _get_owned_job(job_id, current_user, db)
+    target_date = _next_weekday(job.weekday)
+
+    user = db.query(User).filter(User.id == job.user_id).first()
+    password = decrypt(user.encrypted_password)
+
+    try:
+        result = book_session(
+            email=user.email,
+            password=password,
+            target_date=target_date,
+            target_time=job.target_time.strftime("%H:%M"),
+            facility_id=job.facility_id,
+            class_name=job.class_name,
+            event_type=job.event_type,
+        )
+        status = result["status"]
+        message = str(target_date)
+
+        if status == "success" and job.debug:
+            try:
+                cancel_booking(
+                    email=user.email,
+                    password=password,
+                    class_name=job.class_name,
+                    facility_id=job.facility_id,
+                )
+                message = f"[DEBUG] gebucht und storniert für {target_date}"
+            except Exception as cancel_exc:
+                message = f"[DEBUG] gebucht, Stornierung fehlgeschlagen: {cancel_exc}"
+
+    except Exception as exc:
+        status = "failed"
+        message = str(exc)
+
+    db.add(BookingLog(job_id=job.id, target_date=target_date, status=status, message=message))
+    db.commit()
+
+    return ExecuteJobResponse(status=status, message=message)

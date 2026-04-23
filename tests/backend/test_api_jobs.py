@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from backend.core.auth import create_access_token
 from backend.models.user import User
 
@@ -138,3 +140,96 @@ def test_update_job_one_time_flag(client, db_session):
     resp = client.put(f"/api/jobs/{job_id}", json={"one_time": True}, headers=_auth_header(user.id))
     assert resp.status_code == 200
     assert resp.json()["one_time"] is True
+
+
+def _create_job(client, user_id: str) -> str:
+    resp = client.post(
+        "/api/jobs",
+        json={
+            "weekday": 1,
+            "target_time": "18:00:00",
+            "facility_id": "73041",
+            "facility_name": "CrossFit Rabbit Hole",
+            "class_name": "CrossFit",
+            "days_in_advance": 4,
+        },
+        headers=_auth_header(user_id),
+    )
+    return resp.json()["id"]
+
+
+def test_execute_job_success(client, db_session):
+    user = _create_user(db_session)
+    job_id = _create_job(client, user.id)
+
+    with patch("backend.api.jobs.book_session", return_value={"status": "success", "order_id": "ord-1", "event_type": "class"}), \
+         patch("backend.api.jobs.decrypt", return_value="password123"):
+        resp = client.post(f"/api/jobs/{job_id}/execute", headers=_auth_header(user.id))
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["status"] == "success"
+    assert "message" in body
+
+
+def test_execute_job_already_booked(client, db_session):
+    user = _create_user(db_session)
+    job_id = _create_job(client, user.id)
+
+    with patch("backend.api.jobs.book_session", return_value={"status": "already_booked", "order_id": None, "event_type": "class"}), \
+         patch("backend.api.jobs.decrypt", return_value="password123"):
+        resp = client.post(f"/api/jobs/{job_id}/execute", headers=_auth_header(user.id))
+
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "already_booked"
+
+
+def test_execute_job_booking_error(client, db_session):
+    user = _create_user(db_session)
+    job_id = _create_job(client, user.id)
+
+    with patch("backend.api.jobs.book_session", side_effect=RuntimeError("CrossFit 18:00 not found")), \
+         patch("backend.api.jobs.decrypt", return_value="password123"):
+        resp = client.post(f"/api/jobs/{job_id}/execute", headers=_auth_header(user.id))
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["status"] == "failed"
+    assert "CrossFit 18:00 not found" in body["message"]
+
+
+def test_execute_job_debug_mode_cancels_booking(client, db_session):
+    user = _create_user(db_session)
+    # Job mit debug=True erstellen
+    resp = client.post(
+        "/api/jobs",
+        json={
+            "weekday": 1, "target_time": "18:00:00", "facility_id": "73041",
+            "facility_name": "CrossFit Rabbit Hole", "class_name": "CrossFit",
+            "days_in_advance": 4, "debug": True,
+        },
+        headers=_auth_header(user.id),
+    )
+    job_id = resp.json()["id"]
+
+    with patch("backend.api.jobs.book_session", return_value={"status": "success", "order_id": "ord-1", "event_type": "class"}), \
+         patch("backend.api.jobs.decrypt", return_value="password123"), \
+         patch("backend.api.jobs.cancel_booking") as mock_cancel:
+        resp = client.post(f"/api/jobs/{job_id}/execute", headers=_auth_header(user.id))
+
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "success"
+    assert "[DEBUG]" in resp.json()["message"]
+    mock_cancel.assert_called_once()
+
+
+def test_execute_job_forbidden_for_other_user(client, db_session):
+    user_a = _create_user(db_session)
+    user_b = User(eversports_user_id="ev-3", email="c@b.com", encrypted_password="x", active=True)
+    db_session.add(user_b)
+    db_session.commit()
+    db_session.refresh(user_b)
+
+    job_id = _create_job(client, user_a.id)
+    resp = client.post(f"/api/jobs/{job_id}/execute", headers=_auth_header(user_b.id))
+    assert resp.status_code == 403
