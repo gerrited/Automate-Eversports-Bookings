@@ -134,3 +134,37 @@ def send_debug_cancel_failure_email(user_email: str, job, error_message: str, ta
         log.info("Debug cancel failure email sent to %s for job %s", user_email, job.id)
     except Exception as exc:
         log.error("Failed to send debug cancel failure email to %s: %s", user_email, exc)
+
+
+def send_waitlist_notification(user_email: str, job, target_date: date) -> None:
+    """Benachrichtigt den Nutzer über die erfolgreiche Wartelisten-Anmeldung. Best-effort."""
+    try:
+        resend.api_key = os.environ["RESEND_API_KEY"]
+        from_email = os.environ["FROM_EMAIL"]
+
+        time_str = job.target_time.strftime("%H:%M")
+        date_str = target_date.strftime("%d.%m.%Y")
+        weekday_str = WEEKDAYS_DE[target_date.weekday()]
+
+        frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:5173")
+        sender = f"FOReversports <{from_email}>"
+
+        subject = f"Warteliste: {job.class_name} am {date_str}"
+        html = _templates.get_template("booking_waitlist.html").render(
+            class_name=job.class_name,
+            time_str=time_str,
+            weekday_str=weekday_str,
+            date_str=date_str,
+            facility_name=job.facility_name,
+            frontend_url=frontend_url,
+        )
+
+        resend.Emails.send({
+            "from": sender,
+            "to": [user_email],
+            "subject": subject,
+            "html": html,
+        })
+        log.info("Waitlist notification sent to %s for job %s", user_email, job.id)
+    except Exception as exc:
+        log.error("Failed to send waitlist notification to %s: %s", user_email, exc)
