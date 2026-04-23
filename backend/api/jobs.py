@@ -154,12 +154,11 @@ def execute_job(
     job = _get_owned_job(job_id, current_user, db)
     target_date = _next_weekday(job.weekday)
 
-    user = db.query(User).filter(User.id == job.user_id).first()
-    password = decrypt(user.encrypted_password)
+    password = decrypt(current_user.encrypted_password)
 
     try:
         result = book_session(
-            email=user.email,
+            email=current_user.email,
             password=password,
             target_date=target_date,
             target_time=job.target_time.strftime("%H:%M"),
@@ -173,7 +172,7 @@ def execute_job(
         if status == "success" and job.debug:
             try:
                 cancel_booking(
-                    email=user.email,
+                    email=current_user.email,
                     password=password,
                     class_name=job.class_name,
                     facility_id=job.facility_id,

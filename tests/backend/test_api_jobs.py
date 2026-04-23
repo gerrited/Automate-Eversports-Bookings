@@ -233,3 +233,17 @@ def test_execute_job_forbidden_for_other_user(client, db_session):
     job_id = _create_job(client, user_a.id)
     resp = client.post(f"/api/jobs/{job_id}/execute", headers=_auth_header(user_b.id))
     assert resp.status_code == 403
+
+
+def test_execute_job_success_writes_log(client, db_session):
+    from backend.models.booking_log import BookingLog
+    user = _create_user(db_session)
+    job_id = _create_job(client, user.id)
+
+    with patch("backend.api.jobs.book_session", return_value={"status": "success", "order_id": "ord-1", "event_type": "class"}), \
+         patch("backend.api.jobs.decrypt", return_value="password123"):
+        client.post(f"/api/jobs/{job_id}/execute", headers=_auth_header(user.id))
+
+    log = db_session.query(BookingLog).filter(BookingLog.job_id == job_id).first()
+    assert log is not None
+    assert log.status == "success"
