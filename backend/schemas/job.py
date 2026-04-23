@@ -45,4 +45,6 @@ class JobResponse(BaseModel):
 
 class AdminJobResponse(JobResponse):
     user_email: str
-    execution_count: int
+    success_count: int
+    failed_count: int
+    already_booked_count: int

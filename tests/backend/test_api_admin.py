@@ -193,11 +193,11 @@ def _make_job(db_session, user_id: str, weekday: int = 0, target_time=time(18, 0
     return job
 
 
-def _make_log(db_session, job_id: str) -> BookingLog:
+def _make_log(db_session, job_id: str, status: str = "success") -> BookingLog:
     log = BookingLog(
         job_id=job_id,
         target_date=date(2026, 1, 1),
-        status="success",
+        status=status,
     )
     db_session.add(log)
     db_session.commit()
@@ -227,26 +227,33 @@ def test_list_all_jobs_returns_all_users_jobs(client, db_session):
     assert "user1@x.com" in emails
 
 
-def test_list_all_jobs_includes_execution_count(client, db_session):
+def test_list_all_jobs_counts_by_status(client, db_session):
     admin = _make_admin(db_session, ev_id="ev-a2", email="admin2@x.com")
     user = _make_user(db_session, ev_id="ev-u2", email="user2@x.com")
     job = _make_job(db_session, user.id)
-    _make_log(db_session, job.id)
-    _make_log(db_session, job.id)
+    _make_log(db_session, job.id, status="success")
+    _make_log(db_session, job.id, status="success")
+    _make_log(db_session, job.id, status="failed")
+    _make_log(db_session, job.id, status="already_booked")
     resp = client.get("/api/admin/jobs", headers=_auth_header(admin.id))
     assert resp.status_code == 200
     job_data = next(j for j in resp.json() if j["user_email"] == "user2@x.com")
-    assert job_data["execution_count"] == 2
+    assert job_data["success_count"] == 2
+    assert job_data["failed_count"] == 1
+    assert job_data["already_booked_count"] == 1
+    assert "execution_count" not in job_data
 
 
-def test_list_all_jobs_zero_execution_count_when_no_logs(client, db_session):
+def test_list_all_jobs_zero_counts_when_no_logs(client, db_session):
     admin = _make_admin(db_session, ev_id="ev-a3", email="admin3@x.com")
     user = _make_user(db_session, ev_id="ev-u3", email="user3@x.com")
     _make_job(db_session, user.id)
     resp = client.get("/api/admin/jobs", headers=_auth_header(admin.id))
     assert resp.status_code == 200
     job_data = next(j for j in resp.json() if j["user_email"] == "user3@x.com")
-    assert job_data["execution_count"] == 0
+    assert job_data["success_count"] == 0
+    assert job_data["failed_count"] == 0
+    assert job_data["already_booked_count"] == 0
 
 
 def test_list_all_jobs_sorted_by_weekday_time_email(client, db_session):

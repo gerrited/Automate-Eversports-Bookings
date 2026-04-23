@@ -4,7 +4,7 @@ from typing import List, Literal
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import func
+from sqlalchemy import case, func
 from sqlalchemy.orm import Session
 
 from backend.api.deps import require_admin
@@ -85,7 +85,9 @@ def list_all_jobs(
         db.query(
             BookingJob,
             User.email.label("user_email"),
-            func.count(BookingLog.id).label("execution_count"),
+            func.sum(case((BookingLog.status == "success", 1), else_=0)).label("success_count"),
+            func.sum(case((BookingLog.status == "failed", 1), else_=0)).label("failed_count"),
+            func.sum(case((BookingLog.status == "already_booked", 1), else_=0)).label("already_booked_count"),
         )
         .join(User, User.id == BookingJob.user_id)
         .outerjoin(BookingLog, BookingLog.job_id == BookingJob.id)
@@ -107,9 +109,11 @@ def list_all_jobs(
             debug=job.debug,
             created_at=job.created_at,
             user_email=user_email,
-            execution_count=execution_count,
+            success_count=success_count or 0,
+            failed_count=failed_count or 0,
+            already_booked_count=already_booked_count or 0,
         )
-        for job, user_email, execution_count in rows
+        for job, user_email, success_count, failed_count, already_booked_count in rows
     ]
 
 
