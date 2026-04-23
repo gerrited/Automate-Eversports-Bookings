@@ -28,7 +28,7 @@ from backend.core.encryption import decrypt
 logger = logging.getLogger(__name__)
 
 _CLASSES_URL = "https://www.eversports.de/scl/"
-_DATA_ID_RE = re.compile(r"data-id='(\d+)'")
+_DATA_ID_RE = re.compile(r"data-id=[\"'](\d+)[\"']")
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 

@@ -89,6 +89,7 @@ def process_job(job_id: str, now: datetime, session_factory, admin_emails: list[
                 target_time=job.target_time.strftime("%H:%M"),
                 facility_id=job.facility_id,
                 class_name=job.class_name,
+                event_type=job.event_type,
             )
             log_entry = BookingLog(
                 job_id=job.id,
@@ -96,7 +97,10 @@ def process_job(job_id: str, now: datetime, session_factory, admin_emails: list[
                 status=result["status"],
                 message=result.get("order_id"),
             )
-            log.info("Job %s: %s order=%s", job.id, result["status"], result.get("order_id"))
+            log.info("Job %s: %s order=%s event_type=%s", job.id, result["status"], result.get("order_id"), result.get("event_type"))
+            if result["status"] == "success" and result.get("event_type") and job.event_type != result["event_type"]:
+                job.event_type = result["event_type"]
+                db.add(job)
         except Exception as exc:
             log_entry = BookingLog(
                 job_id=job.id,

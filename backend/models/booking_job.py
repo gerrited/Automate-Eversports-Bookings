@@ -19,6 +19,7 @@ class BookingJob(Base):
     enabled = Column(Boolean, default=True, nullable=False)
     one_time = Column(Boolean, default=False, nullable=False)
     debug = Column(Boolean, default=False, nullable=False)
+    event_type = Column(String, nullable=True)  # "class" | "training" | "course" | None = auto-detect
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     user = relationship("User", back_populates="jobs")

@@ -22,7 +22,7 @@ from bs4 import BeautifulSoup
 GRAPHQL_URL = "https://www.eversports.de/api/checkout"
 CALENDAR_URL = "https://www.eversports.de/api/eventsession/calendar"
 BASE_URL = "https://www.eversports.de"
-_DATA_ID_RE = re.compile(r"data-id='(\d+)'")
+_DATA_ID_RE = re.compile(r"data-id=[\"'](\d+)[\"']")
 TIMEOUT = 30
 _SESSION_HEADERS = {
     "User-Agent": (
@@ -133,12 +133,16 @@ def book_session(
     target_time: str,
     facility_id: str,
     class_name: str,
+    event_type: Optional[str] = None,
 ) -> dict:
     """
     Full booking flow.
-    Returns {"status": "success", "order_id": str}
-          | {"status": "already_booked", "order_id": None}
+    Returns {"status": "success", "order_id": str, "event_type": str}
+          | {"status": "already_booked", "order_id": None, "event_type": str}
     Raises RuntimeError on login failure, class not found, or booking error.
+
+    If event_type is given, only that type is queried (faster).
+    Otherwise all types (class, training, course) are tried in order.
     """
     login_result = eversports_login(email, password)
     if login_result is None:
@@ -148,36 +152,49 @@ def book_session(
     # Slug → numerische ID (mit auth. Session, Cloudflare-kompatibel)
     numeric_facility_id = _resolve_facility_id(facility_id, session)
 
-    # Fetch calendar for the week containing target_date
+    # Fetch calendar for the week containing target_date.
+    # If a known event_type is given, try it first — but fall back to other types
+    # in case the session type changed (e.g. training → course).
     week_start = target_date - timedelta(days=target_date.weekday())
-    resp = session.get(
-        CALENDAR_URL,
-        params={
-            "facilityId": numeric_facility_id,
-            "startDate": week_start.isoformat(),
-            "activeEventType": "class",
-        },
-        timeout=TIMEOUT,
-    )
-    if not resp.ok:
-        raise _http_error(resp)
-    calendar_html = resp.json()["data"]["html"]
-
-    soup = BeautifulSoup(calendar_html, "html.parser")
+    all_types = ("class", "training", "course")
+    if event_type:
+        event_types_to_try = (event_type, *[t for t in all_types if t != event_type])
+    else:
+        event_types_to_try = all_types
     matches: list[str] = []
-    for ul in soup.find_all("ul"):
-        header = ul.find("h3", attrs={"data-day": target_date.isoformat()})
-        if not header:
-            continue
-        for li in ul.find_all("li", attrs={"data-uuid": True}):
-            time_div = li.find(class_="session-time")
-            name_div = li.find(class_="session-name")
-            if time_div and name_div:
-                if (
-                    time_div.get_text(strip=True).startswith(target_time)
-                    and name_div.get_text(strip=True) == class_name
-                ):
-                    matches.append(li["data-uuid"])
+    matched_event_type: str = event_type or "class"
+    for et in event_types_to_try:
+        resp = session.get(
+            CALENDAR_URL,
+            params={
+                "facilityId": numeric_facility_id,
+                "startDate": week_start.isoformat(),
+                "activeEventType": et,
+            },
+            timeout=TIMEOUT,
+        )
+        if not resp.ok:
+            raise _http_error(resp)
+        calendar_html = resp.json()["data"]["html"]
+
+        soup = BeautifulSoup(calendar_html, "html.parser")
+        for ul in soup.find_all("ul"):
+            header = ul.find("h3", attrs={"data-day": target_date.isoformat()})
+            if not header:
+                continue
+            for li in ul.find_all("li", attrs={"data-uuid": True}):
+                time_div = li.find(class_="session-time")
+                name_div = li.find(class_="session-name")
+                if time_div and name_div:
+                    if (
+                        time_div.get_text(strip=True).startswith(target_time)
+                        and name_div.get_text(strip=True) == class_name
+                    ):
+                        matches.append(li["data-uuid"])
+
+        if matches:
+            matched_event_type = et
+            break
 
     if not matches:
         raise RuntimeError(f"{class_name} {target_time} not found for {target_date}")
@@ -210,7 +227,7 @@ def book_session(
         for error in cart_result["errors"]:
             msg = error["message"].lower()
             if "already" in msg or "bereits" in msg:
-                return {"status": "already_booked", "order_id": None}
+                return {"status": "already_booked", "order_id": None, "event_type": matched_event_type}
         msgs = "; ".join(e["message"] for e in cart_result["errors"])
         raise RuntimeError(f"Cart creation failed: {msgs}")
 
@@ -233,10 +250,10 @@ def book_session(
         msgs = "; ".join(e["message"] for e in order_result["errors"])
         # Free sessions have no product assigned — booking is completed at cart level
         if any("product" in e["message"].lower() for e in order_result["errors"]):
-            return {"status": "success", "order_id": cart_id}
+            return {"status": "success", "order_id": cart_id, "event_type": matched_event_type}
         raise RuntimeError(f"Order creation failed: {msgs}")
 
-    return {"status": "success", "order_id": order_result["id"]}
+    return {"status": "success", "order_id": order_result["id"], "event_type": matched_event_type}
 
 
 def cancel_booking(
