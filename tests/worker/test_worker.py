@@ -76,6 +76,16 @@ def test_already_booked_false_when_only_failed_log(db_session):
     assert already_booked(db_session, job, date(2026, 4, 14)) is False
 
 
+def test_already_booked_true_when_waitlist_log_exists(db_session):
+    _user(db_session)
+    job = _job(db_session)
+    db_session.add(BookingLog(
+        job_id="j1", target_date=date(2026, 4, 14), status="waitlist", message=None
+    ))
+    db_session.commit()
+    assert already_booked(db_session, job, date(2026, 4, 14)) is True
+
+
 # --- process_job ---
 
 def test_process_job_books_and_writes_success_log(db_session, session_factory, mocker):

@@ -46,13 +46,13 @@ def is_due(job: BookingJob, now: datetime) -> bool:
 
 
 def already_booked(db: Session, job: BookingJob, target_date: date) -> bool:
-    """True if a success log already exists for this job + date."""
+    """True if a terminal log (success or waitlist) already exists for this job + date."""
     return (
         db.query(BookingLog)
         .filter(
             BookingLog.job_id == job.id,
             BookingLog.target_date == target_date,
-            BookingLog.status == "success",
+            BookingLog.status.in_(["success", "waitlist"]),
         )
         .first()
         is not None
