@@ -151,7 +151,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
           {isAdmin() && (
             <label className="flex items-center gap-3 cursor-pointer">
               <input
-                aria-label="Debug"
+                aria-label="Test"
                 type="checkbox"
                 checked={debug}
                 onChange={e => setDebug(e.target.checked)}

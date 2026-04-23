@@ -203,7 +203,7 @@ useEffect(() => {
                   : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
               }`}
             >
-              {debugFilter === 'debug' ? 'Debug' : 'Live'}
+              {debugFilter === 'debug' ? 'Test' : 'Live'}
             </button>
           )}
         </div>
