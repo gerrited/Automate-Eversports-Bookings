@@ -18,3 +18,6 @@ export const deleteJob = (id: string): Promise<void> =>
 
 export const getJobLogs = (id: string): Promise<BookingLog[]> =>
   apiFetch(`/api/jobs/${id}/logs`)
+
+export const executeJob = (id: string): Promise<{ status: string; message: string }> =>
+  apiFetch(`/api/jobs/${id}/execute`, { method: 'POST' })
