@@ -13,16 +13,26 @@ from backend.db import Base
 
 
 @pytest.fixture(scope="function")
-def db_session():
-    engine = create_engine(
+def engine():
+    eng = create_engine(
         "sqlite:///:memory:",
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
-    Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=eng)
+    yield eng
+    Base.metadata.drop_all(bind=eng)
+    eng.dispose()
+
+
+@pytest.fixture(scope="function")
+def db_session(engine):
     Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     session = Session()
     yield session
     session.close()
-    Base.metadata.drop_all(bind=engine)
-    engine.dispose()
+
+
+@pytest.fixture(scope="function")
+def session_factory(engine):
+    return sessionmaker(autocommit=False, autoflush=False, bind=engine)
