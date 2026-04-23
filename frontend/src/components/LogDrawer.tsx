@@ -13,12 +13,14 @@ const statusColor: Record<string, string> = {
   success: 'text-green-400',
   failed: 'text-red-400',
   already_booked: 'text-slate-400',
+  waitlist: 'text-yellow-400',
 }
 
 const statusLabel: Record<string, string> = {
   success: '✓ Gebucht',
   failed: '✗ Fehler',
   already_booked: '→ Bereits gebucht',
+  waitlist: '⏳ Warteliste',
 }
 
 export default function LogDrawer({ job, logs, loading, onClose }: Props) {
