@@ -85,7 +85,7 @@ export default function AllJobsSection({ initialEmailFilter, onUserClick }: { in
                     {WEEKDAY_NAMES[job.weekday]} · {displayTime} Uhr · <span>{job.class_name}</span>
                   </p>
                   <p className="text-slate-400 text-xs mt-0.5">
-                    {job.facility_name} · {job.days_in_advance} Tage im Voraus{job.one_time ? ' · Einmalig' : ''}
+                    {job.facility_name} · {job.days_in_advance} Tage im Voraus{job.one_time ? ' · Einmalig' : ''}{job.debug ? ' · ' : ''}{job.debug && <span className="text-amber-400 font-medium">Test</span>}
                   </p>
                 </div>
                 {(() => {
