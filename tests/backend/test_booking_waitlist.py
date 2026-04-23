@@ -116,3 +116,44 @@ def test_book_session_raises_on_other_cart_errors(mocker):
             facility_id="73041",
             class_name="CrossFit",
         )
+
+
+def test_book_session_raises_when_join_waitlist_fails(mocker):
+    mocker.patch("backend.core.booking.eversports_login", return_value={
+        "user_id": "u1",
+        "session": _make_session_mock(),
+        "avatar_url": None,
+    })
+    mocker.patch("backend.core.booking._resolve_facility_id", return_value="73041")
+
+    cart_response = {
+        "createCartFromEventBookableItem": {
+            "__typename": "ExpectedErrors",
+            "errors": [{"id": "1", "message": "ausgebucht", "__typename": "ExpectedError"}],
+        }
+    }
+    waitlist_error_response = {
+        "addToWaitingList": {
+            "__typename": "ExpectedErrors",
+            "errors": [{"message": "Warteliste nicht verfügbar"}],
+        }
+    }
+
+    call_count = {"n": 0}
+    def fake_gql(session, op, query, variables):
+        call_count["n"] += 1
+        if call_count["n"] == 1:
+            return cart_response
+        return waitlist_error_response
+
+    mocker.patch("backend.core.booking._gql", side_effect=fake_gql)
+
+    with pytest.raises(RuntimeError, match="Waitlist join failed"):
+        book_session(
+            email="a@b.com",
+            password="pw",
+            target_date=date(2026, 4, 14),
+            target_time="18:00",
+            facility_id="73041",
+            class_name="CrossFit",
+        )

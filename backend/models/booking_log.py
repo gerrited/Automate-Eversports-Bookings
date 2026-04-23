@@ -12,7 +12,7 @@ class BookingLog(Base):
     job_id = Column(String, ForeignKey("booking_jobs.id"), nullable=False)
     executed_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     target_date = Column(Date, nullable=False)
-    status = Column(String, nullable=False)   # success / failed / already_booked
+    status = Column(String, nullable=False)   # success / failed / already_booked / waitlist
     message = Column(String, nullable=True)
 
     job = relationship("BookingJob", back_populates="logs")

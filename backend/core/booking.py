@@ -163,6 +163,7 @@ def book_session(
     Full booking flow.
     Returns {"status": "success", "order_id": str, "event_type": str}
           | {"status": "already_booked", "order_id": None, "event_type": str}
+          | {"status": "waitlist", "order_id": None, "event_type": str}
     Raises RuntimeError on login failure, class not found, or booking error.
 
     If event_type is given, only that type is queried (faster).
