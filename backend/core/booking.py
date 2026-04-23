@@ -77,6 +77,30 @@ def _resolve_facility_id(facility_id: str, session: requests.Session) -> str:
     return match.group(1)
 
 
+_WAITLIST_MUTATION = """
+mutation AddToWaitingList($eventBookableItemId: ID!) {
+  addToWaitingList(eventBookableItemId: $eventBookableItemId) {
+    ... on WaitingList { id __typename }
+    ... on ExpectedErrors { errors { message __typename } __typename }
+    __typename
+  }
+}
+"""
+
+
+def join_waitlist(session: requests.Session, event_bookable_item_id: str) -> str:
+    """Trägt den eingeloggten Nutzer auf die Warteliste ein.
+    Gibt die WaitingList-ID (= event_bookable_item_id) zurück.
+    Wirft RuntimeError bei ExpectedErrors.
+    """
+    data = _gql(session, "AddToWaitingList", _WAITLIST_MUTATION, {"eventBookableItemId": event_bookable_item_id})
+    result = data["addToWaitingList"]
+    if result["__typename"] == "ExpectedErrors":
+        msgs = "; ".join(e["message"] for e in result["errors"])
+        raise RuntimeError(f"Waitlist join failed: {msgs}")
+    return result["id"]
+
+
 def eversports_login(email: str, password: str) -> Optional[dict]:
     """
     Authenticate against Eversports.
