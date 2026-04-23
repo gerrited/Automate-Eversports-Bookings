@@ -100,7 +100,7 @@ export default function AllJobsSection({ initialEmailFilter, onUserClick }: { in
                   const bookedPct = (job.already_booked_count / total) * 100
                   return (
                     <div className="ml-3 shrink-0 w-28">
-                      <div className="flex justify-between mb-1">
+                      <div className="flex gap-1.5 mb-1">
                         {job.success_count > 0 && (
                           <span className="text-green-400 text-xs">✓ {job.success_count}</span>
                         )}
