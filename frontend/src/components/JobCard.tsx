@@ -27,9 +27,14 @@ export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect, onE
   const [executing, setExecuting] = useState(false)
   const [feedback, setFeedback] = useState<{ status: string; message: string } | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const mountedRef = useRef(true)
 
   useEffect(() => {
-    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
   }, [])
 
   async function handleExecute() {
@@ -38,12 +43,14 @@ export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect, onE
     setFeedback(null)
     try {
       const result = await onExecute(job.id)
-      setFeedback(result)
+      if (mountedRef.current) setFeedback(result)
     } catch {
-      setFeedback({ status: 'failed', message: 'Unbekannter Fehler' })
+      if (mountedRef.current) setFeedback({ status: 'failed', message: 'Unbekannter Fehler' })
     } finally {
-      setExecuting(false)
-      timerRef.current = setTimeout(() => setFeedback(null), 4000)
+      if (mountedRef.current) {
+        setExecuting(false)
+        timerRef.current = setTimeout(() => setFeedback(null), 4000)
+      }
     }
   }
 

@@ -125,5 +125,16 @@ describe('JobCard', () => {
       })
       expect(screen.getByText(/CrossFit not found/)).toBeInTheDocument()
     })
+
+    it('zeigt already_booked Meldung', async () => {
+      const onExecute = vi.fn().mockResolvedValue({ status: 'already_booked', message: '2026-04-28' })
+      render(
+        <JobCard job={job} onToggle={vi.fn()} onEdit={vi.fn()} onDelete={vi.fn()} onSelect={vi.fn()} onExecute={onExecute} />
+      )
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /jetzt buchen/i }))
+      })
+      expect(screen.getByText(/bereits gebucht/i)).toBeInTheDocument()
+    })
   })
 })
