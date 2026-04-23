@@ -175,7 +175,10 @@ def book_session(
         )
         if not resp.ok:
             raise _http_error(resp)
-        calendar_html = resp.json()["data"]["html"]
+        try:
+            calendar_html = resp.json()["data"]["html"]
+        except (KeyError, TypeError):
+            continue  # facility doesn't offer this event type
 
         soup = BeautifulSoup(calendar_html, "html.parser")
         for ul in soup.find_all("ul"):

@@ -169,6 +169,9 @@ def execute_job(
         status = result["status"]
         message = str(target_date)
 
+        if status == "success" and result.get("event_type") and job.event_type != result["event_type"]:
+            job.event_type = result["event_type"]
+
         if status == "success" and job.debug:
             try:
                 cancel_booking(
