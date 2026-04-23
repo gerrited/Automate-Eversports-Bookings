@@ -16,7 +16,7 @@ def _get_engine():
     if _engine is None:
         url = os.environ["DATABASE_URL"]
         kwargs = {"connect_args": {"check_same_thread": False}} if url.startswith("sqlite") else {}
-        _engine = create_engine(url, **kwargs)
+        _engine = create_engine(url, pool_pre_ping=True, **kwargs)
     return _engine
 
 
