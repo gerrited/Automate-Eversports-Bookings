@@ -1,4 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react'
+import { act } from 'react'
 import { vi } from 'vitest'
 import JobCard from './JobCard'
 import type { Job } from '../types'
@@ -13,6 +14,7 @@ const job: Job = {
   days_in_advance: 4,
   enabled: true,
   one_time: false,
+  debug: false,
   created_at: '2026-04-01T00:00:00Z',
 }
 
@@ -74,5 +76,54 @@ describe('JobCard', () => {
     )
     fireEvent.click(screen.getByTestId('job-card-body'))
     expect(onSelect).toHaveBeenCalledWith(job)
+  })
+
+  describe('onExecute', () => {
+    it('zeigt keinen Jetzt-buchen-Button ohne onExecute-Prop', () => {
+      render(
+        <JobCard job={job} onToggle={vi.fn()} onEdit={vi.fn()} onDelete={vi.fn()} onSelect={vi.fn()} />
+      )
+      expect(screen.queryByRole('button', { name: /jetzt buchen/i })).not.toBeInTheDocument()
+    })
+
+    it('zeigt Jetzt-buchen-Button wenn onExecute übergeben wird', () => {
+      render(
+        <JobCard job={job} onToggle={vi.fn()} onEdit={vi.fn()} onDelete={vi.fn()} onSelect={vi.fn()} onExecute={vi.fn()} />
+      )
+      expect(screen.getByRole('button', { name: /jetzt buchen/i })).toBeInTheDocument()
+    })
+
+    it('ruft onExecute mit job.id auf wenn Button geklickt', async () => {
+      const onExecute = vi.fn().mockResolvedValue({ status: 'success', message: '2026-04-28' })
+      render(
+        <JobCard job={job} onToggle={vi.fn()} onEdit={vi.fn()} onDelete={vi.fn()} onSelect={vi.fn()} onExecute={onExecute} />
+      )
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /jetzt buchen/i }))
+      })
+      expect(onExecute).toHaveBeenCalledWith('job-1')
+    })
+
+    it('zeigt Erfolgsmeldung nach erfolgreicher Buchung', async () => {
+      const onExecute = vi.fn().mockResolvedValue({ status: 'success', message: '2026-04-28' })
+      render(
+        <JobCard job={job} onToggle={vi.fn()} onEdit={vi.fn()} onDelete={vi.fn()} onSelect={vi.fn()} onExecute={onExecute} />
+      )
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /jetzt buchen/i }))
+      })
+      expect(screen.getByText(/erfolgreich gebucht/i)).toBeInTheDocument()
+    })
+
+    it('zeigt Fehlermeldung bei fehlgeschlagener Buchung', async () => {
+      const onExecute = vi.fn().mockResolvedValue({ status: 'failed', message: 'CrossFit not found' })
+      render(
+        <JobCard job={job} onToggle={vi.fn()} onEdit={vi.fn()} onDelete={vi.fn()} onSelect={vi.fn()} onExecute={onExecute} />
+      )
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /jetzt buchen/i }))
+      })
+      expect(screen.getByText(/CrossFit not found/)).toBeInTheDocument()
+    })
   })
 })
