@@ -255,6 +255,12 @@ def book_session(
             msg = error["message"].lower()
             if "already" in msg or "bereits" in msg:
                 return {"status": "already_booked", "order_id": None, "event_type": matched_event_type}
+        full_keywords = ("fully booked", "fully_booked", "ausgebucht", "sold out", "no spots")
+        for error in cart_result["errors"]:
+            msg = error["message"].lower()
+            if any(kw in msg for kw in full_keywords):
+                join_waitlist(session, bookable_item_id)
+                return {"status": "waitlist", "order_id": None, "event_type": matched_event_type}
         msgs = "; ".join(e["message"] for e in cart_result["errors"])
         raise RuntimeError(f"Cart creation failed: {msgs}")
 
