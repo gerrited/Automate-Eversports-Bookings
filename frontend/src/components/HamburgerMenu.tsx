@@ -73,7 +73,7 @@ export default function HamburgerMenu({ onLogout, onSettings, onTestEmails, user
       )}
       <div className="relative">
         <button
-          onClick={() => setOpen(o => !o)}
+          onClick={() => { setOpen(o => !o); setTooltipVisible(false) }}
           className="flex flex-col justify-center items-center w-9 h-9 gap-1.5 rounded-md bg-slate-700 hover:bg-slate-600 transition-colors"
           aria-label="Menü öffnen"
         >
