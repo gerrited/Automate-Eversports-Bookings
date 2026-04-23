@@ -21,7 +21,9 @@ function makeJobs(count: number) {
     enabled: true,
     one_time: false,
     created_at: '2026-01-01T00:00:00Z',
-    execution_count: i,
+    success_count: 0,
+    failed_count: 0,
+    already_booked_count: 0,
   }))
 }
 
@@ -47,9 +49,9 @@ describe('AllJobsSection', () => {
 
   it('filter begrenzt Ergebnisse nach user_email', async () => {
     vi.mocked(listAllJobs).mockResolvedValue([
-      { id: '1', user_email: 'anna@firma.de', weekday: 0, target_time: '08:00:00', facility_id: 'f1', facility_name: 'Studio A', class_name: 'Yoga', days_in_advance: 3, enabled: true, one_time: false, created_at: '', execution_count: 2 },
-      { id: '2', user_email: 'bernd@xyz.org', weekday: 1, target_time: '10:00:00', facility_id: 'f1', facility_name: 'Studio A', class_name: 'Pilates', days_in_advance: 3, enabled: true, one_time: false, created_at: '', execution_count: 0 },
-      { id: '3', user_email: 'anna@test.de', weekday: 2, target_time: '18:00:00', facility_id: 'f1', facility_name: 'Studio B', class_name: 'Boxing', days_in_advance: 3, enabled: false, one_time: true, created_at: '', execution_count: 5 },
+      { id: '1', user_email: 'anna@firma.de', weekday: 0, target_time: '08:00:00', facility_id: 'f1', facility_name: 'Studio A', class_name: 'Yoga', days_in_advance: 3, enabled: true, one_time: false, created_at: '', success_count: 2, failed_count: 0, already_booked_count: 0 },
+      { id: '2', user_email: 'bernd@xyz.org', weekday: 1, target_time: '10:00:00', facility_id: 'f1', facility_name: 'Studio A', class_name: 'Pilates', days_in_advance: 3, enabled: true, one_time: false, created_at: '', success_count: 0, failed_count: 0, already_booked_count: 0 },
+      { id: '3', user_email: 'anna@test.de', weekday: 2, target_time: '18:00:00', facility_id: 'f1', facility_name: 'Studio B', class_name: 'Boxing', days_in_advance: 3, enabled: false, one_time: true, created_at: '', success_count: 5, failed_count: 0, already_booked_count: 0 },
     ])
     render(<AllJobsSection />)
     const input = await screen.findByPlaceholderText('Nach Benutzer filtern…')
@@ -98,7 +100,9 @@ describe('AllJobsSection', () => {
         facility_name: 'Studio A',
         days_in_advance: 3,
         one_time: false,
-        execution_count: 2,
+        success_count: 2,
+        failed_count: 0,
+        already_booked_count: 0,
         facility_id: 'f1',
         enabled: true,
         created_at: '',
@@ -112,7 +116,9 @@ describe('AllJobsSection', () => {
         facility_name: 'Studio B',
         days_in_advance: 2,
         one_time: false,
-        execution_count: 0,
+        success_count: 0,
+        failed_count: 0,
+        already_booked_count: 0,
         facility_id: 'f1',
         enabled: true,
         created_at: '',
@@ -131,11 +137,11 @@ describe('AllJobsSection', () => {
 
   it('zeigt Kursname und Anzahl Durchführungen an', async () => {
     vi.mocked(listAllJobs).mockResolvedValue([
-      { id: '1', user_email: 'anna@firma.de', weekday: 0, target_time: '08:00:00', facility_id: 'f1', facility_name: 'Studio A', class_name: 'Yoga', days_in_advance: 3, enabled: true, one_time: false, created_at: '', execution_count: 7 },
+      { id: '1', user_email: 'anna@firma.de', weekday: 0, target_time: '08:00:00', facility_id: 'f1', facility_name: 'Studio A', class_name: 'Yoga', days_in_advance: 3, enabled: true, one_time: false, created_at: '', success_count: 5, failed_count: 1, already_booked_count: 2 },
     ])
     render(<AllJobsSection />)
     await screen.findByPlaceholderText('Nach Benutzer filtern…')
     expect(screen.getByText('Yoga')).toBeInTheDocument()
-    expect(screen.getByText(/7.*ausgeführt/i)).toBeInTheDocument()
+    expect(screen.getByText(/8.*gesamt/i)).toBeInTheDocument()
   })
 })
