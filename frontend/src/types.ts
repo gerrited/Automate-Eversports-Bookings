@@ -50,5 +50,7 @@ export interface UserRecord {
 
 export interface AdminJob extends Job {
   user_email: string
-  execution_count: number
+  success_count: number
+  failed_count: number
+  already_booked_count: number
 }

@@ -88,9 +88,44 @@ export default function AllJobsSection({ initialEmailFilter, onUserClick }: { in
                     {job.facility_name} · {job.days_in_advance} Tage im Voraus{job.one_time ? ' · Einmalig' : ''}
                   </p>
                 </div>
-                <span className="ml-3 shrink-0 text-slate-400 text-xs whitespace-nowrap">
-                  {job.execution_count}× ausgeführt
-                </span>
+                {(() => {
+                  const total = job.success_count + job.failed_count + job.already_booked_count
+                  if (total === 0) return (
+                    <span className="ml-3 shrink-0 text-slate-500 text-xs whitespace-nowrap">
+                      Noch nicht ausgeführt
+                    </span>
+                  )
+                  const successPct = (job.success_count / total) * 100
+                  const failedPct = (job.failed_count / total) * 100
+                  const bookedPct = (job.already_booked_count / total) * 100
+                  return (
+                    <div className="ml-3 shrink-0 w-28">
+                      <div className="flex justify-between mb-1">
+                        {job.success_count > 0 && (
+                          <span className="text-green-400 text-xs">✓ {job.success_count}</span>
+                        )}
+                        {job.failed_count > 0 && (
+                          <span className="text-red-400 text-xs">✗ {job.failed_count}</span>
+                        )}
+                        {job.already_booked_count > 0 && (
+                          <span className="text-slate-400 text-xs">⊘ {job.already_booked_count}</span>
+                        )}
+                      </div>
+                      <div className="flex h-1.5 rounded-full overflow-hidden bg-slate-700">
+                        {job.success_count > 0 && (
+                          <div className="bg-green-400" style={{ width: `${successPct}%` }} />
+                        )}
+                        {job.failed_count > 0 && (
+                          <div className="bg-red-400" style={{ width: `${failedPct}%` }} />
+                        )}
+                        {job.already_booked_count > 0 && (
+                          <div className="bg-slate-500" style={{ width: `${bookedPct}%` }} />
+                        )}
+                      </div>
+                      <div className="text-slate-500 text-xs mt-1 text-right">{total}× gesamt</div>
+                    </div>
+                  )
+                })()}
               </div>
             )
           })}
