@@ -115,6 +115,15 @@ def test_get_me_without_subscription(client, db_session):
     assert data["subscription_active"] is False
 
 
+def test_get_me_returns_total_bookings_executed(client, db_session):
+    user = _create_active_user(db_session)
+    user.total_bookings_executed = 42
+    db_session.commit()
+    resp = client.get("/api/me", headers=_auth_header(user.id))
+    assert resp.status_code == 200
+    assert resp.json()["total_bookings_executed"] == 42
+
+
 def test_get_me_with_subscription(client, db_session):
     user = _create_active_user(db_session)
     user.max_active_jobs = None

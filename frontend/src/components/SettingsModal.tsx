@@ -10,6 +10,7 @@ interface Props {
 
 export default function SettingsModal({ onClose }: Props) {
   const navigate = useNavigate()
+  const isAdmin = isActualAdmin()
   const [confirmText, setConfirmText] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -18,7 +19,7 @@ export default function SettingsModal({ onClose }: Props) {
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!isActualAdmin()) return
+    if (!isAdmin) return
     getMe()
       .then(data => setSubscriptionActive(data.subscription_active))
       .catch(() => setSubscriptionActive(false))
@@ -63,12 +64,12 @@ export default function SettingsModal({ onClose }: Props) {
           </button>
         </div>
 
-        {isActualAdmin() && (
+        {isAdmin && (
           <div className="border-t border-slate-700 pt-5 mb-5">
             <h3 className="text-white font-semibold mb-3">Abonnement</h3>
             <button
               onClick={handleCheckout}
-              disabled={subscriptionActive === true || checkoutLoading}
+              disabled={subscriptionActive !== false || checkoutLoading}
               className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {checkoutLoading
