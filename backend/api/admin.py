@@ -14,7 +14,7 @@ from backend.models.booking_job import BookingJob
 from backend.models.booking_log import BookingLog
 from backend.models.user import User
 from backend.schemas.job import AdminJobResponse
-from backend.schemas.user import UserResponse, SetActiveRequest
+from backend.schemas.user import UserResponse, SetActiveRequest, SetLimitRequest
 
 log = logging.getLogger(__name__)
 
@@ -27,7 +27,11 @@ def list_users(
     db: Session = Depends(get_db),
 ):
     rows = (
-        db.query(User, func.count(BookingJob.id).label("job_count"))
+        db.query(
+            User,
+            func.count(BookingJob.id).label("job_count"),
+            func.sum(case((BookingJob.enabled == True, 1), else_=0)).label("active_job_count"),
+        )
         .outerjoin(BookingJob, BookingJob.user_id == User.id)
         .group_by(User.id)
         .order_by(User.created_at)
@@ -40,9 +44,11 @@ def list_users(
             active=user.active,
             role=user.role,
             job_count=job_count,
+            active_job_count=active_job_count or 0,
+            max_active_jobs=user.max_active_jobs,
             created_at=user.created_at,
         )
-        for user, job_count in rows
+        for user, job_count, active_job_count in rows
     ]
 
 
@@ -66,12 +72,17 @@ def set_user_active(
     except Exception as exc:
         log.error("Failed to send account status email: %s", exc)
     job_count = db.query(func.count(BookingJob.id)).filter(BookingJob.user_id == user.id).scalar()
+    active_job_count = db.query(func.count(BookingJob.id)).filter(
+        BookingJob.user_id == user.id, BookingJob.enabled == True
+    ).scalar()
     return UserResponse(
         id=user.id,
         email=user.email,
         active=user.active,
         role=user.role,
         job_count=job_count,
+        active_job_count=active_job_count or 0,
+        max_active_jobs=user.max_active_jobs,
         created_at=user.created_at,
     )
 

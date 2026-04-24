@@ -67,3 +67,4 @@ export interface BookedAppointment {
   session_id: string
   facility_id: string
 }
+

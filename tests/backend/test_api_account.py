@@ -101,3 +101,39 @@ def test_delete_account_only_deletes_own_data(client, db_session):
     db_session.expire_all()
     assert db_session.get(User, user_b.id) is not None
     assert db_session.get(BookingJob, job_b.id) is not None
+
+
+def test_get_me_without_subscription(client, db_session):
+    user = _create_active_user(db_session)
+    user.max_active_jobs = 1
+    db_session.commit()
+    resp = client.get("/api/me", headers=_auth_header(user.id))
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["email"] == "user@example.com"
+    assert data["role"] == "user"
+    assert data["subscription_active"] is False
+
+
+def test_get_me_returns_total_bookings_executed(client, db_session):
+    user = _create_active_user(db_session)
+    user.total_bookings_executed = 42
+    db_session.commit()
+    resp = client.get("/api/me", headers=_auth_header(user.id))
+    assert resp.status_code == 200
+    assert resp.json()["total_bookings_executed"] == 42
+
+
+def test_get_me_with_subscription(client, db_session):
+    user = _create_active_user(db_session)
+    user.max_active_jobs = None
+    db_session.commit()
+    resp = client.get("/api/me", headers=_auth_header(user.id))
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["subscription_active"] is True
+
+
+def test_get_me_without_token_returns_401(client):
+    resp = client.get("/api/me")
+    assert resp.status_code == 401

@@ -12,6 +12,7 @@ import HamburgerMenu from '../components/HamburgerMenu'
 import SettingsModal from '../components/SettingsModal'
 import TestEmailModal from '../components/TestEmailModal'
 import { getUpcomingBookings, cancelBooking } from '../api/bookedAppointments'
+import { getMe } from '../api/stripe'
 import BookedAppointmentCard from '../components/BookedAppointmentCard'
 import type { BookedAppointment } from '../types'
 
@@ -57,6 +58,12 @@ export default function DashboardPage() {
   const [debugFilter, setDebugFilter] = useState<'live' | 'debug'>('live')
 
   const [tick, forceUpdate] = useState(0)
+
+  const [totalBookingsExecuted, setTotalBookingsExecuted] = useState<number>(0)
+
+  useEffect(() => {
+    getMe().then(data => setTotalBookingsExecuted(data.total_bookings_executed)).catch(() => {})
+  }, [])
 
   useEffect(() => {
     function onAuthChanged() { forceUpdate(n => n + 1) }
@@ -281,6 +288,14 @@ useEffect(() => {
               />
             ))}
           </div>
+
+          {totalBookingsExecuted > 0 && (
+            <p className="text-slate-400 text-sm text-center mt-6">
+              🦾 für dich wurde{totalBookingsExecuted === 1 ? '' : 'n'} bereits{' '}
+              <span className="font-semibold text-slate-200">{totalBookingsExecuted}</span>{' '}
+              Buchung{totalBookingsExecuted === 1 ? '' : 'en'} automatisch durchgeführt.
+            </p>
+          )}
         </>
       )}
 
