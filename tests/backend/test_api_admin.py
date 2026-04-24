@@ -349,3 +349,106 @@ def test_list_users_includes_max_active_jobs_and_active_job_count(client, db_ses
     assert data["max_active_jobs"] == 5
     assert data["active_job_count"] == 2   # 2 aktiv, 1 deaktiviert
     assert data["job_count"] == 3
+
+
+# --- /admin/users/{id}/limit ---
+
+def test_set_limit_requires_admin(client, db_session):
+    user = _make_user(db_session, ev_id="ev-sl0", email="sl0@x.com")
+    resp = client.patch(
+        f"/api/admin/users/{user.id}/limit",
+        json={"max_active_jobs": 3},
+        headers=_auth_header(user.id),
+    )
+    assert resp.status_code == 403
+
+
+def test_set_limit_user_not_found(client, db_session):
+    admin = _make_admin(db_session, ev_id="ev-sl1", email="sl1@x.com")
+    resp = client.patch(
+        "/api/admin/users/nonexistent/limit",
+        json={"max_active_jobs": 3},
+        headers=_auth_header(admin.id),
+    )
+    assert resp.status_code == 404
+
+
+def test_set_limit_sets_value(client, db_session):
+    admin = _make_admin(db_session, ev_id="ev-sl2", email="sl2@x.com")
+    user = _make_user(db_session, ev_id="ev-sl2u", email="sl2u@x.com")
+
+    resp = client.patch(
+        f"/api/admin/users/{user.id}/limit",
+        json={"max_active_jobs": 3},
+        headers=_auth_header(admin.id),
+    )
+    assert resp.status_code == 200
+    assert resp.json()["max_active_jobs"] == 3
+
+
+def test_set_limit_to_null_clears_limit(client, db_session):
+    admin = _make_admin(db_session, ev_id="ev-sl3", email="sl3@x.com")
+    user = _make_user(db_session, ev_id="ev-sl3u", email="sl3u@x.com")
+    user.max_active_jobs = 5
+    db_session.commit()
+
+    resp = client.patch(
+        f"/api/admin/users/{user.id}/limit",
+        json={"max_active_jobs": None},
+        headers=_auth_header(admin.id),
+    )
+    assert resp.status_code == 200
+    assert resp.json()["max_active_jobs"] is None
+
+
+def test_set_limit_above_active_jobs_no_deactivation(client, db_session, mocker):
+    admin = _make_admin(db_session, ev_id="ev-sl4", email="sl4@x.com")
+    user = _make_user(db_session, ev_id="ev-sl4u", email="sl4u@x.com")
+    _make_job(db_session, user.id)
+    _make_job(db_session, user.id, weekday=1)
+    mock_email = mocker.patch("backend.api.admin.send_limit_enforced_email")
+
+    resp = client.patch(
+        f"/api/admin/users/{user.id}/limit",
+        json={"max_active_jobs": 5},
+        headers=_auth_header(admin.id),
+    )
+    assert resp.status_code == 200
+    assert resp.json()["active_job_count"] == 2
+    mock_email.assert_not_called()
+
+
+def test_set_limit_below_active_jobs_deactivates_all(client, db_session, mocker):
+    admin = _make_admin(db_session, ev_id="ev-sl5", email="sl5@x.com")
+    user = _make_user(db_session, ev_id="ev-sl5u", email="sl5u@x.com")
+    _make_job(db_session, user.id)
+    _make_job(db_session, user.id, weekday=1)
+    _make_job(db_session, user.id, weekday=2)
+    mock_email = mocker.patch("backend.api.admin.send_limit_enforced_email")
+
+    resp = client.patch(
+        f"/api/admin/users/{user.id}/limit",
+        json={"max_active_jobs": 2},
+        headers=_auth_header(admin.id),
+    )
+    assert resp.status_code == 200
+    assert resp.json()["active_job_count"] == 0
+    mock_email.assert_called_once_with(user.email, 2)
+
+
+def test_set_limit_email_failure_does_not_break_response(client, db_session, mocker):
+    admin = _make_admin(db_session, ev_id="ev-sl6", email="sl6@x.com")
+    user = _make_user(db_session, ev_id="ev-sl6u", email="sl6u@x.com")
+    _make_job(db_session, user.id)
+    mocker.patch(
+        "backend.api.admin.send_limit_enforced_email",
+        side_effect=Exception("Resend down"),
+    )
+
+    resp = client.patch(
+        f"/api/admin/users/{user.id}/limit",
+        json={"max_active_jobs": 0},
+        headers=_auth_header(admin.id),
+    )
+    assert resp.status_code == 200
+    assert resp.json()["active_job_count"] == 0

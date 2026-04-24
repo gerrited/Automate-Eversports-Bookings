@@ -8,13 +8,13 @@ from sqlalchemy import case, func
 from sqlalchemy.orm import Session
 
 from backend.api.deps import require_admin
-from backend.core.email import send_account_status_email, send_test_email
+from backend.core.email import send_account_status_email, send_limit_enforced_email, send_test_email
 from backend.db import get_db
 from backend.models.booking_job import BookingJob
 from backend.models.booking_log import BookingLog
 from backend.models.user import User
 from backend.schemas.job import AdminJobResponse
-from backend.schemas.user import UserResponse, SetActiveRequest
+from backend.schemas.user import UserResponse, SetActiveRequest, SetLimitRequest
 
 log = logging.getLogger(__name__)
 
@@ -71,6 +71,56 @@ def set_user_active(
         send_account_status_email(user.email, user.active)
     except Exception as exc:
         log.error("Failed to send account status email: %s", exc)
+    job_count = db.query(func.count(BookingJob.id)).filter(BookingJob.user_id == user.id).scalar()
+    active_job_count = db.query(func.count(BookingJob.id)).filter(
+        BookingJob.user_id == user.id, BookingJob.enabled == True
+    ).scalar()
+    return UserResponse(
+        id=user.id,
+        email=user.email,
+        active=user.active,
+        role=user.role,
+        job_count=job_count,
+        active_job_count=active_job_count or 0,
+        max_active_jobs=user.max_active_jobs,
+        created_at=user.created_at,
+    )
+
+
+@router.patch("/admin/users/{user_id}/limit", response_model=UserResponse)
+def set_user_limit(
+    user_id: str,
+    body: SetLimitRequest,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.max_active_jobs = body.max_active_jobs
+
+    jobs_deactivated = False
+    if body.max_active_jobs is not None:
+        active_jobs = (
+            db.query(BookingJob)
+            .filter(BookingJob.user_id == user_id, BookingJob.enabled == True)
+            .all()
+        )
+        if len(active_jobs) > body.max_active_jobs:
+            for job in active_jobs:
+                job.enabled = False
+            jobs_deactivated = True
+
+    db.commit()
+    db.refresh(user)
+
+    if jobs_deactivated:
+        try:
+            send_limit_enforced_email(user.email, body.max_active_jobs)
+        except Exception as exc:
+            log.error("Failed to send limit enforced email: %s", exc)
+
     job_count = db.query(func.count(BookingJob.id)).filter(BookingJob.user_id == user.id).scalar()
     active_job_count = db.query(func.count(BookingJob.id)).filter(
         BookingJob.user_id == user.id, BookingJob.enabled == True
