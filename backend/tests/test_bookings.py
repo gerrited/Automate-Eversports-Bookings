@@ -121,3 +121,67 @@ def test_cancel_booking_by_ids_raises_on_login_failure():
             assert False, "RuntimeError erwartet"
         except RuntimeError:
             pass
+
+
+_BOOKING = {
+    "activity_name": "CrossFit",
+    "facility_name": "CrossFit Rabbit Hole",
+    "facility_slug": "crossfit-rabbit-hole",
+    "start_datetime": "2026-04-26T09:00:00",
+    "end_datetime": "2026-04-26T10:00:00",
+    "address": "Stubbenweg, 26125 Oldenburg",
+    "event_id": "91440",
+    "event_participant_id": "176157972",
+    "session_id": "80836170",
+    "facility_id": "73041",
+}
+
+
+def test_get_upcoming_bookings_returns_list():
+    with (
+        patch("backend.api.bookings.decrypt", return_value="password"),
+        patch("backend.api.bookings.fetch_upcoming_bookings", return_value=[_BOOKING]),
+    ):
+        resp = client.get("/api/bookings/upcoming")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data) == 1
+    assert data[0]["activity_name"] == "CrossFit"
+    assert data[0]["start_datetime"] == "2026-04-26T09:00:00"
+
+
+def test_get_upcoming_bookings_502_on_empty_credentials():
+    with (
+        patch("backend.api.bookings.decrypt", return_value="password"),
+        patch("backend.api.bookings.fetch_upcoming_bookings", side_effect=RuntimeError("login failed")),
+    ):
+        resp = client.get("/api/bookings/upcoming")
+    assert resp.status_code == 502
+
+
+def test_cancel_booking_success():
+    with (
+        patch("backend.api.bookings.decrypt", return_value="password"),
+        patch("backend.api.bookings.cancel_booking_by_ids", return_value=None),
+    ):
+        resp = client.post("/api/bookings/176157972/cancel", json={
+            "event_id": "91440",
+            "facility_id": "73041",
+            "session_id": "80836170",
+        })
+    assert resp.status_code == 204
+
+
+def test_cancel_booking_400_on_eversports_error():
+    with (
+        patch("backend.api.bookings.decrypt", return_value="password"),
+        patch("backend.api.bookings.cancel_booking_by_ids",
+              side_effect=RuntimeError("HTTP 400 from Eversports: too late")),
+    ):
+        resp = client.post("/api/bookings/176157972/cancel", json={
+            "event_id": "91440",
+            "facility_id": "73041",
+            "session_id": "80836170",
+        })
+    assert resp.status_code == 400
+    assert "too late" in resp.json()["detail"]
