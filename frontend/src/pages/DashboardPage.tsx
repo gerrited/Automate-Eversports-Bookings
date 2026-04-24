@@ -11,22 +11,37 @@ import AllJobsSection from '../components/AllJobsSection'
 import HamburgerMenu from '../components/HamburgerMenu'
 import SettingsModal from '../components/SettingsModal'
 import TestEmailModal from '../components/TestEmailModal'
+import { getUpcomingBookings, cancelBooking } from '../api/bookedAppointments'
+import BookedAppointmentCard from '../components/BookedAppointmentCard'
+import type { BookedAppointment } from '../types'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
   const { hash } = useLocation()
-  const activeTab: 'buchungen' | 'benutzer' | 'jobs' =
-    hash === '#users' ? 'benutzer' : hash === '#all-jobs' ? 'jobs' : 'buchungen'
+  const activeTab: 'geplant' | 'gebucht' | 'benutzer' | 'jobs' =
+    hash === '#users' ? 'benutzer'
+    : hash === '#all-jobs' ? 'jobs'
+    : hash === '#booked' ? 'gebucht'
+    : 'geplant'
 
-  function setActiveTab(tab: 'buchungen' | 'benutzer' | 'jobs', clearFilters = false) {
+  function setActiveTab(tab: 'geplant' | 'gebucht' | 'benutzer' | 'jobs', clearFilters = false) {
     if (clearFilters) {
       setJobsEmailFilter('')
       setUsersEmailFilter('')
     }
-    navigate(tab === 'benutzer' ? '#users' : tab === 'jobs' ? '#all-jobs' : '#bookings', { replace: true })
+    navigate(
+      tab === 'benutzer' ? '#users'
+      : tab === 'jobs' ? '#all-jobs'
+      : tab === 'gebucht' ? '#booked'
+      : '#bookings',
+      { replace: true }
+    )
   }
 
   const [jobs, setJobs] = useState<Job[]>([])
+  const [bookedAppointments, setBookedAppointments] = useState<BookedAppointment[]>([])
+  const [bookedLoading, setBookedLoading] = useState(false)
+  const [bookedError, setBookedError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [editingJob, setEditingJob] = useState<Job | 'new' | null>(null)
   const [showModal, setShowModal] = useState(false)
@@ -75,7 +90,7 @@ useEffect(() => {
       touchStartX.current = null
       touchStartY.current = null
       if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return
-      const tabs = ['#bookings', '#users', '#all-jobs']
+      const tabs = ['#bookings', '#booked', '#users', '#all-jobs']
       const currentIndex = tabs.indexOf(window.location.hash || '#bookings')
       const nextIndex = dx < 0
         ? Math.min(currentIndex + 1, tabs.length - 1)
@@ -100,6 +115,28 @@ useEffect(() => {
   }, [])
 
   useEffect(() => { loadJobs() }, [loadJobs])
+
+  useEffect(() => {
+    if (activeTab !== 'gebucht') return
+    if (bookedAppointments.length > 0) return
+    setBookedLoading(true)
+    setBookedError(null)
+    getUpcomingBookings()
+      .then(setBookedAppointments)
+      .catch((e) => setBookedError(e instanceof Error ? e.message : 'Fehler beim Laden'))
+      .finally(() => setBookedLoading(false))
+  }, [activeTab])
+
+  async function handleCancelBooking(booking: BookedAppointment) {
+    await cancelBooking(booking.event_participant_id, {
+      event_id: booking.event_id,
+      facility_id: booking.facility_id,
+      session_id: booking.session_id,
+    })
+    setBookedAppointments((prev) =>
+      prev.filter((b) => b.event_participant_id !== booking.event_participant_id)
+    )
+  }
 
   function handleLogout() {
     clearToken()
@@ -169,7 +206,7 @@ useEffect(() => {
           {/* Tab-Navigation – nur für Admins */}
           {isAdmin() && (
             <div className="flex gap-1 border-b border-slate-700">
-              {(['buchungen', 'benutzer', 'jobs'] as const).map((tab) => (
+              {(['geplant', 'gebucht', 'benutzer', 'jobs'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab, true)}
@@ -179,7 +216,10 @@ useEffect(() => {
                       : 'text-slate-400 hover:text-slate-200 hover:bg-surface-card'
                     }`}
                 >
-                  {tab === 'buchungen' ? 'Buchungen' : tab === 'benutzer' ? 'Benutzer' : 'Jobs'}
+                  {tab === 'geplant' ? 'Geplant'
+                    : tab === 'gebucht' ? 'Gebucht'
+                    : tab === 'benutzer' ? 'Benutzer'
+                    : 'Jobs'}
                 </button>
               ))}
             </div>
@@ -190,7 +230,7 @@ useEffect(() => {
     <div className={`px-4 pb-8 max-w-2xl mx-auto ${isAdmin() ? 'pt-32 sm:pt-44' : 'pt-24 sm:pt-32'}`}>
 
       {/* Add button – nur auf Buchungen-Tab (oder für Nicht-Admins immer) */}
-      {(!isAdmin() || activeTab === 'buchungen') && (
+      {(!isAdmin() || activeTab === 'geplant') && (
         <div className="flex gap-2 mb-6">
           <button
             onClick={() => { setEditingJob('new'); setShowModal(true) }}
@@ -214,7 +254,7 @@ useEffect(() => {
       )}
 
       {/* Job list – nur auf Buchungen-Tab (oder für Nicht-Admins immer) */}
-      {(!isAdmin() || activeTab === 'buchungen') && (
+      {(!isAdmin() || activeTab === 'geplant') && (
         <>
           {loading && <p className="text-slate-400 text-sm">Lädt…</p>}
           {!loading && jobs.length === 0 && (
@@ -244,6 +284,28 @@ useEffect(() => {
             ))}
           </div>
         </>
+      )}
+
+      {/* Admin: Gebucht-Tab */}
+      {activeTab === 'gebucht' && (
+        <div className="flex flex-col gap-3">
+          {bookedLoading && (
+            <p className="text-slate-400 text-sm text-center mt-12">Lade Buchungen…</p>
+          )}
+          {bookedError && (
+            <p className="text-red-400 text-sm text-center mt-12">{bookedError}</p>
+          )}
+          {!bookedLoading && !bookedError && bookedAppointments.length === 0 && (
+            <p className="text-slate-400 text-sm text-center mt-12">Keine bevorstehenden Buchungen</p>
+          )}
+          {bookedAppointments.map((b) => (
+            <BookedAppointmentCard
+              key={b.event_participant_id}
+              booking={b}
+              onCancel={handleCancelBooking}
+            />
+          ))}
+        </div>
       )}
 
       {/* Admin: Benutzer-Tab */}
