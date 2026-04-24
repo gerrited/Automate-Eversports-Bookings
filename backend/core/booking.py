@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import logging
 import re
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Optional
 
 import requests
@@ -341,3 +341,65 @@ def cancel_booking(
     )
     if not resp.ok:
         raise _http_error(resp)
+
+
+def fetch_upcoming_bookings(email: str, password: str) -> list[dict]:
+    """
+    Ruft bevorstehende Buchungen von /u ab und gibt strukturierte Daten zurück.
+    Gibt [] zurück wenn Login fehlschlägt.
+    """
+    login_result = eversports_login(email, password)
+    if login_result is None:
+        return []
+    session: requests.Session = login_result["session"]
+
+    resp = session.get(BASE_URL + "/u", timeout=TIMEOUT)
+    if not resp.ok:
+        return []
+
+    def _get_input(block, id_: str) -> str:
+        el = block.find("input", id=id_)
+        return el["value"] if el else ""
+
+    soup = BeautifulSoup(resp.text, "html.parser")
+    bookings = []
+
+    for block in soup.find_all("div", class_="marketplace-booked-activity"):
+        name_el = block.find("h4", class_="marketplace-booked-activity__name")
+        activity_name = name_el.get_text(strip=True) if name_el else ""
+
+        facility_el = block.find("div", class_="marketplace-booked-activity__facility")
+        facility_link = facility_el.find("a") if facility_el else None
+        facility_name = facility_link.get_text(strip=True) if facility_link else ""
+        facility_href = facility_link.get("href", "") if facility_link else ""
+        facility_slug = facility_href.removeprefix("/s/")
+
+        cancel_link = block.find("a", class_="cancel-link-event")
+        if cancel_link is None:
+            continue
+
+        def _parse_dt(raw: str) -> str:
+            try:
+                return datetime.strptime(raw, "%Y%m%dT%H%M%S").isoformat()
+            except ValueError:
+                return raw
+
+        street = _get_input(block, "facility-street")
+        zip_ = _get_input(block, "facility-zip")
+        city = _get_input(block, "facility-city")
+        address = f"{street}, {zip_} {city}".strip(", ")
+
+        bookings.append({
+            "activity_name": activity_name,
+            "facility_name": facility_name,
+            "facility_slug": facility_slug,
+            "start_datetime": _parse_dt(_get_input(block, "google-calendar-start")),
+            "end_datetime": _parse_dt(_get_input(block, "google-calendar-end")),
+            "address": address,
+            "event_id": cancel_link.get("data-event", ""),
+            "event_participant_id": cancel_link.get("data-eventparticipant", ""),
+            "session_id": cancel_link.get("data-session", ""),
+            "facility_id": cancel_link.get("data-facilityid", ""),
+        })
+
+    return bookings
