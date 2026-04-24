@@ -37,6 +37,11 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
+const originalLocation = window.location
+afterAll(() => {
+  Object.defineProperty(window, 'location', { value: originalLocation, writable: true })
+})
+
 describe('SettingsModal', () => {
   it('renders the settings heading and delete section', () => {
     vi.mocked(isActualAdmin).mockReturnValue(false)
