@@ -84,3 +84,40 @@ def test_fetch_upcoming_bookings_returns_empty_on_login_failure():
     with patch("backend.core.booking.eversports_login", return_value=None):
         result = fetch_upcoming_bookings("test@example.com", "wrong")
     assert result == []
+
+
+def test_cancel_booking_by_ids_calls_eversports():
+    from backend.core.booking import cancel_booking_by_ids
+    cancel_resp = MagicMock()
+    cancel_resp.ok = True
+    session = MagicMock()
+    session.post.return_value = cancel_resp
+
+    with patch("backend.core.booking.eversports_login", return_value=_mock_login(session)):
+        cancel_booking_by_ids(
+            email="test@example.com",
+            password="pw",
+            event_id="91440",
+            event_participant_id="176157972",
+            facility_id="73041",
+            session_id="80836170",
+        )
+
+    session.post.assert_called_once()
+    call_kwargs = session.post.call_args
+    assert "event/cancel" in call_kwargs[0][0]
+    posted = call_kwargs[1]["data"]
+    assert posted["eventId"] == "91440"
+    assert posted["eventParticipantId"] == "176157972"
+    assert posted["facilityId"] == "73041"
+    assert posted["sessionId"] == "80836170"
+
+
+def test_cancel_booking_by_ids_raises_on_login_failure():
+    from backend.core.booking import cancel_booking_by_ids
+    with patch("backend.core.booking.eversports_login", return_value=None):
+        try:
+            cancel_booking_by_ids("e", "p", "1", "2", "3", "4")
+            assert False, "RuntimeError erwartet"
+        except RuntimeError:
+            pass

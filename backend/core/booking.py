@@ -404,3 +404,35 @@ def fetch_upcoming_bookings(email: str, password: str) -> list[dict]:
         })
 
     return bookings
+
+
+def cancel_booking_by_ids(
+    email: str,
+    password: str,
+    event_id: str,
+    event_participant_id: str,
+    facility_id: str,
+    session_id: str,
+) -> None:
+    """
+    Storniert eine Buchung direkt über die bekannten IDs.
+    Wirft RuntimeError bei Login-Fehler oder HTTP-Fehler.
+    """
+    login_result = eversports_login(email, password)
+    if login_result is None:
+        raise RuntimeError("Eversports login failed")
+    session: requests.Session = login_result["session"]
+
+    resp = session.post(
+        BASE_URL + "/api/event/cancel",
+        data={
+            "eventId": event_id,
+            "eventParticipantId": event_participant_id,
+            "facilityId": facility_id,
+            "sessionId": session_id,
+            "isLateCancellation": "false",
+        },
+        timeout=TIMEOUT,
+    )
+    if not resp.ok:
+        raise _http_error(resp)
