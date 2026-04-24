@@ -68,9 +68,3 @@ export interface BookedAppointment {
   facility_id: string
 }
 
-export interface CurrentUser {
-  email: string
-  role: string
-  subscription_active: boolean
-  total_bookings_executed: number
-}
