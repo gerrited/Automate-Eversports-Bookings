@@ -1,4 +1,4 @@
-"""add_max_active_jobs_to_users
+"""add max_active_jobs to users
 
 Revision ID: f2e233c3cee1
 Revises: f3a4b5c6d7e8
