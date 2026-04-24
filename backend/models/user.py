@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Column, String, DateTime, Boolean
+from sqlalchemy import Column, String, DateTime, Boolean, Integer
 from sqlalchemy.orm import relationship
 from backend.db import Base
 
@@ -14,6 +14,7 @@ class User(Base):
     encrypted_password = Column(String, nullable=False)
     active = Column(Boolean, default=False, nullable=False)
     role = Column(String, default="user", nullable=False)
+    max_active_jobs = Column(Integer, nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     jobs = relationship("BookingJob", back_populates="user", cascade="all, delete-orphan")
