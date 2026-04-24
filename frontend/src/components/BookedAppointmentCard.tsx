@@ -6,18 +6,13 @@ interface Props {
   onCancel: (booking: BookedAppointment) => Promise<void>
 }
 
-function formatDatetime(isoStart: string, isoEnd: string): string {
+function formatHeader(isoStart: string, isoEnd: string): string {
   const start = new Date(isoStart)
   const end = new Date(isoEnd)
-  const dateStr = start.toLocaleDateString('de-DE', {
-    weekday: 'short',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  })
+  const dateStr = start.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' })
   const startTime = start.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
   const endTime = end.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
-  return `${dateStr}, ${startTime} – ${endTime}`
+  return `${dateStr} · ${startTime}–${endTime} Uhr`
 }
 
 export default function BookedAppointmentCard({ booking, onCancel }: Props) {
@@ -39,10 +34,12 @@ export default function BookedAppointmentCard({ booking, onCancel }: Props) {
   return (
     <div className="bg-surface-card rounded-xl overflow-hidden">
       <div className="p-4">
-        <p className="text-white font-semibold">{booking.activity_name}</p>
-        <p className="text-slate-400 text-sm mt-1">{formatDatetime(booking.start_datetime, booking.end_datetime)}</p>
-        <p className="text-slate-400 text-sm">{booking.facility_name}</p>
-        <p className="text-slate-400 text-xs">{booking.address}</p>
+        <p className="text-white font-semibold">
+          {formatHeader(booking.start_datetime, booking.end_datetime)} · {booking.activity_name}
+        </p>
+        <p className="text-slate-400 text-sm mt-1">
+          {booking.facility_name} · {booking.address}
+        </p>
       </div>
 
       <div className="flex items-center gap-2 px-4 pb-3 pt-3">
