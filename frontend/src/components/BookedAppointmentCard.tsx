@@ -6,13 +6,11 @@ interface Props {
   onCancel: (booking: BookedAppointment) => Promise<void>
 }
 
-function formatHeader(isoStart: string, isoEnd: string): string {
+function formatHeader(isoStart: string): string {
   const start = new Date(isoStart)
-  const end = new Date(isoEnd)
-  const dateStr = start.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' })
+  const dateStr = start.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit' })
   const startTime = start.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
-  const endTime = end.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
-  return `${dateStr} · ${startTime}–${endTime} Uhr`
+  return `${dateStr} · ${startTime} Uhr`
 }
 
 export default function BookedAppointmentCard({ booking, onCancel }: Props) {
@@ -35,7 +33,7 @@ export default function BookedAppointmentCard({ booking, onCancel }: Props) {
     <div className="bg-surface-card rounded-xl overflow-hidden">
       <div className="p-4">
         <p className="text-white font-semibold">
-          {formatHeader(booking.start_datetime, booking.end_datetime)} · {booking.activity_name}
+          {formatHeader(booking.start_datetime)} · {booking.activity_name}
         </p>
         <p className="text-slate-400 text-sm mt-1">
           {booking.facility_name} · {booking.address}

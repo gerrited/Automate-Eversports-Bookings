@@ -296,7 +296,9 @@ useEffect(() => {
           {!bookedLoading && !bookedError && bookedAppointments.length === 0 && (
             <p className="text-slate-400 text-sm text-center mt-12">Keine bevorstehenden Buchungen</p>
           )}
-          {bookedAppointments.map((b) => (
+          {[...bookedAppointments]
+            .sort((a, b) => a.start_datetime.localeCompare(b.start_datetime))
+            .map((b) => (
             <BookedAppointmentCard
               key={b.event_participant_id}
               booking={b}
