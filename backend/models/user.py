@@ -15,6 +15,7 @@ class User(Base):
     active = Column(Boolean, default=False, nullable=False)
     role = Column(String, default="user", nullable=False)
     max_active_jobs = Column(Integer, nullable=True)
+    total_bookings_executed = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     jobs = relationship("BookingJob", back_populates="user", cascade="all, delete-orphan")
