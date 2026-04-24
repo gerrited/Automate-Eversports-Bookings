@@ -11,3 +11,10 @@ export async function setUserActive(id: string, active: boolean): Promise<UserRe
     body: JSON.stringify({ active }),
   })
 }
+
+export async function setUserLimit(id: string, max_active_jobs: number | null): Promise<UserRecord> {
+  return apiFetch<UserRecord>(`/api/admin/users/${id}/limit`, {
+    method: 'PATCH',
+    body: JSON.stringify({ max_active_jobs }),
+  })
+}
