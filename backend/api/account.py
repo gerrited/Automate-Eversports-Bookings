@@ -4,8 +4,14 @@ from sqlalchemy.orm import Session
 from backend.api.deps import get_current_active_user
 from backend.db import get_db
 from backend.models.user import User
+from backend.schemas.user import MeResponse
 
 router = APIRouter()
+
+
+@router.get("/me", response_model=MeResponse)
+def get_me(current_user: User = Depends(get_current_active_user)):
+    return current_user
 
 
 @router.delete("/account", status_code=204)

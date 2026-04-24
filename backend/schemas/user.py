@@ -15,3 +15,9 @@ class UserResponse(BaseModel):
 
 class SetActiveRequest(BaseModel):
     active: bool
+
+
+class MeResponse(BaseModel):
+    total_bookings_executed: int
+
+    model_config = {"from_attributes": True}
