@@ -40,6 +40,7 @@ export default function DashboardPage() {
 
   const [jobs, setJobs] = useState<Job[]>([])
   const [bookedAppointments, setBookedAppointments] = useState<BookedAppointment[]>([])
+  const [bookedLoaded, setBookedLoaded] = useState(false)
   const [bookedLoading, setBookedLoading] = useState(false)
   const [bookedError, setBookedError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -118,14 +119,15 @@ useEffect(() => {
 
   useEffect(() => {
     if (activeTab !== 'gebucht') return
-    if (bookedAppointments.length > 0) return
+    if (bookedLoaded) return
+    setBookedLoaded(true)
     setBookedLoading(true)
     setBookedError(null)
     getUpcomingBookings()
       .then(setBookedAppointments)
       .catch((e) => setBookedError(e instanceof Error ? e.message : 'Fehler beim Laden'))
       .finally(() => setBookedLoading(false))
-  }, [activeTab])
+  }, [activeTab, bookedLoaded])
 
   async function handleCancelBooking(booking: BookedAppointment) {
     await cancelBooking(booking.event_participant_id, {
