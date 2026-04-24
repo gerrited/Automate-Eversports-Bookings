@@ -229,8 +229,8 @@ useEffect(() => {
 
     <div className="px-4 pb-8 max-w-2xl mx-auto pt-32 sm:pt-44">
 
-      {/* Add button – nur auf Buchungen-Tab (oder für Nicht-Admins immer) */}
-      {(!isAdmin() || activeTab === 'geplant') && (
+      {/* Add button – nur auf Geplant-Tab */}
+      {activeTab === 'geplant' && (
         <div className="flex gap-2 mb-6">
           <button
             onClick={() => { setEditingJob('new'); setShowModal(true) }}
@@ -253,8 +253,8 @@ useEffect(() => {
         </div>
       )}
 
-      {/* Job list – nur auf Buchungen-Tab (oder für Nicht-Admins immer) */}
-      {(!isAdmin() || activeTab === 'geplant') && (
+      {/* Job list – nur auf Geplant-Tab */}
+      {activeTab === 'geplant' && (
         <>
           {loading && <p className="text-slate-400 text-sm">Lädt…</p>}
           {!loading && jobs.length === 0 && (
