@@ -331,3 +331,21 @@ def test_send_test_email_send_error_returns_500(client, db_session, mocker):
         headers=_auth_header(admin.id),
     )
     assert resp.status_code == 500
+
+
+def test_list_users_includes_max_active_jobs_and_active_job_count(client, db_session):
+    admin = _make_admin(db_session, ev_id="ev-lim-a", email="limadmin@x.com")
+    user = _make_user(db_session, ev_id="ev-lim-u", email="limuser@x.com")
+    user.max_active_jobs = 5
+    job = _make_job(db_session, user.id)          # enabled=True per Default
+    _make_job(db_session, user.id, weekday=1)      # noch ein aktiver Job
+    disabled_job = _make_job(db_session, user.id, weekday=2)
+    disabled_job.enabled = False
+    db_session.commit()
+
+    resp = client.get("/api/admin/users", headers=_auth_header(admin.id))
+    assert resp.status_code == 200
+    data = next(u for u in resp.json() if u["email"] == "limuser@x.com")
+    assert data["max_active_jobs"] == 5
+    assert data["active_job_count"] == 2   # 2 aktiv, 1 deaktiviert
+    assert data["job_count"] == 3
