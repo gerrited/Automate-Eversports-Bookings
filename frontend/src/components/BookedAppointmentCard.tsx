@@ -23,9 +23,9 @@ function formatDatetime(isoStart: string, isoEnd: string): string {
 export default function BookedAppointmentCard({ booking, onCancel }: Props) {
   const [cancelling, setCancelling] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [confirmOpen, setConfirmOpen] = useState(false)
 
   async function handleCancel() {
+    if (!window.confirm('Buchung wirklich stornieren?')) return
     setCancelling(true)
     setError(null)
     try {
@@ -37,38 +37,26 @@ export default function BookedAppointmentCard({ booking, onCancel }: Props) {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex flex-col gap-2">
-      <div className="text-sm text-gray-500">{formatDatetime(booking.start_datetime, booking.end_datetime)}</div>
-      <div className="font-semibold text-gray-900">{booking.activity_name}</div>
-      <div className="text-sm text-gray-600">{booking.facility_name}</div>
-      <div className="text-xs text-gray-400">{booking.address}</div>
+    <div className="bg-surface-card rounded-xl overflow-hidden">
+      <div className="p-4">
+        <p className="text-white font-semibold">{booking.activity_name}</p>
+        <p className="text-slate-400 text-sm mt-1">{formatDatetime(booking.start_datetime, booking.end_datetime)}</p>
+        <p className="text-slate-400 text-sm">{booking.facility_name}</p>
+        <p className="text-slate-400 text-xs">{booking.address}</p>
+      </div>
 
-      {error && <div className="text-xs text-red-500 mt-1">{error}</div>}
-
-      {!confirmOpen ? (
+      <div className="flex items-center gap-2 px-4 pb-3 pt-3">
         <button
-          onClick={() => setConfirmOpen(true)}
-          className="mt-2 self-start text-sm text-red-500 hover:text-red-700 transition-colors"
+          onClick={handleCancel}
+          disabled={cancelling}
+          className="px-3 py-1 rounded-md bg-red-900 hover:bg-red-700 text-red-300 text-sm transition-colors ml-auto disabled:opacity-50"
         >
-          Stornieren
+          {cancelling ? 'Wird storniert…' : 'Stornieren'}
         </button>
-      ) : (
-        <div className="mt-2 flex items-center gap-3">
-          <span className="text-sm text-gray-700">Wirklich stornieren?</span>
-          <button
-            onClick={handleCancel}
-            disabled={cancelling}
-            className="text-sm text-red-600 font-medium hover:text-red-800 disabled:opacity-50"
-          >
-            {cancelling ? 'Wird storniert…' : 'Ja, stornieren'}
-          </button>
-          <button
-            onClick={() => setConfirmOpen(false)}
-            className="text-sm text-gray-500 hover:text-gray-700"
-          >
-            Abbrechen
-          </button>
-        </div>
+      </div>
+
+      {error && (
+        <div className="px-4 pb-3 text-sm font-medium text-red-400">{error}</div>
       )}
     </div>
   )
