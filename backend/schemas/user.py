@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class UserResponse(BaseModel):
@@ -22,7 +22,7 @@ class SetActiveRequest(BaseModel):
 
 
 class SetLimitRequest(BaseModel):
-    max_active_jobs: Optional[int] = None
+    max_active_jobs: Optional[int] = Field(default=None, ge=1)
 
 
 class MeResponse(BaseModel):

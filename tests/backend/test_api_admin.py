@@ -440,6 +440,7 @@ def test_set_limit_email_failure_does_not_break_response(client, db_session, moc
     admin = _make_admin(db_session, ev_id="ev-sl6", email="sl6@x.com")
     user = _make_user(db_session, ev_id="ev-sl6u", email="sl6u@x.com")
     _make_job(db_session, user.id)
+    _make_job(db_session, user.id, weekday=1)
     mocker.patch(
         "backend.api.admin.send_limit_enforced_email",
         side_effect=Exception("Resend down"),
@@ -447,7 +448,7 @@ def test_set_limit_email_failure_does_not_break_response(client, db_session, moc
 
     resp = client.patch(
         f"/api/admin/users/{user.id}/limit",
-        json={"max_active_jobs": 0},
+        json={"max_active_jobs": 1},
         headers=_auth_header(admin.id),
     )
     assert resp.status_code == 200
