@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom'
 
 vi.mock('../api/account', () => ({
   getMe: vi.fn(),
+  deleteAccount: vi.fn(),
 }))
 
 vi.mock('../api/jobs', () => ({
