@@ -205,31 +205,29 @@ useEffect(() => {
             />
           </div>
 
-          {/* Tab-Navigation – nur für Admins */}
-          {isAdmin() && (
-            <div className="flex gap-1 border-b border-slate-700">
-              {(['geplant', 'gebucht', 'benutzer', 'jobs'] as const).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab, true)}
-                  className={`px-4 py-2 text-sm font-medium rounded-t-md transition-colors focus:outline-none
-                    ${activeTab === tab
-                      ? 'bg-brand text-white border-b-2 border-brand -mb-px'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-surface-card'
-                    }`}
-                >
-                  {tab === 'geplant' ? 'Geplant'
-                    : tab === 'gebucht' ? 'Gebucht'
-                    : tab === 'benutzer' ? 'Benutzer'
-                    : 'Jobs'}
-                </button>
-              ))}
-            </div>
-          )}
+          {/* Tab-Navigation – Geplant/Gebucht für alle, Benutzer/Jobs nur für Admins */}
+          <div className="flex gap-1 border-b border-slate-700">
+            {(['geplant', 'gebucht', ...(isAdmin() ? ['benutzer', 'jobs'] : [])] as ('geplant' | 'gebucht' | 'benutzer' | 'jobs')[]).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab, true)}
+                className={`px-4 py-2 text-sm font-medium rounded-t-md transition-colors focus:outline-none
+                  ${activeTab === tab
+                    ? 'bg-brand text-white border-b-2 border-brand -mb-px'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-surface-card'
+                  }`}
+              >
+                {tab === 'geplant' ? 'Geplant'
+                  : tab === 'gebucht' ? 'Gebucht'
+                  : tab === 'benutzer' ? 'Benutzer'
+                  : 'Jobs'}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-    <div className={`px-4 pb-8 max-w-2xl mx-auto ${isAdmin() ? 'pt-32 sm:pt-44' : 'pt-24 sm:pt-32'}`}>
+    <div className="px-4 pb-8 max-w-2xl mx-auto pt-32 sm:pt-44">
 
       {/* Add button – nur auf Buchungen-Tab (oder für Nicht-Admins immer) */}
       {(!isAdmin() || activeTab === 'geplant') && (
@@ -288,7 +286,7 @@ useEffect(() => {
         </>
       )}
 
-      {/* Admin: Gebucht-Tab */}
+      {/* Gebucht-Tab */}
       {activeTab === 'gebucht' && (
         <div className="flex flex-col gap-3">
           {bookedLoading && (
