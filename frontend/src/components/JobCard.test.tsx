@@ -42,12 +42,14 @@ describe('JobCard', () => {
     expect(screen.getByText(/Einmalig/)).toBeInTheDocument()
   })
 
-  it('calls onToggle when toggle is clicked', () => {
-    const onToggle = vi.fn()
+  it('calls onToggle when toggle is clicked', async () => {
+    const onToggle = vi.fn().mockResolvedValue(undefined)
     render(
       <JobCard job={job} onToggle={onToggle} onEdit={vi.fn()} onDelete={vi.fn()} onSelect={vi.fn()} />
     )
-    fireEvent.click(screen.getByRole('switch'))
+    await act(async () => {
+      fireEvent.click(screen.getByRole('switch'))
+    })
     expect(onToggle).toHaveBeenCalledWith('job-1')
   })
 
@@ -136,5 +138,16 @@ describe('JobCard', () => {
       })
       expect(screen.getByText(/bereits gebucht/i)).toBeInTheDocument()
     })
+  })
+
+  it('zeigt Fehlermeldung wenn onToggle fehlschlägt', async () => {
+    const onToggle = vi.fn().mockRejectedValue(new Error('Limit von 3 aktiven Buchungen erreicht.'))
+    render(
+      <JobCard job={job} onToggle={onToggle} onEdit={vi.fn()} onDelete={vi.fn()} onSelect={vi.fn()} />
+    )
+    await act(async () => {
+      fireEvent.click(screen.getByRole('switch'))
+    })
+    expect(screen.getByText(/Limit von 3 aktiven Buchungen erreicht/)).toBeInTheDocument()
   })
 })

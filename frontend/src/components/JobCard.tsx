@@ -4,7 +4,7 @@ import { WEEKDAY_NAMES } from '../types'
 
 interface Props {
   job: Job
-  onToggle: (id: string) => void
+  onToggle: (id: string) => Promise<void>
   onEdit: (job: Job) => void
   onDelete: (id: string) => void
   onSelect: (job: Job) => void
@@ -54,6 +54,17 @@ export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect, onE
     }
   }
 
+  async function handleToggle() {
+    try {
+      await onToggle(job.id)
+    } catch (err) {
+      if (mountedRef.current) {
+        setFeedback({ status: 'failed', message: err instanceof Error ? err.message : 'Fehler beim Umschalten' })
+        timerRef.current = setTimeout(() => setFeedback(null), 10000)
+      }
+    }
+  }
+
   const targetDate = nextWeekdayDate(job.weekday)
   const dateLabel = targetDate.toLocaleDateString('de-DE', {
     weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric',
@@ -95,7 +106,7 @@ export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect, onE
           <button
             role="switch"
             aria-checked={job.enabled}
-            onClick={e => { e.stopPropagation(); onToggle(job.id) }}
+            onClick={e => { e.stopPropagation(); handleToggle() }}
             className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${
               job.enabled ? 'bg-green-700' : 'bg-slate-600'
             }`}
