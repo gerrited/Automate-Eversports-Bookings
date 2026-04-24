@@ -157,6 +157,18 @@ describe('SettingsModal — Abo-Sektion', () => {
     })
   })
 
+  it('zeigt Ladetext während Checkout vorbereitet wird', async () => {
+    vi.mocked(isActualAdmin).mockReturnValue(true)
+    vi.mocked(getMe).mockResolvedValue({ email: 'admin@example.com', role: 'admin', subscription_active: false, total_bookings_executed: 0 })
+    let resolveCheckout!: (value: { url: string }) => void
+    vi.mocked(createCheckoutSession).mockReturnValue(new Promise(res => { resolveCheckout = res }))
+    renderModal()
+    const btn = await screen.findByRole('button', { name: /abo kaufen/i })
+    fireEvent.click(btn)
+    expect(await screen.findByRole('button', { name: /wird vorbereitet/i })).toBeDisabled()
+    resolveCheckout({ url: 'https://checkout.stripe.com/pay/test' })
+  })
+
   it('zeigt Fehlermeldung bei Checkout-Fehler', async () => {
     vi.mocked(isActualAdmin).mockReturnValue(true)
     vi.mocked(getMe).mockResolvedValue({ email: 'admin@example.com', role: 'admin', subscription_active: false, total_bookings_executed: 0 })
