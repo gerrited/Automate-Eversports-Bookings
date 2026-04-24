@@ -25,6 +25,7 @@ export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect, onE
   const facilityLabel = job.facility_name || job.facility_id
 
   const [executing, setExecuting] = useState(false)
+  const [toggling, setToggling] = useState(false)
   const [feedback, setFeedback] = useState<{ status: string; message: string } | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const mountedRef = useRef(true)
@@ -55,13 +56,18 @@ export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect, onE
   }
 
   async function handleToggle() {
+    if (toggling) return
+    setToggling(true)
     try {
       await onToggle(job.id)
     } catch (err) {
       if (mountedRef.current) {
+        if (timerRef.current) clearTimeout(timerRef.current)
         setFeedback({ status: 'failed', message: err instanceof Error ? err.message : 'Fehler beim Umschalten' })
         timerRef.current = setTimeout(() => setFeedback(null), 10000)
       }
+    } finally {
+      if (mountedRef.current) setToggling(false)
     }
   }
 

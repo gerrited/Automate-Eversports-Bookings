@@ -150,4 +150,17 @@ describe('JobCard', () => {
     })
     expect(screen.getByText(/Limit von 3 aktiven Buchungen erreicht/)).toBeInTheDocument()
   })
+
+  it('verhindert doppelte Toggle-Aufrufe während laufender Anfrage', async () => {
+    let resolve!: () => void
+    const onToggle = vi.fn().mockReturnValue(new Promise<void>(r => { resolve = r }))
+    render(
+      <JobCard job={job} onToggle={onToggle} onEdit={vi.fn()} onDelete={vi.fn()} onSelect={vi.fn()} />
+    )
+    fireEvent.click(screen.getByRole('switch'))
+    fireEvent.click(screen.getByRole('switch'))
+    resolve()
+    await act(async () => {})
+    expect(onToggle).toHaveBeenCalledTimes(1)
+  })
 })
