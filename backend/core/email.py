@@ -80,6 +80,30 @@ def send_account_status_email(user_email: str, is_active: bool) -> None:
         log.error("Failed to send account status email to %s: %s", user_email, exc)
 
 
+def send_limit_enforced_email(user_email: str, max_active_jobs: int) -> None:
+    """Benachrichtigt den User, dass sein Limit gesetzt und alle Jobs deaktiviert wurden. Best-effort."""
+    try:
+        resend.api_key = os.environ["RESEND_API_KEY"]
+        from_email = os.environ["FROM_EMAIL"]
+        sender = f"FOReversports <{from_email}>"
+        frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:5173")
+
+        subject = "Dein Buchungslimit wurde angepasst"
+        html = _templates.get_template("limit_enforced.html").render(
+            max_active_jobs=max_active_jobs,
+            frontend_url=frontend_url,
+        )
+        resend.Emails.send({
+            "from": sender,
+            "to": [user_email],
+            "subject": subject,
+            "html": html,
+        })
+        log.info("Limit enforced email sent to %s (limit=%d)", user_email, max_active_jobs)
+    except Exception as exc:
+        log.error("Failed to send limit enforced email to %s: %s", user_email, exc)
+
+
 _WEEKDAYS_DE = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
 
 

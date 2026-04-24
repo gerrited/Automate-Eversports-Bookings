@@ -16,6 +16,7 @@ def get_me(current_user: User = Depends(get_current_active_user)):
         role=current_user.role,
         subscription_active=current_user.max_active_jobs is None,
         total_bookings_executed=current_user.total_bookings_executed,
+        max_active_jobs=current_user.max_active_jobs,
     )
 
 

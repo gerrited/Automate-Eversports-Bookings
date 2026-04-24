@@ -45,6 +45,8 @@ export interface UserRecord {
   active: boolean
   role: string
   job_count: number
+  active_job_count: number
+  max_active_jobs: number | null
   created_at: string
 }
 
