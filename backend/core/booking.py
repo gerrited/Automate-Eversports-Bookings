@@ -364,6 +364,12 @@ def fetch_upcoming_bookings(email: str, password: str) -> list[dict]:
     soup = BeautifulSoup(resp.text, "html.parser")
     bookings = []
 
+    def _parse_dt(raw: str) -> str:
+        try:
+            return datetime.strptime(raw, "%Y%m%dT%H%M%S").isoformat()
+        except ValueError:
+            return raw
+
     for block in soup.find_all("div", class_="marketplace-booked-activity"):
         name_el = block.find("h4", class_="marketplace-booked-activity__name")
         activity_name = name_el.get_text(strip=True) if name_el else ""
@@ -378,16 +384,11 @@ def fetch_upcoming_bookings(email: str, password: str) -> list[dict]:
         if cancel_link is None:
             continue
 
-        def _parse_dt(raw: str) -> str:
-            try:
-                return datetime.strptime(raw, "%Y%m%dT%H%M%S").isoformat()
-            except ValueError:
-                return raw
-
         street = _get_input(block, "facility-street")
         zip_ = _get_input(block, "facility-zip")
         city = _get_input(block, "facility-city")
-        address = f"{street}, {zip_} {city}".strip(", ")
+        parts = [p for p in [street, f"{zip_} {city}".strip()] if p]
+        address = ", ".join(parts)
 
         bookings.append({
             "activity_name": activity_name,
