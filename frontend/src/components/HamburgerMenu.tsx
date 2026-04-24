@@ -9,7 +9,7 @@ interface Props {
   userAvatar?: string | null
   isActualAdmin?: boolean
   isAdminView?: boolean
-  maxActiveJobs?: number | null
+  maxActiveJobs?: number | null | undefined
 }
 
 export default function HamburgerMenu({ onLogout, onSettings, onTestEmails, userEmail, userAvatar, isActualAdmin, isAdminView, maxActiveJobs }: Props) {
@@ -49,9 +49,11 @@ export default function HamburgerMenu({ onLogout, onSettings, onTestEmails, user
               <div className="px-3 py-3 text-xs text-slate-400 leading-relaxed">
                 Angemeldet als<br />
                 <span className="text-slate-300 font-medium">{userEmail}</span>
-                {maxActiveJobs != null && (
+                {maxActiveJobs !== undefined && (
                   <span className="block mt-1 text-slate-500">
-                    Max. {maxActiveJobs} geplante {maxActiveJobs === 1 ? 'Buchung' : 'Buchungen'}
+                    {maxActiveJobs != null
+                      ? `Max. ${maxActiveJobs} geplante ${maxActiveJobs === 1 ? 'Buchung' : 'Buchungen'}`
+                      : 'Beliebig viele geplante Buchungen'}
                   </span>
                 )}
               </div>

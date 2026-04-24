@@ -60,7 +60,7 @@ export default function DashboardPage() {
   const [tick, forceUpdate] = useState(0)
 
   const [totalBookingsExecuted, setTotalBookingsExecuted] = useState<number>(0)
-  const [maxActiveJobs, setMaxActiveJobs] = useState<number | null>(null)
+  const [maxActiveJobs, setMaxActiveJobs] = useState<number | null | undefined>(undefined)
 
   useEffect(() => {
     getMe().then(data => {
