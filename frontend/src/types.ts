@@ -54,3 +54,16 @@ export interface AdminJob extends Job {
   failed_count: number
   already_booked_count: number
 }
+
+export interface BookedAppointment {
+  activity_name: string
+  facility_name: string
+  facility_slug: string
+  start_datetime: string
+  end_datetime: string
+  address: string
+  event_id: string
+  event_participant_id: string
+  session_id: string
+  facility_id: string
+}
