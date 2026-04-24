@@ -39,6 +39,20 @@ def _find_duplicate(
     return q.first()
 
 
+def _check_job_limit(user: User, db: Session) -> None:
+    if user.max_active_jobs is None:
+        return
+    active_count = db.query(BookingJob).filter(
+        BookingJob.user_id == user.id,
+        BookingJob.enabled == True,
+    ).count()
+    if active_count >= user.max_active_jobs:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Limit von {user.max_active_jobs} aktiven Buchungen erreicht.",
+        )
+
+
 def _get_owned_job(job_id: str, current_user: User, db: Session) -> BookingJob:
     job = db.query(BookingJob).filter(BookingJob.id == job_id).first()
     if job is None:
@@ -80,6 +94,7 @@ def create_job(
 ):
     if _find_duplicate(current_user.id, body.weekday, body.target_time, body.facility_id, body.class_name, db):
         raise HTTPException(status_code=409, detail="Ein identischer Job existiert bereits.")
+    _check_job_limit(current_user, db)
     job = BookingJob(**body.model_dump(), user_id=current_user.id)
     db.add(job)
     db.commit()
@@ -112,6 +127,8 @@ def toggle_job(
     db: Session = Depends(get_db),
 ):
     job = _get_owned_job(job_id, current_user, db)
+    if not job.enabled:
+        _check_job_limit(current_user, db)
     job.enabled = not job.enabled
     db.commit()
     db.refresh(job)

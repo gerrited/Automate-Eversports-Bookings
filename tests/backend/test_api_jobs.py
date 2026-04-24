@@ -247,3 +247,107 @@ def test_execute_job_success_writes_log(client, db_session):
     log = db_session.query(BookingLog).filter(BookingLog.job_id == job_id).first()
     assert log is not None
     assert log.status == "success"
+
+
+def test_create_job_respects_limit(client, db_session):
+    user = _create_user(db_session)
+    user.max_active_jobs = 1
+    db_session.commit()
+
+    payload = {
+        "weekday": 1,
+        "target_time": "18:00:00",
+        "facility_id": "73041",
+        "facility_name": "CrossFit Rabbit Hole",
+        "class_name": "CrossFit",
+        "days_in_advance": 4,
+    }
+    # Erster Job — erlaubt
+    resp = client.post("/api/jobs", json=payload, headers=_auth_header(user.id))
+    assert resp.status_code == 201
+
+    # Zweiter Job — Limit erreicht
+    payload2 = {**payload, "weekday": 2}
+    resp2 = client.post("/api/jobs", json=payload2, headers=_auth_header(user.id))
+    assert resp2.status_code == 409
+    assert "Limit" in resp2.json()["detail"]
+
+
+def test_create_job_no_limit_when_null(client, db_session):
+    user = _create_user(db_session)
+    # max_active_jobs ist NULL — unbegrenzt
+
+    for weekday in range(5):
+        payload = {
+            "weekday": weekday,
+            "target_time": "18:00:00",
+            "facility_id": "73041",
+            "facility_name": "CrossFit Rabbit Hole",
+            "class_name": "CrossFit",
+            "days_in_advance": 4,
+        }
+        resp = client.post("/api/jobs", json=payload, headers=_auth_header(user.id))
+        assert resp.status_code == 201
+
+
+def test_toggle_job_respects_limit(client, db_session):
+    user = _create_user(db_session)
+    user.max_active_jobs = 1
+    db_session.commit()
+
+    payload_base = {
+        "weekday": 1,
+        "target_time": "18:00:00",
+        "facility_id": "73041",
+        "facility_name": "CrossFit Rabbit Hole",
+        "class_name": "CrossFit",
+        "days_in_advance": 4,
+    }
+    # Ersten Job erstellen (aktiv)
+    resp1 = client.post("/api/jobs", json=payload_base, headers=_auth_header(user.id))
+    assert resp1.status_code == 201
+    job1_id = resp1.json()["id"]
+
+    # Zweiten Job erstellen — schlägt wegen Limit fehl
+    # Deswegen: Limit kurz erhöhen, Job erstellen, dann deaktivieren
+    user.max_active_jobs = 2
+    db_session.commit()
+    payload2 = {**payload_base, "weekday": 2}
+    resp2 = client.post("/api/jobs", json=payload2, headers=_auth_header(user.id))
+    assert resp2.status_code == 201
+    job2_id = resp2.json()["id"]
+
+    # job2 deaktivieren
+    client.patch(f"/api/jobs/{job2_id}/toggle", headers=_auth_header(user.id))
+
+    # Limit wieder auf 1 setzen
+    user.max_active_jobs = 1
+    db_session.commit()
+
+    # job2 wieder aktivieren — Limit ist jetzt durch job1 belegt
+    resp = client.patch(f"/api/jobs/{job2_id}/toggle", headers=_auth_header(user.id))
+    assert resp.status_code == 409
+    assert "Limit" in resp.json()["detail"]
+
+
+def test_toggle_job_disable_ignores_limit(client, db_session):
+    user = _create_user(db_session)
+    user.max_active_jobs = 1
+    db_session.commit()
+
+    payload = {
+        "weekday": 1,
+        "target_time": "18:00:00",
+        "facility_id": "73041",
+        "facility_name": "CrossFit Rabbit Hole",
+        "class_name": "CrossFit",
+        "days_in_advance": 4,
+    }
+    resp = client.post("/api/jobs", json=payload, headers=_auth_header(user.id))
+    assert resp.status_code == 201
+    job_id = resp.json()["id"]
+
+    # Deaktivieren soll immer klappen, egal was das Limit ist
+    resp = client.patch(f"/api/jobs/{job_id}/toggle", headers=_auth_header(user.id))
+    assert resp.status_code == 200
+    assert resp.json()["enabled"] is False
