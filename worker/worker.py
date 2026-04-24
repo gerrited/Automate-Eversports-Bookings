@@ -143,6 +143,8 @@ def process_job(job_id: str, now: datetime, session_factory, admin_emails: list[
                     log.error("Job %s: could not send debug cancel failure email — %s", job.id, email_exc)
 
         db.add(log_entry)
+        if log_entry.status in ("success", "already_booked", "waitlist"):
+            user.total_bookings_executed += 1
         db.commit()
 
         if job.one_time and log_entry.status in ("success", "already_booked"):

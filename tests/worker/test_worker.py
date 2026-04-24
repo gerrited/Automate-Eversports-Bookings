@@ -506,3 +506,57 @@ def test_one_time_job_not_deleted_on_waitlist(db_session, session_factory, mocke
 
     remaining = db_session.query(BookingJob).filter(BookingJob.id == "jwl3").first()
     assert remaining is not None
+
+
+def test_process_job_increments_counter_on_success(db_session, session_factory, mocker):
+    user = _user(db_session, uid="cnt1", ev="ev_cnt1", email="cnt1@b.com")
+    _job(db_session, jid="jcnt1", uid="cnt1", weekday=1, days=4)
+
+    mocker.patch("worker.worker.decrypt", return_value="pass")
+    mocker.patch("worker.worker.book_session", return_value={"status": "success", "order_id": "ord"})
+
+    process_job("jcnt1", datetime(2026, 4, 10, 18, 0), session_factory, [])
+
+    db_session.refresh(user)
+    assert user.total_bookings_executed == 1
+
+
+def test_process_job_increments_counter_on_already_booked(db_session, session_factory, mocker):
+    user = _user(db_session, uid="cnt2", ev="ev_cnt2", email="cnt2@b.com")
+    _job(db_session, jid="jcnt2", uid="cnt2", weekday=1, days=4)
+
+    mocker.patch("worker.worker.decrypt", return_value="pass")
+    mocker.patch("worker.worker.book_session", return_value={"status": "already_booked"})
+
+    process_job("jcnt2", datetime(2026, 4, 10, 18, 0), session_factory, [])
+
+    db_session.refresh(user)
+    assert user.total_bookings_executed == 1
+
+
+def test_process_job_increments_counter_on_waitlist(db_session, session_factory, mocker):
+    user = _user(db_session, uid="cnt3", ev="ev_cnt3", email="cnt3@b.com")
+    _job(db_session, jid="jcnt3", uid="cnt3", weekday=1, days=4)
+
+    mocker.patch("worker.worker.decrypt", return_value="pass")
+    mocker.patch("worker.worker.book_session", return_value={"status": "waitlist"})
+    mocker.patch("worker.worker.send_waitlist_notification")
+
+    process_job("jcnt3", datetime(2026, 4, 10, 18, 0), session_factory, [])
+
+    db_session.refresh(user)
+    assert user.total_bookings_executed == 1
+
+
+def test_process_job_does_not_increment_counter_on_failure(db_session, session_factory, mocker):
+    user = _user(db_session, uid="cnt4", ev="ev_cnt4", email="cnt4@b.com")
+    _job(db_session, jid="jcnt4", uid="cnt4", weekday=1, days=4)
+
+    mocker.patch("worker.worker.decrypt", return_value="pass")
+    mocker.patch("worker.worker.book_session", side_effect=RuntimeError("Fehler"))
+    mocker.patch("worker.worker.send_booking_failure_email")
+
+    process_job("jcnt4", datetime(2026, 4, 10, 18, 0), session_factory, [])
+
+    db_session.refresh(user)
+    assert user.total_bookings_executed == 0
