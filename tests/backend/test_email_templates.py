@@ -141,3 +141,31 @@ def test_worker_booking_waitlist_renders():
     assert "Warteliste" in html
     assert FRONTEND_URL in html
     assert "#004349" in html
+
+
+def test_subscription_activated_renders():
+    html = _env(BACKEND_DIR).get_template("subscription_activated.html").render(
+        frontend_url=FRONTEND_URL,
+        plan_name="Pro Monatlich",
+        amount="9.99",
+        subscription_end="24.05.2025",
+    )
+    assert "Pro Monatlich" in html
+    assert "9.99" in html
+    assert "24.05.2025" in html
+    assert FRONTEND_URL in html
+    assert "#004349" in html
+    assert "aktiv" in html
+
+
+def test_subscription_cancelled_renders():
+    html = _env(BACKEND_DIR).get_template("subscription_cancelled.html").render(
+        frontend_url=FRONTEND_URL,
+        cancelled_at="24.04.2025",
+        deactivated_jobs_count=3,
+    )
+    assert "24.04.2025" in html
+    assert "3" in html
+    assert FRONTEND_URL in html
+    assert "#004349" in html
+    assert "abgelaufen" in html
