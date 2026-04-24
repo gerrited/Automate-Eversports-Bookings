@@ -337,7 +337,7 @@ def test_list_users_includes_max_active_jobs_and_active_job_count(client, db_ses
     admin = _make_admin(db_session, ev_id="ev-lim-a", email="limadmin@x.com")
     user = _make_user(db_session, ev_id="ev-lim-u", email="limuser@x.com")
     user.max_active_jobs = 5
-    job = _make_job(db_session, user.id)          # enabled=True per Default
+    _make_job(db_session, user.id)                 # enabled=True per Default
     _make_job(db_session, user.id, weekday=1)      # noch ein aktiver Job
     disabled_job = _make_job(db_session, user.id, weekday=2)
     disabled_job.enabled = False

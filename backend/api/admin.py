@@ -14,7 +14,7 @@ from backend.models.booking_job import BookingJob
 from backend.models.booking_log import BookingLog
 from backend.models.user import User
 from backend.schemas.job import AdminJobResponse
-from backend.schemas.user import UserResponse, SetActiveRequest, SetLimitRequest
+from backend.schemas.user import UserResponse, SetActiveRequest
 
 log = logging.getLogger(__name__)
 
