@@ -77,8 +77,6 @@ export default function DashboardPage() {
   const touchStartX = useRef<number | null>(null)
   const touchStartY = useRef<number | null>(null)
 useEffect(() => {
-    if (!isAdmin()) return
-
     function onTouchStart(e: TouchEvent) {
       touchStartX.current = e.touches[0].clientX
       touchStartY.current = e.touches[0].clientY
@@ -91,7 +89,7 @@ useEffect(() => {
       touchStartX.current = null
       touchStartY.current = null
       if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return
-      const tabs = ['#bookings', '#booked', '#users', '#all-jobs']
+      const tabs = isAdmin() ? ['#bookings', '#booked', '#users', '#all-jobs'] : ['#bookings', '#booked']
       const currentIndex = tabs.indexOf(window.location.hash || '#bookings')
       const nextIndex = dx < 0
         ? Math.min(currentIndex + 1, tabs.length - 1)
