@@ -72,4 +72,5 @@ export interface BookedAppointment {
 
 export interface CurrentUser {
   total_bookings_executed: number
+  max_active_jobs: number | null
 }

@@ -27,5 +27,6 @@ class SetLimitRequest(BaseModel):
 
 class MeResponse(BaseModel):
     total_bookings_executed: int
+    max_active_jobs: Optional[int] = None
 
     model_config = {"from_attributes": True}

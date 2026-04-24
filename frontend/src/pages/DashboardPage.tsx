@@ -60,9 +60,13 @@ export default function DashboardPage() {
   const [tick, forceUpdate] = useState(0)
 
   const [totalBookingsExecuted, setTotalBookingsExecuted] = useState<number>(0)
+  const [maxActiveJobs, setMaxActiveJobs] = useState<number | null>(null)
 
   useEffect(() => {
-    getMe().then(data => setTotalBookingsExecuted(data.total_bookings_executed)).catch(() => {})
+    getMe().then(data => {
+      setTotalBookingsExecuted(data.total_bookings_executed)
+      setMaxActiveJobs(data.max_active_jobs)
+    }).catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -207,6 +211,7 @@ useEffect(() => {
               userAvatar={getAvatarUrl()}
               isActualAdmin={isActualAdmin()}
               isAdminView={isAdmin()}
+              maxActiveJobs={maxActiveJobs}
             />
           </div>
 
