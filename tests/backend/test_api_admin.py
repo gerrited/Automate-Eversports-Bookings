@@ -453,3 +453,15 @@ def test_set_limit_email_failure_does_not_break_response(client, db_session, moc
     )
     assert resp.status_code == 200
     assert resp.json()["active_job_count"] == 0
+
+
+def test_set_limit_rejects_zero_or_negative(client, db_session):
+    admin = _make_admin(db_session, ev_id="ev-sl7", email="sl7@x.com")
+    user = _make_user(db_session, ev_id="ev-sl7u", email="sl7u@x.com")
+    for value in [0, -1]:
+        resp = client.patch(
+            f"/api/admin/users/{user.id}/limit",
+            json={"max_active_jobs": value},
+            headers=_auth_header(admin.id),
+        )
+        assert resp.status_code == 422
