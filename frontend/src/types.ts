@@ -69,5 +69,8 @@ export interface BookedAppointment {
 }
 
 export interface CurrentUser {
+  email: string
+  role: string
+  subscription_active: boolean
   total_bookings_executed: number
 }

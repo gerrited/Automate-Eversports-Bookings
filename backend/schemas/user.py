@@ -29,3 +29,4 @@ class MeResponse(BaseModel):
     email: str
     role: str
     subscription_active: bool
+    total_bookings_executed: int

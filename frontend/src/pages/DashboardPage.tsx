@@ -12,7 +12,7 @@ import HamburgerMenu from '../components/HamburgerMenu'
 import SettingsModal from '../components/SettingsModal'
 import TestEmailModal from '../components/TestEmailModal'
 import { getUpcomingBookings, cancelBooking } from '../api/bookedAppointments'
-import { getMe } from '../api/account'
+import { getMe } from '../api/stripe'
 import BookedAppointmentCard from '../components/BookedAppointmentCard'
 import type { BookedAppointment } from '../types'
 
