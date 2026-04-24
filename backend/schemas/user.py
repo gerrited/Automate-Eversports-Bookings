@@ -26,6 +26,6 @@ class SetLimitRequest(BaseModel):
 
 
 class MeResponse(BaseModel):
-    total_bookings_executed: int
-
-    model_config = {"from_attributes": True}
+    email: str
+    role: str
+    subscription_active: bool

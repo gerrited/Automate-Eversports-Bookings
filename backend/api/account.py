@@ -11,7 +11,11 @@ router = APIRouter()
 
 @router.get("/me", response_model=MeResponse)
 def get_me(current_user: User = Depends(get_current_active_user)):
-    return current_user
+    return MeResponse(
+        email=current_user.email,
+        role=current_user.role,
+        subscription_active=current_user.max_active_jobs is None,
+    )
 
 
 @router.delete("/account", status_code=204)
