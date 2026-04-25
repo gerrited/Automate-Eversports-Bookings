@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { listAllLogs } from '../api/adminLogs'
 import { WEEKDAY_NAMES } from '../types'
 import type { AdminLogsPage } from '../types'
@@ -36,14 +36,20 @@ export default function AllLogsSection() {
     return () => clearTimeout(timer)
   }, [emailFilter])
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     setLoading(true)
     setError(null)
-    listAllLogs(currentPage, debouncedFilter || undefined)
-      .then(setResult)
-      .catch(e => setError(e instanceof Error ? e.message : 'Fehler beim Laden'))
-      .finally(() => setLoading(false))
+    try {
+      const data = await listAllLogs(currentPage, debouncedFilter || undefined)
+      setResult(data)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Fehler beim Laden')
+    } finally {
+      setLoading(false)
+    }
   }, [currentPage, debouncedFilter])
+
+  useEffect(() => { load() }, [load])
 
   const items = result?.items ?? []
   const total = result?.total ?? 0
