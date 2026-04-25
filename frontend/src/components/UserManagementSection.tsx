@@ -12,6 +12,7 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
   const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all')
   const [currentPage, setCurrentPage] = useState(1)
   const currentEmail = getEmail()
+  const [toggleError, setToggleError] = useState<string | null>(null)
   const [editingLimitUserId, setEditingLimitUserId] = useState<string | null>(null)
   const [limitInputValue, setLimitInputValue] = useState('')
   const [pendingLimit, setPendingLimit] = useState<{ user: UserRecord; value: number | null } | null>(null)
@@ -45,8 +46,14 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
 
   async function handleToggle(user: UserRecord) {
     if (user.email === currentEmail && user.active) return
-    await setUserActive(user.id, !user.active)
-    load()
+    const newActive = !user.active
+    setUsers(prev => prev.map(u => u.id === user.id ? { ...u, active: newActive } : u))
+    try {
+      await setUserActive(user.id, newActive)
+    } catch {
+      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, active: user.active } : u))
+      setToggleError(`Fehler beim ${newActive ? 'Aktivieren' : 'Deaktivieren'} von ${user.email}.`)
+    }
   }
 
   function startEditLimit(user: UserRecord) {
@@ -116,6 +123,12 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
               {activeFilter === 'active' ? 'Aktiv' : activeFilter === 'inactive' ? 'Inaktiv' : 'Alle'}
             </button>
           </div>
+          {toggleError && (
+            <div className="flex items-center justify-between bg-red-950 border border-red-700 rounded-lg px-3 py-2">
+              <p className="text-red-300 text-sm">{toggleError}</p>
+              <button onClick={() => setToggleError(null)} className="text-red-400 hover:text-red-200 ml-3 text-xs">✕</button>
+            </div>
+          )}
           <p className="text-slate-500 text-xs">
             {filteredUsers.length} von {users.length} Benutzern · Seite {safePage} von {totalPages}
           </p>
