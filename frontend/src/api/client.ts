@@ -72,9 +72,12 @@ export async function apiFetch<T>(
   const resp = await fetch(`${BASE}${path}`, { ...options, headers })
 
   if (resp.status === 401) {
-    clearToken()
-    window.location.href = '/'
-    throw new Error('Unauthorized')
+    if (getToken()) {
+      clearToken()
+      window.location.href = '/'
+    }
+    const body = await resp.json().catch(() => ({}))
+    throw new Error(body.detail ?? 'Unauthorized')
   }
 
   if (!resp.ok) {
