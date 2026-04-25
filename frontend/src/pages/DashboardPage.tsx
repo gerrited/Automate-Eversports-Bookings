@@ -8,6 +8,7 @@ import JobModal from '../components/JobModal'
 import LogDrawer from '../components/LogDrawer'
 import UserManagementSection from '../components/UserManagementSection'
 import AllJobsSection from '../components/AllJobsSection'
+import AllLogsSection from '../components/AllLogsSection'
 import HamburgerMenu from '../components/HamburgerMenu'
 import SettingsModal from '../components/SettingsModal'
 import TestEmailModal from '../components/TestEmailModal'
@@ -19,13 +20,14 @@ import type { BookedAppointment } from '../types'
 export default function DashboardPage() {
   const navigate = useNavigate()
   const { hash } = useLocation()
-  const activeTab: 'geplant' | 'gebucht' | 'benutzer' | 'jobs' =
+  const activeTab: 'geplant' | 'gebucht' | 'benutzer' | 'jobs' | 'logs' =
     hash === '#users' ? 'benutzer'
     : hash === '#all-jobs' ? 'jobs'
+    : hash === '#logs' ? 'logs'
     : hash === '#booked' ? 'gebucht'
     : 'geplant'
 
-  function setActiveTab(tab: 'geplant' | 'gebucht' | 'benutzer' | 'jobs', clearFilters = false) {
+  function setActiveTab(tab: 'geplant' | 'gebucht' | 'benutzer' | 'jobs' | 'logs', clearFilters = false) {
     if (clearFilters) {
       setJobsEmailFilter('')
       setUsersEmailFilter('')
@@ -33,6 +35,7 @@ export default function DashboardPage() {
     navigate(
       tab === 'benutzer' ? '#users'
       : tab === 'jobs' ? '#all-jobs'
+      : tab === 'logs' ? '#logs'
       : tab === 'gebucht' ? '#booked'
       : '#bookings',
       { replace: true }
@@ -78,7 +81,7 @@ export default function DashboardPage() {
     function onAuthChanged() {
       forceUpdate(n => n + 1)
       const h = window.location.hash
-      if (!isAdmin() && (h === '#users' || h === '#all-jobs')) {
+      if (!isAdmin() && (h === '#users' || h === '#all-jobs' || h === '#logs')) {
         navigate('#bookings', { replace: true })
       }
     }
@@ -111,7 +114,7 @@ useEffect(() => {
       touchStartX.current = null
       touchStartY.current = null
       if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return
-      const tabs = isAdmin() ? ['#bookings', '#booked', '#users', '#all-jobs'] : ['#bookings', '#booked']
+      const tabs = isAdmin() ? ['#bookings', '#booked', '#users', '#all-jobs', '#logs'] : ['#bookings', '#booked']
       const currentIndex = tabs.indexOf(window.location.hash || '#bookings')
       const nextIndex = dx < 0
         ? Math.min(currentIndex + 1, tabs.length - 1)
@@ -228,7 +231,7 @@ useEffect(() => {
 
           {/* Tab-Navigation – Geplant/Gebucht für alle, Benutzer/Jobs nur für Admins */}
           <div className="flex gap-1 border-b border-slate-700">
-            {(['geplant', 'gebucht', ...(isAdmin() ? ['benutzer', 'jobs'] : [])] as ('geplant' | 'gebucht' | 'benutzer' | 'jobs')[]).map((tab) => (
+            {(['geplant', 'gebucht', ...(isAdmin() ? ['benutzer', 'jobs', 'logs'] : [])] as ('geplant' | 'gebucht' | 'benutzer' | 'jobs' | 'logs')[]).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab, true)}
@@ -241,7 +244,8 @@ useEffect(() => {
                 {tab === 'geplant' ? 'Geplant'
                   : tab === 'gebucht' ? 'Gebucht'
                   : tab === 'benutzer' ? 'Benutzer'
-                  : 'Jobs'}
+                  : tab === 'jobs' ? 'Jobs'
+                  : 'Logs'}
               </button>
             ))}
           </div>
@@ -344,6 +348,9 @@ useEffect(() => {
 
       {/* Admin: Jobs-Tab */}
       {isAdmin() && activeTab === 'jobs' && <AllJobsSection initialEmailFilter={jobsEmailFilter} onUserClick={handleJobUserClick} />}
+
+      {/* Admin: Logs-Tab */}
+      {isAdmin() && activeTab === 'logs' && <AllLogsSection />}
 
       {/* Modal */}
       {showModal && (
