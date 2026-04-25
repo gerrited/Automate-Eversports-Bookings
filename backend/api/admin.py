@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import List, Literal
+from typing import List, Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -14,6 +14,7 @@ from backend.models.booking_job import BookingJob
 from backend.models.booking_log import BookingLog
 from backend.models.user import User
 from backend.schemas.job import AdminJobResponse
+from backend.schemas.log import AdminLogsPage, AdminLogResponse
 from backend.schemas.user import UserResponse, SetActiveRequest, SetLimitRequest
 
 log = logging.getLogger(__name__)
@@ -176,6 +177,49 @@ def list_all_jobs(
         )
         for job, user_email, success_count, failed_count, already_booked_count in rows
     ]
+
+
+@router.get("/admin/logs", response_model=AdminLogsPage)
+def list_all_logs(
+    page: int = 1,
+    user_email: Optional[str] = None,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    PAGE_SIZE = 50
+    query = (
+        db.query(BookingLog, BookingJob, User.email.label("user_email"))
+        .join(BookingJob, BookingJob.id == BookingLog.job_id)
+        .join(User, User.id == BookingJob.user_id)
+    )
+    if user_email:
+        query = query.filter(User.email.ilike(f"%{user_email}%"))
+    total = query.count()
+    rows = (
+        query
+        .order_by(BookingLog.executed_at.desc())
+        .offset((page - 1) * PAGE_SIZE)
+        .limit(PAGE_SIZE)
+        .all()
+    )
+    items = [
+        AdminLogResponse(
+            id=log.id,
+            job_id=log.job_id,
+            executed_at=log.executed_at,
+            target_date=log.target_date,
+            status=log.status,
+            message=log.message,
+            class_name=job.class_name,
+            facility_name=job.facility_name,
+            target_time=job.target_time,
+            weekday=job.weekday,
+            debug=job.debug,
+            user_email=email,
+        )
+        for log, job, email in rows
+    ]
+    return AdminLogsPage(items=items, total=total, page=page, page_size=PAGE_SIZE)
 
 
 class TestEmailRequest(BaseModel):
