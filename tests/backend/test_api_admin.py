@@ -559,3 +559,9 @@ def test_list_all_logs_pagination(client, db_session):
     resp2 = client.get("/api/admin/logs?page=2", headers=_auth_header(admin.id))
     data2 = resp2.json()
     assert len(data2["items"]) == 5
+
+
+def test_list_all_logs_page_zero_rejected(client, db_session):
+    admin = _make_admin(db_session)
+    resp = client.get("/api/admin/logs?page=0", headers=_auth_header(admin.id))
+    assert resp.status_code == 422

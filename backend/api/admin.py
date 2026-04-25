@@ -2,7 +2,7 @@ import logging
 import os
 from typing import List, Literal, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import case, func
 from sqlalchemy.orm import Session
@@ -181,7 +181,7 @@ def list_all_jobs(
 
 @router.get("/admin/logs", response_model=AdminLogsPage)
 def list_all_logs(
-    page: int = 1,
+    page: int = Query(default=1, ge=1),
     user_email: Optional[str] = None,
     current_user: User = Depends(require_admin),
     db: Session = Depends(get_db),
