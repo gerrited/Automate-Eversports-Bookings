@@ -230,7 +230,7 @@ useEffect(() => {
           </div>
 
           {/* Tab-Navigation – Geplant/Gebucht für alle, Benutzer/Jobs nur für Admins */}
-          <div className="flex gap-1 border-b border-slate-700 overflow-x-auto scrollbar-none">
+          <div className="flex gap-1 border-b border-slate-700 overflow-x-auto overflow-y-hidden scrollbar-none">
             {(['geplant', 'gebucht', ...(isAdmin() ? ['users', 'jobs', 'logs'] : [])] as ('geplant' | 'gebucht' | 'users' | 'jobs' | 'logs')[]).map((tab) => (
               <button
                 key={tab}
