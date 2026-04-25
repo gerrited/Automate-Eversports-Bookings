@@ -70,10 +70,16 @@ export default function DashboardPage() {
   }, [])
 
   useEffect(() => {
-    function onAuthChanged() { forceUpdate(n => n + 1) }
+    function onAuthChanged() {
+      forceUpdate(n => n + 1)
+      const h = window.location.hash
+      if (!isAdmin() && (h === '#users' || h === '#all-jobs')) {
+        navigate('#bookings', { replace: true })
+      }
+    }
     window.addEventListener('auth-changed', onAuthChanged)
     return () => window.removeEventListener('auth-changed', onAuthChanged)
-  }, [])
+  }, [navigate])
 
   function handleUserJobsClick(email: string) {
     setJobsEmailFilter(email)
