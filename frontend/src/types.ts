@@ -74,3 +74,25 @@ export interface CurrentUser {
   total_bookings_executed: number
   max_active_jobs: number | null
 }
+
+export interface AdminLog {
+  id: string
+  job_id: string
+  executed_at: string
+  target_date: string
+  status: 'success' | 'failed' | 'already_booked' | 'waitlist'
+  message: string | null
+  class_name: string
+  facility_name: string
+  target_time: string
+  weekday: number
+  debug: boolean
+  user_email: string
+}
+
+export interface AdminLogsPage {
+  items: AdminLog[]
+  total: number
+  page: number
+  page_size: number
+}
