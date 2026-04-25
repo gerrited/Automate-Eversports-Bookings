@@ -193,11 +193,13 @@ def _make_job(db_session, user_id: str, weekday: int = 0, target_time=time(18, 0
     return job
 
 
-def _make_log(db_session, job_id: str, status: str = "success") -> BookingLog:
+def _make_log(db_session, job_id: str, status: str = "success", executed_at=None) -> BookingLog:
+    from datetime import datetime, timezone
     log = BookingLog(
         job_id=job_id,
         target_date=date(2026, 1, 1),
         status=status,
+        executed_at=executed_at or datetime.now(timezone.utc),
     )
     db_session.add(log)
     db_session.commit()
@@ -465,3 +467,95 @@ def test_set_limit_rejects_zero_or_negative(client, db_session):
             headers=_auth_header(admin.id),
         )
         assert resp.status_code == 422
+
+
+# ── Tests GET /api/admin/logs ──────────────────────────────────────────────────
+
+def test_list_all_logs_requires_auth(client):
+    resp = client.get("/api/admin/logs")
+    assert resp.status_code == 401
+
+
+def test_list_all_logs_requires_admin_role(client, db_session):
+    user = _make_user(db_session)
+    resp = client.get("/api/admin/logs", headers=_auth_header(user.id))
+    assert resp.status_code == 403
+
+
+def test_list_all_logs_returns_all_logs(client, db_session):
+    admin = _make_admin(db_session)
+    user = _make_user(db_session)
+    job = _make_job(db_session, user.id)
+    _make_log(db_session, job.id, status="success")
+    _make_log(db_session, job.id, status="failed")
+    resp = client.get("/api/admin/logs", headers=_auth_header(admin.id))
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["total"] == 2
+    assert len(data["items"]) == 2
+
+
+def test_list_all_logs_sorted_newest_first(client, db_session):
+    from datetime import datetime, timezone
+    admin = _make_admin(db_session)
+    user = _make_user(db_session)
+    job = _make_job(db_session, user.id)
+    t1 = datetime(2026, 1, 1, 10, tzinfo=timezone.utc)
+    t2 = datetime(2026, 1, 2, 10, tzinfo=timezone.utc)
+    _make_log(db_session, job.id, executed_at=t1)
+    _make_log(db_session, job.id, executed_at=t2)
+    resp = client.get("/api/admin/logs", headers=_auth_header(admin.id))
+    data = resp.json()
+    times = [item["executed_at"] for item in data["items"]]
+    assert times[0] > times[1]
+
+
+def test_list_all_logs_filter_by_user_email(client, db_session):
+    admin = _make_admin(db_session)
+    user1 = _make_user(db_session, ev_id="ev-u1", email="anna@example.com")
+    user2 = _make_user(db_session, ev_id="ev-u2", email="bernd@example.com")
+    job1 = _make_job(db_session, user1.id)
+    job2 = _make_job(db_session, user2.id)
+    _make_log(db_session, job1.id)
+    _make_log(db_session, job2.id)
+    resp = client.get("/api/admin/logs?user_email=anna", headers=_auth_header(admin.id))
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["total"] == 1
+    assert data["items"][0]["user_email"] == "anna@example.com"
+
+
+def test_list_all_logs_includes_job_fields(client, db_session):
+    admin = _make_admin(db_session)
+    user = _make_user(db_session)
+    job = _make_job(db_session, user.id)
+    job.facility_name = "Studio B"
+    job.class_name = "Pilates"
+    db_session.commit()
+    _make_log(db_session, job.id)
+    resp = client.get("/api/admin/logs", headers=_auth_header(admin.id))
+    assert resp.status_code == 200
+    item = resp.json()["items"][0]
+    assert item["class_name"] == "Pilates"
+    assert item["facility_name"] == "Studio B"
+    assert item["user_email"] == "user@x.com"
+    assert "weekday" in item
+    assert "target_time" in item
+    assert "debug" in item
+
+
+def test_list_all_logs_pagination(client, db_session):
+    admin = _make_admin(db_session)
+    user = _make_user(db_session)
+    job = _make_job(db_session, user.id)
+    for _ in range(55):
+        _make_log(db_session, job.id)
+    resp = client.get("/api/admin/logs?page=1", headers=_auth_header(admin.id))
+    data = resp.json()
+    assert data["total"] == 55
+    assert len(data["items"]) == 50
+    assert data["page"] == 1
+    assert data["page_size"] == 50
+    resp2 = client.get("/api/admin/logs?page=2", headers=_auth_header(admin.id))
+    data2 = resp2.json()
+    assert len(data2["items"]) == 5
