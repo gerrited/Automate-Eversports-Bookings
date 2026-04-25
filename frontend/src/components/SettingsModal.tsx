@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { clearToken } from '../api/client'
+import { clearToken, isActualAdmin } from '../api/client'
 import { deleteAccount } from '../api/account'
+import { getMe, createCheckoutSession } from '../api/stripe'
 
 interface Props {
   onClose: () => void
@@ -9,9 +10,20 @@ interface Props {
 
 export default function SettingsModal({ onClose }: Props) {
   const navigate = useNavigate()
+  const isAdmin = isActualAdmin()
   const [confirmText, setConfirmText] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [subscriptionActive, setSubscriptionActive] = useState<boolean | null>(null)
+  const [checkoutLoading, setCheckoutLoading] = useState(false)
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!isAdmin) return
+    getMe()
+      .then(data => setSubscriptionActive(data.subscription_active))
+      .catch(() => setSubscriptionActive(false))
+  }, [])
 
   async function handleDelete() {
     setLoading(true)
@@ -23,6 +35,18 @@ export default function SettingsModal({ onClose }: Props) {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Fehler beim Löschen des Kontos.')
       setLoading(false)
+    }
+  }
+
+  async function handleCheckout() {
+    setCheckoutLoading(true)
+    setCheckoutError(null)
+    try {
+      const data = await createCheckoutSession()
+      window.location.href = data.url
+    } catch (err) {
+      setCheckoutError(err instanceof Error ? err.message : 'Fehler beim Starten des Checkouts.')
+      setCheckoutLoading(false)
     }
   }
 
@@ -39,6 +63,24 @@ export default function SettingsModal({ onClose }: Props) {
             ✕
           </button>
         </div>
+
+        {isAdmin && (
+          <div className="border-t border-slate-700 pt-5 mb-5">
+            <h3 className="text-white font-semibold mb-3">Abonnement</h3>
+            <button
+              onClick={handleCheckout}
+              disabled={subscriptionActive !== false || checkoutLoading}
+              className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {checkoutLoading
+                ? 'Wird vorbereitet…'
+                : subscriptionActive
+                ? 'Abo bereits aktiv'
+                : 'Abo kaufen'}
+            </button>
+            {checkoutError && <p className="text-red-400 text-sm mt-2">{checkoutError}</p>}
+          </div>
+        )}
 
         <div className="border-t border-slate-700 pt-5">
           <h3 className="text-white font-semibold mb-2">Konto löschen</h3>

@@ -70,7 +70,3 @@ export interface BookedAppointment {
   facility_id: string
 }
 
-export interface CurrentUser {
-  total_bookings_executed: number
-  max_active_jobs: number | null
-}

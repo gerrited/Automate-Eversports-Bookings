@@ -174,3 +174,53 @@ def send_test_email(admin_email: str, email_type: str) -> None:
         "html": html,
     })
     log.info("Test email (%s) sent to %s", email_type, admin_email)
+
+
+def send_subscription_activated_email(
+    user_email: str,
+    *,
+    plan_name: str,
+    amount: float,
+    subscription_end: str,
+) -> None:
+    """Benachrichtigt den User über ein aktives Abo. Best-effort — kein Crash bei Fehlern."""
+    try:
+        resend.api_key = os.environ["RESEND_API_KEY"]
+        from_email = os.environ["FROM_EMAIL"]
+        sender = f"FOReversports <{from_email}>"
+        frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:5173")
+        subject = "Dein Abo ist aktiv"
+        html = _templates.get_template("subscription_activated.html").render(
+            frontend_url=frontend_url,
+            plan_name=plan_name,
+            amount=f"{amount:.2f}",
+            subscription_end=subscription_end,
+        )
+        resend.Emails.send({"from": sender, "to": [user_email], "subject": subject, "html": html})
+        log.info("Subscription activated email sent to %s", user_email)
+    except Exception as exc:
+        log.error("Failed to send subscription activated email to %s: %s", user_email, exc)
+
+
+def send_subscription_cancelled_email(
+    user_email: str,
+    *,
+    cancelled_at: str,
+    deactivated_jobs_count: int,
+) -> None:
+    """Benachrichtigt den User über ein abgelaufenes Abo. Best-effort — kein Crash bei Fehlern."""
+    try:
+        resend.api_key = os.environ["RESEND_API_KEY"]
+        from_email = os.environ["FROM_EMAIL"]
+        sender = f"FOReversports <{from_email}>"
+        frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:5173")
+        subject = "Dein Abo ist abgelaufen"
+        html = _templates.get_template("subscription_cancelled.html").render(
+            frontend_url=frontend_url,
+            cancelled_at=cancelled_at,
+            deactivated_jobs_count=deactivated_jobs_count,
+        )
+        resend.Emails.send({"from": sender, "to": [user_email], "subject": subject, "html": html})
+        log.info("Subscription cancelled email sent to %s", user_email)
+    except Exception as exc:
+        log.error("Failed to send subscription cancelled email to %s: %s", user_email, exc)
