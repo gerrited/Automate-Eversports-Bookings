@@ -230,12 +230,12 @@ useEffect(() => {
           </div>
 
           {/* Tab-Navigation – Geplant/Gebucht für alle, Benutzer/Jobs nur für Admins */}
-          <div className="flex gap-1 border-b border-slate-700">
+          <div className="flex gap-1 border-b border-slate-700 overflow-x-auto scrollbar-none">
             {(['geplant', 'gebucht', ...(isAdmin() ? ['users', 'jobs', 'logs'] : [])] as ('geplant' | 'gebucht' | 'users' | 'jobs' | 'logs')[]).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab, true)}
-                className={`px-4 py-2 text-sm font-medium rounded-t-md transition-colors focus:outline-none
+                className={`px-4 py-2 text-sm font-medium rounded-t-md transition-colors focus:outline-none shrink-0
                   ${activeTab === tab
                     ? 'bg-brand text-white border-b-2 border-brand -mb-px'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-surface-card'
