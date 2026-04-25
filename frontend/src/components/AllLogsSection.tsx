@@ -87,7 +87,7 @@ export default function AllLogsSection() {
                 <div className="flex-1 min-w-0">
                   <p className="text-white text-sm font-medium truncate">{log.user_email}</p>
                   <p className="text-slate-300 text-sm">
-                    {log.class_name} · {WEEKDAY_NAMES[log.weekday]} · {displayTime} Uhr
+                    {WEEKDAY_NAMES[log.weekday]} · {displayTime} Uhr · {log.class_name}
                   </p>
                   <p className="text-slate-400 text-xs mt-0.5">
                     {log.facility_name}
