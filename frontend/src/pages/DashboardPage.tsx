@@ -44,6 +44,7 @@ export default function DashboardPage() {
   const [bookedLoaded, setBookedLoaded] = useState(false)
   const [bookedLoading, setBookedLoading] = useState(false)
   const [bookedError, setBookedError] = useState<string | null>(null)
+  const bookedPrefetch = useRef<Promise<BookedAppointment[]> | null>(null)
   const [loading, setLoading] = useState(true)
   const [editingJob, setEditingJob] = useState<Job | 'new' | null>(null)
   const [showModal, setShowModal] = useState(false)
@@ -67,6 +68,10 @@ export default function DashboardPage() {
       setTotalBookingsExecuted(data.total_bookings_executed)
       setMaxActiveJobs(data.max_active_jobs)
     }).catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    bookedPrefetch.current = getUpcomingBookings()
   }, [])
 
   useEffect(() => {
@@ -138,7 +143,7 @@ useEffect(() => {
     setBookedLoaded(true)
     setBookedLoading(true)
     setBookedError(null)
-    getUpcomingBookings()
+    ;(bookedPrefetch.current ?? getUpcomingBookings())
       .then(setBookedAppointments)
       .catch((e) => setBookedError(e instanceof Error ? e.message : 'Fehler beim Laden'))
       .finally(() => setBookedLoading(false))
