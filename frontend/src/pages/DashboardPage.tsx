@@ -20,20 +20,20 @@ import type { BookedAppointment } from '../types'
 export default function DashboardPage() {
   const navigate = useNavigate()
   const { hash } = useLocation()
-  const activeTab: 'geplant' | 'gebucht' | 'benutzer' | 'jobs' | 'logs' =
-    hash === '#users' ? 'benutzer'
+  const activeTab: 'geplant' | 'gebucht' | 'users' | 'jobs' | 'logs' =
+    hash === '#users' ? 'users'
     : hash === '#all-jobs' ? 'jobs'
     : hash === '#logs' ? 'logs'
     : hash === '#booked' ? 'gebucht'
     : 'geplant'
 
-  function setActiveTab(tab: 'geplant' | 'gebucht' | 'benutzer' | 'jobs' | 'logs', clearFilters = false) {
+  function setActiveTab(tab: 'geplant' | 'gebucht' | 'users' | 'jobs' | 'logs', clearFilters = false) {
     if (clearFilters) {
       setJobsEmailFilter('')
       setUsersEmailFilter('')
     }
     navigate(
-      tab === 'benutzer' ? '#users'
+      tab === 'users' ? '#users'
       : tab === 'jobs' ? '#all-jobs'
       : tab === 'logs' ? '#logs'
       : tab === 'gebucht' ? '#booked'
@@ -96,7 +96,7 @@ export default function DashboardPage() {
 
   function handleJobUserClick(email: string) {
     setUsersEmailFilter(email)
-    setActiveTab('benutzer')
+    setActiveTab('users')
   }
 
   const touchStartX = useRef<number | null>(null)
@@ -231,7 +231,7 @@ useEffect(() => {
 
           {/* Tab-Navigation – Geplant/Gebucht für alle, Benutzer/Jobs nur für Admins */}
           <div className="flex gap-1 border-b border-slate-700">
-            {(['geplant', 'gebucht', ...(isAdmin() ? ['benutzer', 'jobs', 'logs'] : [])] as ('geplant' | 'gebucht' | 'benutzer' | 'jobs' | 'logs')[]).map((tab) => (
+            {(['geplant', 'gebucht', ...(isAdmin() ? ['users', 'jobs', 'logs'] : [])] as ('geplant' | 'gebucht' | 'users' | 'jobs' | 'logs')[]).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab, true)}
@@ -243,7 +243,7 @@ useEffect(() => {
               >
                 {tab === 'geplant' ? 'Geplant'
                   : tab === 'gebucht' ? 'Gebucht'
-                  : tab === 'benutzer' ? 'Benutzer'
+                  : tab === 'users' ? 'Users'
                   : tab === 'jobs' ? 'Jobs'
                   : 'Logs'}
               </button>
@@ -344,7 +344,7 @@ useEffect(() => {
       )}
 
       {/* Admin: Benutzer-Tab */}
-      {isAdmin() && activeTab === 'benutzer' && <UserManagementSection onJobsClick={handleUserJobsClick} initialEmailFilter={usersEmailFilter} />}
+      {isAdmin() && activeTab === 'users' && <UserManagementSection onJobsClick={handleUserJobsClick} initialEmailFilter={usersEmailFilter} />}
 
       {/* Admin: Jobs-Tab */}
       {isAdmin() && activeTab === 'jobs' && <AllJobsSection initialEmailFilter={jobsEmailFilter} onUserClick={handleJobUserClick} />}
