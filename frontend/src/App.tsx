@@ -13,7 +13,7 @@ function RequireAuth({ children }: { children: ReactElement }) {
 export default function App() {
   return (
     <BrowserRouter>
-      <NoticeBanner url={import.meta.env.VITE_NOTICE_PUBLIC_GIST_URL as string | undefined} />
+      <NoticeBanner url={window.__APP_CONFIG__?.noticePublicGistUrl || undefined} />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route

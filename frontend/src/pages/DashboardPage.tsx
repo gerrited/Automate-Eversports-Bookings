@@ -215,7 +215,7 @@ useEffect(() => {
     <div className="min-h-screen bg-surface-page">
       {/* Fixed Header */}
       <NoticeBanner
-        url={import.meta.env.VITE_NOTICE_USERS_GIST_URL as string | undefined}
+        url={window.__APP_CONFIG__?.noticeUsersGistUrl || undefined}
         topOffset="var(--notice-height, 0px)"
         cssVar="--notice-users-height"
       />
