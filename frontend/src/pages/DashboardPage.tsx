@@ -12,6 +12,7 @@ import AllLogsSection from '../components/AllLogsSection'
 import HamburgerMenu from '../components/HamburgerMenu'
 import SettingsModal from '../components/SettingsModal'
 import TestEmailModal from '../components/TestEmailModal'
+import NoticeBanner from '../components/NoticeBanner'
 import { getUpcomingBookings, cancelBooking } from '../api/bookedAppointments'
 import { getMe } from '../api/account'
 import BookedAppointmentCard from '../components/BookedAppointmentCard'
@@ -213,7 +214,15 @@ useEffect(() => {
   return (
     <div className="min-h-screen bg-surface-page">
       {/* Fixed Header */}
-      <div className="fixed top-0 left-0 right-0 z-20 bg-surface-page border-b border-slate-700/60">
+      <NoticeBanner
+        url={import.meta.env.VITE_NOTICE_USERS_GIST_URL as string | undefined}
+        topOffset="var(--notice-height, 0px)"
+        cssVar="--notice-users-height"
+      />
+      <div
+        className="fixed left-0 right-0 z-20 bg-surface-page border-b border-slate-700/60"
+        style={{ top: 'calc(var(--notice-height, 0px) + var(--notice-users-height, 0px))' }}
+      >
         <div className="px-4 max-w-2xl mx-auto">
           <div className="flex justify-between items-center py-4">
             <img src="/logo.png" alt="Logo" className="h-10 w-auto sm:h-16 cursor-pointer" onClick={() => navigate('/dashboard')} />
@@ -253,6 +262,7 @@ useEffect(() => {
       </div>
 
     <div className="px-4 pb-8 max-w-2xl mx-auto pt-32 sm:pt-44">
+      <div aria-hidden style={{ height: 'calc(var(--notice-height, 0px) + var(--notice-users-height, 0px))' }} />
 
       {/* Add button – nur auf Geplant-Tab */}
       {activeTab === 'geplant' && (

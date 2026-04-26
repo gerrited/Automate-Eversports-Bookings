@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import LandingPage from './pages/LandingPage'
 import DashboardPage from './pages/DashboardPage'
 import Footer from './components/Footer'
+import NoticeBanner from './components/NoticeBanner'
 
 function RequireAuth({ children }: { children: ReactElement }) {
   const token = localStorage.getItem('token')
@@ -12,6 +13,7 @@ function RequireAuth({ children }: { children: ReactElement }) {
 export default function App() {
   return (
     <BrowserRouter>
+      <NoticeBanner url={import.meta.env.VITE_NOTICE_PUBLIC_GIST_URL as string | undefined} />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route
