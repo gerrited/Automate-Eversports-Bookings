@@ -141,3 +141,16 @@ def test_worker_booking_waitlist_renders():
     assert "Warteliste" in html
     assert FRONTEND_URL in html
     assert "#004349" in html
+
+
+def test_admin_message_renders():
+    html = _env(BACKEND_DIR).get_template("admin_message.html").render(
+        subject="Wichtige Information",
+        content="Hallo,\ndies ist eine Nachricht vom Admin.",
+        frontend_url=FRONTEND_URL,
+    )
+    assert "Wichtige Information" in html
+    assert "Hallo," in html
+    assert "dies ist eine Nachricht vom Admin." in html
+    assert FRONTEND_URL in html
+    assert "#004349" in html

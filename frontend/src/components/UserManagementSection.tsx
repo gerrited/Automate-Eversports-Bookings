@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { listUsers, setUserActive, setUserLimit } from '../api/users'
+import { listUsers, setUserActive, setUserLimit, sendUserMessage } from '../api/users'
 import { getEmail } from '../api/client'
 import type { UserRecord } from '../types'
 
@@ -16,6 +16,12 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
   const [editingLimitUserId, setEditingLimitUserId] = useState<string | null>(null)
   const [limitInputValue, setLimitInputValue] = useState('')
   const [pendingLimit, setPendingLimit] = useState<{ user: UserRecord; value: number | null } | null>(null)
+  const [messagingUser, setMessagingUser] = useState<UserRecord | null>(null)
+  const [messageSubject, setMessageSubject] = useState('')
+  const [messageContent, setMessageContent] = useState('')
+  const [messageError, setMessageError] = useState<string | null>(null)
+  const [messageSending, setMessageSending] = useState(false)
+  const [messageSent, setMessageSent] = useState(false)
 
   const load = useCallback(async () => {
     try {
@@ -84,6 +90,37 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
     await setUserLimit(pendingLimit.user.id, pendingLimit.value)
     setPendingLimit(null)
     load()
+  }
+
+  function openMessageModal(user: UserRecord) {
+    setMessagingUser(user)
+    setMessageSubject('')
+    setMessageContent('')
+    setMessageError(null)
+    setMessageSent(false)
+  }
+
+  function closeMessageModal() {
+    setMessagingUser(null)
+    setMessageSubject('')
+    setMessageContent('')
+    setMessageError(null)
+    setMessageSending(false)
+    setMessageSent(false)
+  }
+
+  async function handleSendMessage() {
+    if (!messagingUser || !messageSubject.trim() || !messageContent.trim()) return
+    setMessageSending(true)
+    setMessageError(null)
+    try {
+      await sendUserMessage(messagingUser.id, messageSubject.trim(), messageContent.trim())
+      setMessageSent(true)
+      setMessageSending(false)
+    } catch {
+      setMessageError('Nachricht konnte nicht gesendet werden.')
+      setMessageSending(false)
+    }
   }
 
   const filteredUsers = users
@@ -195,19 +232,27 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
                     )}
                   </div>
                 </div>
-                <button
-                  disabled={isSelf}
-                  onClick={() => handleToggle(user)}
-                  className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                    isSelf
-                      ? 'opacity-40 cursor-not-allowed bg-slate-700 text-slate-400'
-                      : user.active
-                      ? 'bg-red-900 hover:bg-red-700 text-red-300'
-                      : 'bg-green-900 hover:bg-green-700 text-green-300'
-                  }`}
-                >
-                  {user.active ? 'Deaktivieren' : 'Aktivieren'}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => openMessageModal(user)}
+                    className="px-3 py-1 rounded-md text-sm font-medium transition-colors bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700"
+                  >
+                    Nachricht
+                  </button>
+                  <button
+                    disabled={isSelf}
+                    onClick={() => handleToggle(user)}
+                    className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                      isSelf
+                        ? 'opacity-40 cursor-not-allowed bg-slate-700 text-slate-400'
+                        : user.active
+                        ? 'bg-red-900 hover:bg-red-700 text-red-300'
+                        : 'bg-green-900 hover:bg-green-700 text-green-300'
+                    }`}
+                  >
+                    {user.active ? 'Deaktivieren' : 'Aktivieren'}
+                  </button>
+                </div>
               </div>
             )
           })}
@@ -253,6 +298,67 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
                 Ja, Limit setzen
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {messagingUser && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-surface-card border border-slate-700 rounded-xl p-6 max-w-sm w-full mx-4">
+            {messageSent ? (
+              <>
+                <p className="text-white font-semibold mb-3">Nachricht gesendet</p>
+                <div className="bg-teal-950 border-l-3 border-teal-500 rounded-r-md px-4 py-3 mb-5 text-sm text-teal-300">
+                  Die Nachricht wurde an {messagingUser.email} gesendet.
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    onClick={closeMessageModal}
+                    className="px-4 py-2 text-sm bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                  >
+                    Schließen
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-white font-semibold mb-4">Nachricht an {messagingUser.email}</p>
+                <div className="flex flex-col gap-3 mb-4">
+                  <input
+                    type="text"
+                    value={messageSubject}
+                    onChange={e => setMessageSubject(e.target.value)}
+                    placeholder="Betreff"
+                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-slate-500"
+                  />
+                  <textarea
+                    value={messageContent}
+                    onChange={e => setMessageContent(e.target.value)}
+                    placeholder="Nachricht"
+                    rows={5}
+                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-slate-500 resize-none"
+                  />
+                </div>
+                {messageError && (
+                  <p className="text-red-400 text-sm mb-3">{messageError}</p>
+                )}
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={closeMessageModal}
+                    disabled={messageSending}
+                    className="px-4 py-2 text-sm text-slate-400 hover:text-white border border-slate-700 rounded-lg transition-colors disabled:opacity-40"
+                  >
+                    Abbrechen
+                  </button>
+                  <button
+                    onClick={handleSendMessage}
+                    disabled={messageSending || !messageSubject.trim() || !messageContent.trim()}
+                    className="px-4 py-2 text-sm bg-teal-900 hover:bg-teal-800 text-teal-300 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {messageSending ? 'Wird gesendet…' : 'Senden'}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

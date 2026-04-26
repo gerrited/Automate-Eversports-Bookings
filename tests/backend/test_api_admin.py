@@ -565,3 +565,53 @@ def test_list_all_logs_page_zero_rejected(client, db_session):
     admin = _make_admin(db_session)
     resp = client.get("/api/admin/logs?page=0", headers=_auth_header(admin.id))
     assert resp.status_code == 422
+
+
+# --- /admin/users/{id}/message ---
+
+def test_send_message_requires_admin(client, db_session):
+    user = _make_user(db_session, ev_id="ev-msg0", email="msg0@x.com")
+    resp = client.post(
+        f"/api/admin/users/{user.id}/message",
+        json={"subject": "Test", "content": "Hallo"},
+        headers=_auth_header(user.id),
+    )
+    assert resp.status_code == 403
+
+
+def test_send_message_user_not_found(client, db_session):
+    admin = _make_admin(db_session, ev_id="ev-msg1", email="msg1@x.com")
+    resp = client.post(
+        "/api/admin/users/nonexistent-id/message",
+        json={"subject": "Test", "content": "Hallo"},
+        headers=_auth_header(admin.id),
+    )
+    assert resp.status_code == 404
+
+
+def test_send_message_calls_send_admin_message(client, db_session, mocker):
+    admin = _make_admin(db_session, ev_id="ev-msg2", email="msg2@x.com")
+    user = _make_user(db_session, ev_id="ev-msg2u", email="msg2u@x.com")
+    mock_email = mocker.patch("backend.api.admin.send_admin_message")
+
+    resp = client.post(
+        f"/api/admin/users/{user.id}/message",
+        json={"subject": "Wichtige Info", "content": "Hallo,\nDies ist eine Nachricht."},
+        headers=_auth_header(admin.id),
+    )
+
+    assert resp.status_code == 200
+    assert resp.json()["detail"] == "Nachricht gesendet"
+    mock_email.assert_called_once_with(
+        "msg2u@x.com",
+        "Wichtige Info",
+        "Hallo,\nDies ist eine Nachricht.",
+    )
+
+
+def test_send_message_requires_auth(client):
+    resp = client.post(
+        "/api/admin/users/some-id/message",
+        json={"subject": "Test", "content": "Hallo"},
+    )
+    assert resp.status_code == 401
