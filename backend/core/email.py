@@ -174,3 +174,27 @@ def send_test_email(admin_email: str, email_type: str) -> None:
         "html": html,
     })
     log.info("Test email (%s) sent to %s", email_type, admin_email)
+
+
+def send_admin_message(user_email: str, subject: str, content: str) -> None:
+    """Sendet eine Admin-Nachricht an einen User. Best-effort — kein Crash bei Fehlern."""
+    try:
+        resend.api_key = os.environ["RESEND_API_KEY"]
+        from_email = os.environ["FROM_EMAIL"]
+        sender = f"FOReversports <{from_email}>"
+        frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:5173")
+
+        html = _templates.get_template("admin_message.html").render(
+            subject=subject,
+            content=content,
+            frontend_url=frontend_url,
+        )
+        resend.Emails.send({
+            "from": sender,
+            "to": [user_email],
+            "subject": subject,
+            "html": html,
+        })
+        log.info("Admin message sent to %s (subject=%r)", user_email, subject)
+    except Exception as exc:
+        log.error("Failed to send admin message to %s: %s", user_email, exc)
