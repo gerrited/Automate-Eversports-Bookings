@@ -145,5 +145,3 @@ jobs:
             COMMIT_SHA=${{ github.sha }}
             GITHUB_REPO=${{ github.repository }}
             VERSION=${{ inputs.version }}
-            NOTICE_PUBLIC_GIST_URL=${{ vars.NOTICE_PUBLIC_GIST_URL }}
-            NOTICE_USERS_GIST_URL=${{ vars.NOTICE_USERS_GIST_URL }}
