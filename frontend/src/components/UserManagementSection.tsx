@@ -343,18 +343,18 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
                 )}
                 <div className="flex justify-end gap-3">
                   <button
-                    onClick={closeMessageModal}
-                    disabled={messageSending}
-                    className="px-4 py-2 text-sm text-slate-400 hover:text-white border border-slate-700 rounded-lg transition-colors disabled:opacity-40"
-                  >
-                    Abbrechen
-                  </button>
-                  <button
                     onClick={handleSendMessage}
                     disabled={messageSending || !messageSubject.trim() || !messageContent.trim()}
                     className="px-4 py-2 text-sm bg-teal-900 hover:bg-teal-800 text-teal-300 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     {messageSending ? 'Wird gesendet…' : 'Senden'}
+                  </button>
+                  <button
+                    onClick={closeMessageModal}
+                    disabled={messageSending}
+                    className="px-4 py-2 text-sm text-slate-400 hover:text-white border border-slate-700 rounded-lg transition-colors disabled:opacity-40"
+                  >
+                    Abbrechen
                   </button>
                 </div>
               </>
