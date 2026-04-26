@@ -26,6 +26,7 @@ export function useNotice(url: string | undefined): string | null {
         setContent(value)
       })
       .catch(() => {
+        cache.set(url, null)
         setContent(null)
       })
   }, [url])
