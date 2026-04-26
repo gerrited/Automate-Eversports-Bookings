@@ -96,6 +96,7 @@ E-Mail-Templates werden als Jinja2-HTML-Dateien gespeichert (`{{ variable }}`-Sy
 | `backend/templates/email/new_user_notification.html` | Backend + Test-Mail | `new_user_email`, `now`, `users_url`, `frontend_url` |
 | `backend/templates/email/account_activated.html` | Backend + Test-Mail | `frontend_url` |
 | `backend/templates/email/account_deactivated.html` | Backend + Test-Mail | `frontend_url` |
+| `backend/templates/email/admin_message.html` | Backend | `subject`, `content`, `frontend_url` |
 | `backend/templates/email/booking_failure.html` | Test-Mail | `class_name`, `time_str`, `weekday_str`, `date_str`, `facility_name`, `error_message`, `frontend_url` |
 | `backend/templates/email/debug_cancel_failure.html` | Test-Mail | wie `booking_failure` |
 | `worker/templates/email/booking_failure.html` | Worker | wie oben |

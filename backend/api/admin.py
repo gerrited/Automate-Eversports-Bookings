@@ -237,10 +237,7 @@ def send_message_to_user(
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
-    try:
-        send_admin_message(user.email, body.subject, body.content)
-    except Exception as exc:
-        log.error("Failed to send admin message: %s", exc)
+    send_admin_message(user.email, body.subject, body.content)
     return {"detail": "Nachricht gesendet"}
 
 

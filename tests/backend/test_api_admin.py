@@ -609,23 +609,6 @@ def test_send_message_calls_send_admin_message(client, db_session, mocker):
     )
 
 
-def test_send_message_email_failure_does_not_affect_response(client, db_session, mocker):
-    admin = _make_admin(db_session, ev_id="ev-msg3", email="msg3@x.com")
-    user = _make_user(db_session, ev_id="ev-msg3u", email="msg3u@x.com")
-    mocker.patch(
-        "backend.api.admin.send_admin_message",
-        side_effect=Exception("Resend down"),
-    )
-
-    resp = client.post(
-        f"/api/admin/users/{user.id}/message",
-        json={"subject": "Test", "content": "Inhalt"},
-        headers=_auth_header(admin.id),
-    )
-
-    assert resp.status_code == 200
-
-
 def test_send_message_requires_auth(client):
     resp = client.post(
         "/api/admin/users/some-id/message",
