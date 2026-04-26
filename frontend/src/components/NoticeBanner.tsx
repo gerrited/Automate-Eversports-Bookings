@@ -25,7 +25,7 @@ export default function NoticeBanner({ url, topOffset = '0px', cssVar = '--notic
       observer.disconnect()
       document.documentElement.style.setProperty(cssVar, '0px')
     }
-  }, [cssVar])
+  }, [cssVar, content])
 
   if (!content) return null
 

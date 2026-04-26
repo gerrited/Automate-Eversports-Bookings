@@ -60,4 +60,12 @@ describe('NoticeBanner', () => {
     render(<NoticeBanner url="https://example.com/notice.md" cssVar="--notice-users-height" />)
     expect(setSpy).toHaveBeenCalledWith('--notice-users-height', expect.any(String))
   })
+
+  it('setzt CSS-Variable auf 0px beim Unmounten', () => {
+    vi.spyOn(useNoticeModule, 'useNotice').mockReturnValue('Hinweis')
+    const setSpy = vi.spyOn(document.documentElement.style, 'setProperty')
+    const { unmount } = render(<NoticeBanner url="https://example.com/notice.md" />)
+    unmount()
+    expect(setSpy).toHaveBeenCalledWith('--notice-height', '0px')
+  })
 })
