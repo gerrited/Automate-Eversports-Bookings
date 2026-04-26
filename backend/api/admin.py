@@ -3,7 +3,7 @@ import os
 from typing import List, Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import case, func
 from sqlalchemy.orm import Session
 
@@ -223,8 +223,8 @@ def list_all_logs(
 
 
 class SendMessageRequest(BaseModel):
-    subject: str
-    content: str
+    subject: str = Field(..., min_length=1)
+    content: str = Field(..., min_length=1)
 
 
 @router.post("/admin/users/{user_id}/message")
