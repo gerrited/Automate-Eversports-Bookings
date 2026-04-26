@@ -1,9 +1,8 @@
 import { renderHook, waitFor } from '@testing-library/react'
 import { vi, afterEach } from 'vitest'
-import { useNotice, clearNoticeCache } from './useNotice'
+import { useNotice } from './useNotice'
 
 afterEach(() => {
-  clearNoticeCache()
   vi.restoreAllMocks()
 })
 
@@ -21,6 +20,16 @@ describe('useNotice', () => {
     await waitFor(() => expect(result.current).toBe('Hello **world**'))
   })
 
+  it('ruft fetch mit cache: no-store auf', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      text: () => Promise.resolve('content'),
+    })
+    vi.stubGlobal('fetch', mockFetch)
+    const { result } = renderHook(() => useNotice('https://gist.example.com/notice.md'))
+    await waitFor(() => expect(result.current).toBe('content'))
+    expect(mockFetch).toHaveBeenCalledWith('https://gist.example.com/notice.md', { cache: 'no-store' })
+  })
+
   it('gibt null zurück wenn Inhalt nur Whitespace ist', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       text: () => Promise.resolve('   \n  '),
@@ -33,16 +42,5 @@ describe('useNotice', () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network error')))
     const { result } = renderHook(() => useNotice('https://gist.example.com/notice.md'))
     await waitFor(() => expect(result.current).toBeNull())
-  })
-
-  it('cached Ergebnisse und ruft fetch nur einmal auf', async () => {
-    const mockFetch = vi.fn().mockResolvedValue({
-      text: () => Promise.resolve('cached content'),
-    })
-    vi.stubGlobal('fetch', mockFetch)
-    const { result } = renderHook(() => useNotice('https://gist.example.com/notice.md'))
-    await waitFor(() => expect(result.current).toBe('cached content'))
-    renderHook(() => useNotice('https://gist.example.com/notice.md'))
-    expect(mockFetch).toHaveBeenCalledTimes(1)
   })
 })
