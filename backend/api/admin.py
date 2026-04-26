@@ -8,7 +8,7 @@ from sqlalchemy import case, func
 from sqlalchemy.orm import Session
 
 from backend.api.deps import require_admin
-from backend.core.email import send_account_status_email, send_limit_enforced_email, send_test_email
+from backend.core.email import send_account_status_email, send_admin_message, send_limit_enforced_email, send_test_email
 from backend.db import get_db
 from backend.models.booking_job import BookingJob
 from backend.models.booking_log import BookingLog
@@ -220,6 +220,28 @@ def list_all_logs(
         for log, job, email in rows
     ]
     return AdminLogsPage(items=items, total=total, page=page, page_size=PAGE_SIZE)
+
+
+class SendMessageRequest(BaseModel):
+    subject: str
+    content: str
+
+
+@router.post("/admin/users/{user_id}/message")
+def send_message_to_user(
+    user_id: str,
+    body: SendMessageRequest,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    try:
+        send_admin_message(user.email, body.subject, body.content)
+    except Exception as exc:
+        log.error("Failed to send admin message: %s", exc)
+    return {"detail": "Nachricht gesendet"}
 
 
 class TestEmailRequest(BaseModel):
