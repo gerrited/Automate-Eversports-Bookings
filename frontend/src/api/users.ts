@@ -18,3 +18,10 @@ export async function setUserLimit(id: string, max_active_jobs: number | null): 
     body: JSON.stringify({ max_active_jobs }),
   })
 }
+
+export async function sendUserMessage(id: string, subject: string, content: string): Promise<void> {
+  await apiFetch<{ detail: string }>(`/api/admin/users/${id}/message`, {
+    method: 'POST',
+    body: JSON.stringify({ subject, content }),
+  })
+}
