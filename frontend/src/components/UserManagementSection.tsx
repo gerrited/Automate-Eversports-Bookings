@@ -313,7 +313,7 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
                 <div className="flex justify-end">
                   <button
                     onClick={closeMessageModal}
-                    className="px-4 py-2 text-sm bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                    className="px-4 py-2 bg-brand hover:bg-brand-hover text-white rounded-lg font-semibold transition-colors"
                   >
                     Schließen
                   </button>
@@ -345,14 +345,14 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
                   <button
                     onClick={handleSendMessage}
                     disabled={messageSending || !messageSubject.trim() || !messageContent.trim()}
-                    className="px-4 py-2 text-sm bg-teal-900 hover:bg-teal-800 text-teal-300 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="px-4 py-2 bg-brand hover:bg-brand-hover text-white rounded-lg font-semibold transition-colors disabled:opacity-50"
                   >
                     {messageSending ? 'Wird gesendet…' : 'Senden'}
                   </button>
                   <button
                     onClick={closeMessageModal}
                     disabled={messageSending}
-                    className="px-4 py-2 text-sm text-slate-400 hover:text-white border border-slate-700 rounded-lg transition-colors disabled:opacity-40"
+                    className="px-4 py-2 text-slate-400 hover:text-white transition-colors"
                   >
                     Abbrechen
                   </button>
