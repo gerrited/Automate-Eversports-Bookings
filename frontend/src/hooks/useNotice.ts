@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 
-const cache = new Map<string, string>()
+const cache = new Map<string, string | null>()
 
 export function clearNoticeCache(): void {
   cache.clear()
@@ -9,22 +9,21 @@ export function clearNoticeCache(): void {
 export function useNotice(url: string | undefined): string | null {
   const [content, setContent] = useState<string | null>(() => {
     if (!url) return null
-    const cached = cache.get(url)
-    return cached !== undefined ? (cached || null) : null
+    return cache.has(url) ? cache.get(url)! : null
   })
 
   useEffect(() => {
     if (!url) return
     if (cache.has(url)) {
-      setContent(cache.get(url) || null)
+      setContent(cache.get(url)!)
       return
     }
     fetch(url)
       .then(r => r.text())
       .then(text => {
-        const trimmed = text.trim()
-        cache.set(url, trimmed)
-        setContent(trimmed || null)
+        const value = text.trim() || null
+        cache.set(url, value)
+        setContent(value)
       })
       .catch(() => {
         setContent(null)
