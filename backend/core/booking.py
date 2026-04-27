@@ -321,25 +321,17 @@ def _cancel_with_session(
     soup = BeautifulSoup(resp.text, "html.parser")
 
     numeric_facility_id = _resolve_facility_id(facility_id, session)
-    all_links = soup.find_all("a", class_="cancel-link-event")
-    log.warning(
-        "_cancel_with_session: looking for facility=%s (numeric=%s) class=%s — found %d cancel link(s)",
-        facility_id, numeric_facility_id, class_name, len(all_links),
-    )
-    for i, link in enumerate(all_links):
-        parent_li = link.find_parent("li")
-        log.warning(
-            "  link[%d]: data-facilityid=%s text=%s",
-            i, link.get("data-facilityid", ""),
-            (parent_li.get_text(strip=True)[:80] if parent_li else ""),
-        )
 
     cancel_link = None
-    for link in all_links:
+    for block in soup.find_all("div", class_="marketplace-booked-activity"):
+        link = block.find("a", class_="cancel-link-event")
+        if link is None:
+            continue
         if str(link.get("data-facilityid", "")) != numeric_facility_id:
             continue
-        h4 = link.find_parent("li")
-        if h4 and class_name and class_name not in h4.get_text():
+        name_el = block.find("h4", class_="marketplace-booked-activity__name")
+        activity_name = name_el.get_text(strip=True) if name_el else ""
+        if class_name and class_name not in activity_name:
             continue
         cancel_link = link
         break
