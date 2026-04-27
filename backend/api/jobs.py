@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import time
 from datetime import date, timedelta
 from typing import List
 
@@ -10,7 +9,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from backend.api.deps import get_current_active_user
-from backend.core.booking import book_session, _cancel_with_session
+from backend.core.booking import book_session, cancel_booking
 from backend.core.encryption import decrypt
 from backend.db import get_db
 from backend.models.booking_job import BookingJob
@@ -194,26 +193,18 @@ def execute_job(
             job.event_type = result["event_type"]
 
         if status == "success" and job.debug:
-            last_exc: Exception | None = None
-            for attempt in range(3):
-                if attempt > 0:
-                    time.sleep(2)
-                try:
-                    _cancel_with_session(
-                        session=result["_session"],
-                        class_name=job.class_name,
-                        facility_id=job.facility_id,
-                    )
-                    last_exc = None
-                    break
-                except Exception as e:
-                    last_exc = e
-            if last_exc is None:
+            try:
+                cancel_booking(
+                    email=current_user.email,
+                    password=password,
+                    class_name=job.class_name,
+                    facility_id=job.facility_id,
+                )
                 message = f"[DEBUG] gebucht und storniert für {target_date}"
                 log.info("Job %s: debug booking cancelled", job.id)
-            else:
-                message = f"[DEBUG] gebucht, Stornierung fehlgeschlagen: {last_exc}"
-                log.error("Job %s: debug cancel failed — %s", job.id, last_exc)
+            except Exception as cancel_exc:
+                message = f"[DEBUG] gebucht, Stornierung fehlgeschlagen: {cancel_exc}"
+                log.error("Job %s: debug cancel failed — %s", job.id, cancel_exc)
 
     except Exception as exc:
         status = "failed"
