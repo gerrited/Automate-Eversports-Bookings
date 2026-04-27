@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import LandingPage from './pages/LandingPage'
 import DashboardPage from './pages/DashboardPage'
 import Footer from './components/Footer'
@@ -12,6 +12,7 @@ function RequireAuth({ children }: { children: ReactElement }) {
 }
 
 function NoticeArea() {
+  useLocation() // re-render on route change to pick up token changes
   const token = localStorage.getItem('token')
   const publicUrl = window.__APP_CONFIG__?.noticePublicGistUrl || undefined
   const userUrl = token ? (window.__APP_CONFIG__?.noticeUsersGistUrl || undefined) : undefined
