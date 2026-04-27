@@ -199,8 +199,8 @@ def test_execute_job_booking_error(client, db_session):
 
 
 def test_execute_job_debug_mode_cancels_booking(client, db_session):
+    from unittest.mock import MagicMock
     user = _create_user(db_session)
-    # Job mit debug=True erstellen
     resp = client.post(
         "/api/jobs",
         json={
@@ -212,15 +212,45 @@ def test_execute_job_debug_mode_cancels_booking(client, db_session):
     )
     job_id = resp.json()["id"]
 
-    with patch("backend.api.jobs.book_session", return_value={"status": "success", "order_id": "ord-1", "event_type": "class"}), \
+    mock_session = MagicMock()
+    with patch("backend.api.jobs.book_session", return_value={"status": "success", "order_id": "ord-1", "event_type": "class", "_session": mock_session}), \
          patch("backend.api.jobs.decrypt", return_value="password123"), \
-         patch("backend.api.jobs.cancel_booking") as mock_cancel:
+         patch("backend.api.jobs._cancel_with_session") as mock_cancel:
         resp = client.post(f"/api/jobs/{job_id}/execute", headers=_auth_header(user.id))
 
     assert resp.status_code == 200
     assert resp.json()["status"] == "success"
     assert "[DEBUG]" in resp.json()["message"]
-    mock_cancel.assert_called_once()
+    mock_cancel.assert_called_once_with(
+        session=mock_session,
+        class_name="CrossFit",
+        facility_id="73041",
+    )
+
+
+def test_execute_job_debug_cancel_failure(client, db_session):
+    from unittest.mock import MagicMock
+    user = _create_user(db_session)
+    resp = client.post(
+        "/api/jobs",
+        json={
+            "weekday": 1, "target_time": "18:00:00", "facility_id": "73041",
+            "facility_name": "CrossFit Rabbit Hole", "class_name": "CrossFit",
+            "days_in_advance": 4, "debug": True,
+        },
+        headers=_auth_header(user.id),
+    )
+    job_id = resp.json()["id"]
+
+    mock_session = MagicMock()
+    with patch("backend.api.jobs.book_session", return_value={"status": "success", "order_id": "ord-1", "event_type": "class", "_session": mock_session}), \
+         patch("backend.api.jobs.decrypt", return_value="password123"), \
+         patch("backend.api.jobs._cancel_with_session", side_effect=RuntimeError("No upcoming booking found")):
+        resp = client.post(f"/api/jobs/{job_id}/execute", headers=_auth_header(user.id))
+
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "success"
+    assert "Stornierung fehlgeschlagen" in resp.json()["message"]
 
 
 def test_execute_job_forbidden_for_other_user(client, db_session):

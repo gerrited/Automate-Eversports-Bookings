@@ -255,13 +255,13 @@ def book_session(
         for error in cart_result["errors"]:
             msg = error["message"].lower()
             if "already" in msg or "bereits" in msg:
-                return {"status": "already_booked", "order_id": None, "event_type": matched_event_type}
+                return {"status": "already_booked", "order_id": None, "event_type": matched_event_type, "_session": session}
         full_keywords = ("fully booked", "fully_booked", "ausgebucht", "sold out", "no spots")
         for error in cart_result["errors"]:
             msg = error["message"].lower()
             if any(kw in msg for kw in full_keywords):
                 join_waitlist(session, bookable_item_id)
-                return {"status": "waitlist", "order_id": None, "event_type": matched_event_type}
+                return {"status": "waitlist", "order_id": None, "event_type": matched_event_type, "_session": session}
         msgs = "; ".join(e["message"] for e in cart_result["errors"])
         raise RuntimeError(f"Cart creation failed: {msgs}")
 
@@ -284,10 +284,10 @@ def book_session(
         msgs = "; ".join(e["message"] for e in order_result["errors"])
         # Free sessions have no product assigned — booking is completed at cart level
         if any("product" in e["message"].lower() for e in order_result["errors"]):
-            return {"status": "success", "order_id": cart_id, "event_type": matched_event_type}
+            return {"status": "success", "order_id": cart_id, "event_type": matched_event_type, "_session": session}
         raise RuntimeError(f"Order creation failed: {msgs}")
 
-    return {"status": "success", "order_id": order_result["id"], "event_type": matched_event_type}
+    return {"status": "success", "order_id": order_result["id"], "event_type": matched_event_type, "_session": session}
 
 
 def cancel_booking(
@@ -303,8 +303,18 @@ def cancel_booking(
     login_result = eversports_login(email, password)
     if login_result is None:
         raise RuntimeError("Eversports login failed")
-    session: requests.Session = login_result["session"]
+    _cancel_with_session(
+        session=login_result["session"],
+        class_name=class_name,
+        facility_id=facility_id,
+    )
 
+
+def _cancel_with_session(
+    session: requests.Session,
+    class_name: str,
+    facility_id: str,
+) -> None:
     resp = session.get(BASE_URL + "/u", timeout=TIMEOUT)
     if not resp.ok:
         raise _http_error(resp)
@@ -316,7 +326,6 @@ def cancel_booking(
     for link in soup.find_all("a", class_="cancel-link-event"):
         if str(link.get("data-facilityid", "")) != numeric_facility_id:
             continue
-        # Match by class name via the nearest h4
         h4 = link.find_parent("li")
         if h4 and class_name and class_name not in h4.get_text():
             continue

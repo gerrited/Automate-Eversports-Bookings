@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import date, timedelta
 from typing import List
 
@@ -8,7 +9,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from backend.api.deps import get_current_active_user
-from backend.core.booking import book_session, cancel_booking
+from backend.core.booking import book_session, _cancel_with_session
 from backend.core.encryption import decrypt
 from backend.db import get_db
 from backend.models.booking_job import BookingJob
@@ -16,6 +17,8 @@ from backend.models.booking_log import BookingLog
 from backend.models.user import User
 from backend.schemas.job import JobCreate, JobUpdate, JobResponse
 from backend.schemas.log import LogResponse
+
+log = logging.getLogger(__name__)
 
 
 def _find_duplicate(
@@ -191,15 +194,16 @@ def execute_job(
 
         if status == "success" and job.debug:
             try:
-                cancel_booking(
-                    email=current_user.email,
-                    password=password,
+                _cancel_with_session(
+                    session=result["_session"],
                     class_name=job.class_name,
                     facility_id=job.facility_id,
                 )
                 message = f"[DEBUG] gebucht und storniert für {target_date}"
+                log.info("Job %s: debug booking cancelled", job.id)
             except Exception as cancel_exc:
                 message = f"[DEBUG] gebucht, Stornierung fehlgeschlagen: {cancel_exc}"
+                log.error("Job %s: debug cancel failed — %s", job.id, cancel_exc)
 
     except Exception as exc:
         status = "failed"
