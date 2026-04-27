@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from datetime import date, timedelta
 from typing import List
 
@@ -193,17 +194,26 @@ def execute_job(
             job.event_type = result["event_type"]
 
         if status == "success" and job.debug:
-            try:
-                _cancel_with_session(
-                    session=result["_session"],
-                    class_name=job.class_name,
-                    facility_id=job.facility_id,
-                )
+            last_exc: Exception | None = None
+            for attempt in range(3):
+                if attempt > 0:
+                    time.sleep(2)
+                try:
+                    _cancel_with_session(
+                        session=result["_session"],
+                        class_name=job.class_name,
+                        facility_id=job.facility_id,
+                    )
+                    last_exc = None
+                    break
+                except Exception as e:
+                    last_exc = e
+            if last_exc is None:
                 message = f"[DEBUG] gebucht und storniert für {target_date}"
                 log.info("Job %s: debug booking cancelled", job.id)
-            except Exception as cancel_exc:
-                message = f"[DEBUG] gebucht, Stornierung fehlgeschlagen: {cancel_exc}"
-                log.error("Job %s: debug cancel failed — %s", job.id, cancel_exc)
+            else:
+                message = f"[DEBUG] gebucht, Stornierung fehlgeschlagen: {last_exc}"
+                log.error("Job %s: debug cancel failed — %s", job.id, last_exc)
 
     except Exception as exc:
         status = "failed"
