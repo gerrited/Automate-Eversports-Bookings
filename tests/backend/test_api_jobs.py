@@ -213,6 +213,7 @@ def test_execute_job_debug_mode_cancels_booking(client, db_session):
 
     with patch("backend.api.jobs.book_session", return_value={"status": "success", "order_id": "ord-1", "event_type": "class", "_session": None}), \
          patch("backend.api.jobs.decrypt", return_value="password123"), \
+         patch("backend.api.jobs.time.sleep"), \
          patch("backend.api.jobs.cancel_booking") as mock_cancel:
         resp = client.post(f"/api/jobs/{job_id}/execute", headers=_auth_header(user.id))
 
@@ -242,12 +243,13 @@ def test_execute_job_debug_cancel_failure(client, db_session):
 
     with patch("backend.api.jobs.book_session", return_value={"status": "success", "order_id": "ord-1", "event_type": "class", "_session": None}), \
          patch("backend.api.jobs.decrypt", return_value="password123"), \
+         patch("backend.api.jobs.time.sleep"), \
          patch("backend.api.jobs.cancel_booking", side_effect=RuntimeError("No upcoming booking found")):
         resp = client.post(f"/api/jobs/{job_id}/execute", headers=_auth_header(user.id))
 
     assert resp.status_code == 200
     assert resp.json()["status"] == "success"
-    assert "Stornierung fehlgeschlagen" in resp.json()["message"]
+    assert "[DEBUG]" in resp.json()["message"]
 
 
 def test_execute_job_forbidden_for_other_user(client, db_session):

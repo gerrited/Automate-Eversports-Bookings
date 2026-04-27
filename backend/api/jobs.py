@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import logging
+import time
 from datetime import date, timedelta
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -76,6 +77,18 @@ def _next_weekday(weekday: int) -> date:
 class ExecuteJobResponse(BaseModel):
     status: str   # "success" | "already_booked" | "failed"
     message: str
+
+
+_DEBUG_CANCEL_DELAY = 15  # seconds — Eversports needs time to reflect booking on /u
+
+
+def _run_debug_cancel(job_id: str, email: str, password: str, class_name: str, facility_id: str) -> None:
+    time.sleep(_DEBUG_CANCEL_DELAY)
+    try:
+        cancel_booking(email=email, password=password, class_name=class_name, facility_id=facility_id)
+        log.info("Job %s: debug booking cancelled", job_id)
+    except Exception as cancel_exc:
+        log.error("Job %s: debug cancel failed — %s", job_id, cancel_exc)
 
 
 router = APIRouter()
@@ -168,6 +181,7 @@ def get_job_logs(
 @router.post("/jobs/{job_id}/execute", response_model=ExecuteJobResponse)
 def execute_job(
     job_id: str,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
@@ -193,18 +207,16 @@ def execute_job(
             job.event_type = result["event_type"]
 
         if status == "success" and job.debug:
-            try:
-                cancel_booking(
-                    email=current_user.email,
-                    password=password,
-                    class_name=job.class_name,
-                    facility_id=job.facility_id,
-                )
-                message = f"[DEBUG] gebucht und storniert für {target_date}"
-                log.info("Job %s: debug booking cancelled", job.id)
-            except Exception as cancel_exc:
-                message = f"[DEBUG] gebucht, Stornierung fehlgeschlagen: {cancel_exc}"
-                log.error("Job %s: debug cancel failed — %s", job.id, cancel_exc)
+            background_tasks.add_task(
+                _run_debug_cancel,
+                job_id=job.id,
+                email=current_user.email,
+                password=password,
+                class_name=job.class_name,
+                facility_id=job.facility_id,
+            )
+            message = f"[DEBUG] gebucht für {target_date}, Stornierung läuft..."
+            log.info("Job %s: debug cancel scheduled", job.id)
 
     except Exception as exc:
         status = "failed"
