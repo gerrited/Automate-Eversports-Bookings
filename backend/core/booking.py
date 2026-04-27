@@ -314,6 +314,8 @@ def _cancel_with_session(
     session: requests.Session,
     class_name: str,
     facility_id: str,
+    target_date: Optional[date] = None,
+    target_time: Optional[str] = None,
 ) -> None:
     resp = session.get(BASE_URL + "/u", timeout=TIMEOUT)
     if not resp.ok:
@@ -333,6 +335,17 @@ def _cancel_with_session(
         activity_name = name_el.get_text(strip=True) if name_el else ""
         if class_name and class_name not in activity_name:
             continue
+        if target_date is not None or target_time is not None:
+            raw_start = (block.find("input", id="google-calendar-start") or {}).get("value", "")
+            try:
+                booking_dt = datetime.strptime(raw_start, "%Y%m%dT%H%M%S")
+            except ValueError:
+                booking_dt = None
+            if booking_dt is not None:
+                if target_date is not None and booking_dt.date() != target_date:
+                    continue
+                if target_time is not None and booking_dt.strftime("%H:%M") != target_time:
+                    continue
         cancel_link = link
         break
 

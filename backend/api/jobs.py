@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from backend.api.deps import get_current_active_user
-from backend.core.booking import book_session, cancel_booking
+from backend.core.booking import book_session, _cancel_with_session, eversports_login
 from backend.core.encryption import decrypt
 from backend.db import get_db
 from backend.models.booking_job import BookingJob
@@ -82,10 +82,22 @@ class ExecuteJobResponse(BaseModel):
 _DEBUG_CANCEL_DELAY = 15  # seconds — Eversports needs time to reflect booking on /u
 
 
-def _run_debug_cancel(job_id: str, email: str, password: str, class_name: str, facility_id: str) -> None:
+def _run_debug_cancel(
+    job_id: str, email: str, password: str, class_name: str, facility_id: str,
+    target_date: date, target_time: str,
+) -> None:
     time.sleep(_DEBUG_CANCEL_DELAY)
     try:
-        cancel_booking(email=email, password=password, class_name=class_name, facility_id=facility_id)
+        login_result = eversports_login(email, password)
+        if login_result is None:
+            raise RuntimeError("Eversports login failed")
+        _cancel_with_session(
+            session=login_result["session"],
+            class_name=class_name,
+            facility_id=facility_id,
+            target_date=target_date,
+            target_time=target_time,
+        )
         log.info("Job %s: debug booking cancelled", job_id)
     except Exception as cancel_exc:
         log.error("Job %s: debug cancel failed — %s", job_id, cancel_exc)
@@ -214,6 +226,8 @@ def execute_job(
                 password=password,
                 class_name=job.class_name,
                 facility_id=job.facility_id,
+                target_date=target_date,
+                target_time=job.target_time.strftime("%H:%M"),
             )
             message = f"[DEBUG] gebucht für {target_date}, Stornierung läuft..."
             log.info("Job %s: debug cancel scheduled", job.id)
