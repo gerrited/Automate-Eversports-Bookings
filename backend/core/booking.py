@@ -322,13 +322,13 @@ def _cancel_with_session(
 
     numeric_facility_id = _resolve_facility_id(facility_id, session)
     all_links = soup.find_all("a", class_="cancel-link-event")
-    log.info(
+    log.warning(
         "_cancel_with_session: looking for facility=%s (numeric=%s) class=%s — found %d cancel link(s)",
         facility_id, numeric_facility_id, class_name, len(all_links),
     )
     for i, link in enumerate(all_links):
         parent_li = link.find_parent("li")
-        log.info(
+        log.warning(
             "  link[%d]: data-facilityid=%s text=%s",
             i, link.get("data-facilityid", ""),
             (parent_li.get_text(strip=True)[:80] if parent_li else ""),
