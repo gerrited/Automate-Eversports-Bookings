@@ -236,12 +236,15 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
                   <button
                     onClick={() => openMessageModal(user)}
                     className="px-3 py-1 rounded-md text-sm font-medium transition-colors bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700"
+                    aria-label="Nachricht senden"
                   >
-                    Nachricht
+                    <svg className="sm:hidden w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path d="M2.003 5.884 10 9.882l7.997-3.998A2 2 0 0 0 16 4H4a2 2 0 0 0-1.997 1.884z"/><path d="m18 8.118-8 4-8-4V14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8.118z"/></svg>
+                    <span className="hidden sm:inline">Nachricht</span>
                   </button>
                   <button
                     disabled={isSelf}
                     onClick={() => handleToggle(user)}
+                    aria-label={user.active ? 'Deaktivieren' : 'Aktivieren'}
                     className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
                       isSelf
                         ? 'opacity-40 cursor-not-allowed bg-slate-700 text-slate-400'
@@ -250,7 +253,13 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
                         : 'bg-green-900 hover:bg-green-700 text-green-300'
                     }`}
                   >
-                    {user.active ? 'Deaktivieren' : 'Aktivieren'}
+                    <svg className="sm:hidden w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                      {user.active
+                        ? <path fillRule="evenodd" d="M4.293 4.293a1 1 0 0 1 1.414 0L10 8.586l4.293-4.293a1 1 0 1 1 1.414 1.414L11.414 10l4.293 4.293a1 1 0 0 1-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 0 1-1.414-1.414L8.586 10 4.293 5.707a1 1 0 0 1 0-1.414z" clipRule="evenodd"/>
+                        : <path fillRule="evenodd" d="M16.707 5.293a1 1 0 0 1 0 1.414l-8 8a1 1 0 0 1-1.414 0l-4-4a1 1 0 0 1 1.414-1.414L8 12.586l7.293-7.293a1 1 0 0 1 1.414 0z" clipRule="evenodd"/>
+                      }
+                    </svg>
+                    <span className="hidden sm:inline">{user.active ? 'Deaktivieren' : 'Aktivieren'}</span>
                   </button>
                 </div>
               </div>
