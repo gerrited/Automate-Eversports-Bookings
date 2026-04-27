@@ -42,7 +42,7 @@ export default function NoticeBanner({ url, topOffset = '0px', cssVar = '--notic
         borderBottom: '1px solid #0d3538',
         padding: '6px',
         textAlign: 'center',
-        fontSize: '0.7rem',
+        fontSize: '0.85rem',
         color: '#9ca3af',
       }}
     >

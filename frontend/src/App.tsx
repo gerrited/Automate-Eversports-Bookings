@@ -4,16 +4,25 @@ import LandingPage from './pages/LandingPage'
 import DashboardPage from './pages/DashboardPage'
 import Footer from './components/Footer'
 import NoticeBanner from './components/NoticeBanner'
+import { useNotice } from './hooks/useNotice'
 
 function RequireAuth({ children }: { children: ReactElement }) {
   const token = localStorage.getItem('token')
   return token ? children : <Navigate to="/" replace />
 }
 
+function NoticeArea() {
+  const token = localStorage.getItem('token')
+  const publicUrl = window.__APP_CONFIG__?.noticePublicGistUrl || undefined
+  const userUrl = token ? (window.__APP_CONFIG__?.noticeUsersGistUrl || undefined) : undefined
+  const userContent = useNotice(userUrl)
+  return <NoticeBanner url={userContent ? userUrl : publicUrl} />
+}
+
 export default function App() {
   return (
     <BrowserRouter>
-      <NoticeBanner url={window.__APP_CONFIG__?.noticePublicGistUrl || undefined} />
+      <NoticeArea />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route
