@@ -1,6 +1,6 @@
 ![logo](frontend/public/logo.png)
 
-# FOReversports - Automate Eversports Bookins
+# FOReversports - Automate Eversports Bookings
 FOReversports takes the stress out of booking by automatically booking spots in Eversports classes. Everything is easily managed via its dedicated web UI.
 
 FOReversports is a recursive acronym. It stands for: Fast On-time Reservation for Eversports
