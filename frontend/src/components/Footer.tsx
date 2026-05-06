@@ -18,6 +18,15 @@ export default function Footer() {
       <footer style={{ position: 'fixed', bottom: 0, left: 0, right: 0, textAlign: 'center', padding: '6px', fontSize: '0.7rem', color: '#9ca3af', background: '#021214', borderTop: '1px solid #0d3538', display: 'flex', justifyContent: 'center', gap: '8px' }}>
         <button
           type="button"
+          aria-label="Impressum & Datenschutz"
+          onClick={() => setImprintOpen(true)}
+          style={{ color: 'inherit', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 'inherit' }}
+        >
+          Impressum & Datenschutz
+        </button>
+        <span>·</span>
+        <button
+          type="button"
           aria-label="FAQ"
           onClick={() => setFaqOpen(true)}
           style={{ color: 'inherit', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 'inherit' }}
@@ -25,15 +34,6 @@ export default function Footer() {
           FAQ
         </button>
         <span>·</span>
-        <button
-          type="button"
-          aria-label="Impressum & Datenschutz"
-          onClick={() => setImprintOpen(true)}
-          style={{ color: 'inherit', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 'inherit' }}
-        >
-          Impressum
-        </button>
-        {(version || shortSha) && <span>·</span>}
         {version && (
           <span>
             {versionHref ? (
@@ -43,7 +43,7 @@ export default function Footer() {
             ) : `v${version}`}
           </span>
         )}
-        {version && shortSha && <span>·</span>}
+        {version && shortSha && " ("}
         {shortSha && (
           <span>
             {commitHref ? (
@@ -53,6 +53,7 @@ export default function Footer() {
             ) : shortSha}
           </span>
         )}
+        {version && shortSha && ")"}
       </footer>
       {faqOpen && <FaqModal onClose={() => setFaqOpen(false)} />}
       {imprintOpen && <ImprintModal onClose={() => setImprintOpen(false)} />}
