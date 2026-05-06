@@ -28,5 +28,10 @@ class SetLimitRequest(BaseModel):
 class MeResponse(BaseModel):
     total_bookings_executed: int
     max_active_jobs: Optional[int] = None
+    notification_advance_minutes: int = 60
 
     model_config = {"from_attributes": True}
+
+
+class UpdateAccountRequest(BaseModel):
+    notification_advance_minutes: Optional[int] = Field(default=None, ge=15, le=1440)
