@@ -109,6 +109,16 @@ export default function ImprintModal({ onClose }: Props) {
                   verarbeitet Daten als Auftragsverarbeiter unter Einhaltung strenger Sicherheitsstandards.
                 </p>
               </div>
+              <div className="flex flex-col gap-1">
+                <p className="text-sm font-medium text-slate-300">E-Mail-Versand (Resend)</p>
+                <p className="text-sm text-slate-400 leading-relaxed">
+                  Für den Versand von Benachrichtigungen (z.&nbsp;B. Kontofreischaltung, Buchungsfehler)
+                  nutzen wir den Dienst Resend (Resend Inc., USA). Dabei werden Ihre E-Mail-Adresse sowie
+                  die jeweiligen Nachrichteninhalte an die Server von Resend übertragen. Die Daten werden
+                  in der Region EU-West-1 (Irland) gespeichert. Resend verarbeitet diese Daten als
+                  Auftragsverarbeiter gemäß DSGVO-Standardvertragsklauseln.
+                </p>
+              </div>
             </div>
 
             <div className="flex flex-col gap-2">
