@@ -43,17 +43,17 @@ export default function Footer() {
             ) : `v${version}`}
           </span>
         )}
-        {version && shortSha && " ("}
         {shortSha && (
           <span>
+            {version && "("}
             {commitHref ? (
               <a href={commitHref} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>
                 {shortSha}
               </a>
             ) : shortSha}
+            {version && ")"}
           </span>
         )}
-        {version && shortSha && ")"}
       </footer>
       {faqOpen && <FaqModal onClose={() => setFaqOpen(false)} />}
       {imprintOpen && <ImprintModal onClose={() => setImprintOpen(false)} />}
