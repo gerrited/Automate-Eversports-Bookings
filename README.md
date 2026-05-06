@@ -1,8 +1,11 @@
 ![logo](frontend/public/logo.png)
 
-# Automate Eversports Bookings
+# FOReversports - Automate Eversports Bookins
+FOReversports takes the stress out of booking by automatically booking spots in Eversports classes. Everything is easily managed via its dedicated web UI.
 
-Automatically books Eversports classes for multiple users. Managed via a web-based UI called FOReversports. FOR stands for "Fastest On-time Reservation".
+FOReversports is a recursive acronym. It stands for: Fast On-time Reservation for Eversports
+
+It perfectly describes what the tool does: making sure you're always first in line for your favorite sessions.
 
 ## Demo
 [![Watch the video](https://img.youtube.com/vi/spngnOZDBQo/0.jpg)](https://www.youtube.com/watch?v=spngnOZDBQo)
