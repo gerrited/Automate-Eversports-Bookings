@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import FaqModal from './FaqModal'
+import ImprintModal from './ImprintModal'
 
 export default function Footer() {
   const sha = import.meta.env.VITE_COMMIT_SHA as string | undefined
   const repo = import.meta.env.VITE_GITHUB_REPO as string | undefined
   const version = (import.meta.env.VITE_VERSION as string | undefined)?.replace(/^v/, '')
   const [faqOpen, setFaqOpen] = useState(false)
+  const [imprintOpen, setImprintOpen] = useState(false)
 
   const shortSha = sha?.slice(0, 7)
   const commitHref = sha && repo ? `https://github.com/${repo}/commit/${sha}` : undefined
@@ -21,6 +23,15 @@ export default function Footer() {
           style={{ color: 'inherit', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 'inherit' }}
         >
           FAQ
+        </button>
+        <span>·</span>
+        <button
+          type="button"
+          aria-label="Impressum & Datenschutz"
+          onClick={() => setImprintOpen(true)}
+          style={{ color: 'inherit', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 'inherit' }}
+        >
+          Impressum
         </button>
         {(version || shortSha) && <span>·</span>}
         {version && (
@@ -44,6 +55,7 @@ export default function Footer() {
         )}
       </footer>
       {faqOpen && <FaqModal onClose={() => setFaqOpen(false)} />}
+      {imprintOpen && <ImprintModal onClose={() => setImprintOpen(false)} />}
     </>
   )
 }
