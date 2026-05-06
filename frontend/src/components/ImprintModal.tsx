@@ -153,7 +153,7 @@ export default function ImprintModal({ onClose }: Props) {
         </section>
 
         <p className="text-xs text-slate-600 text-center">
-          Erstellt für das private Projekt foreversports.cc | Stand: Mai 2024
+          Erstellt für das private Projekt foreversports.cc | Stand: Mai 2026
         </p>
       </div>
     </div>
