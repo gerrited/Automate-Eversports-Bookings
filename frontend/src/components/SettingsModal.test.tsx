@@ -4,6 +4,16 @@ import { MemoryRouter } from 'react-router-dom'
 
 vi.mock('../api/account', () => ({
   deleteAccount: vi.fn(),
+  getMe: vi.fn().mockResolvedValue({
+    total_bookings_executed: 0,
+    max_active_jobs: null,
+    notification_advance_minutes: 60,
+  }),
+  updateAccount: vi.fn().mockResolvedValue({
+    total_bookings_executed: 0,
+    max_active_jobs: null,
+    notification_advance_minutes: 30,
+  }),
 }))
 vi.mock('../api/client', () => ({
   clearToken: vi.fn(),
@@ -26,6 +36,23 @@ function renderModal(onClose = vi.fn()) {
     </MemoryRouter>
   )
 }
+
+beforeAll(() => {
+  // jsdom does not expose Notification or serviceWorker; stub them so the
+  // notifications section renders during tests.
+  if (!('Notification' in window)) {
+    Object.defineProperty(window, 'Notification', {
+      value: { requestPermission: vi.fn() },
+      writable: true,
+    })
+  }
+  if (!('serviceWorker' in navigator)) {
+    Object.defineProperty(navigator, 'serviceWorker', {
+      value: {},
+      writable: true,
+    })
+  }
+})
 
 afterEach(() => {
   vi.clearAllMocks()
@@ -88,5 +115,27 @@ describe('SettingsModal', () => {
     renderModal(onClose)
     fireEvent.click(screen.getByLabelText('Schließen'))
     expect(onClose).toHaveBeenCalledOnce()
+  })
+
+  it('renders notification advance minutes field', async () => {
+    renderModal()
+    expect(await screen.findByLabelText('Minuten vor dem Termin')).toBeInTheDocument()
+  })
+
+  it('loads current notification_advance_minutes from API', async () => {
+    renderModal()
+    const input = await screen.findByLabelText('Minuten vor dem Termin') as HTMLInputElement
+    expect(input.value).toBe('60')
+  })
+
+  it('saves notification_advance_minutes on submit', async () => {
+    const { updateAccount } = await import('../api/account')
+    renderModal()
+    const input = await screen.findByLabelText('Minuten vor dem Termin')
+    fireEvent.change(input, { target: { value: '30' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Speichern' }))
+    await waitFor(() => {
+      expect(updateAccount).toHaveBeenCalledWith({ notification_advance_minutes: 30 })
+    })
   })
 })
