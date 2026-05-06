@@ -560,3 +560,31 @@ def test_process_job_does_not_increment_counter_on_failure(db_session, session_f
 
     db_session.refresh(user)
     assert user.total_bookings_executed == 0
+
+
+from unittest.mock import patch
+from backend.models.push_subscription import PushSubscription
+
+
+def test_run_calls_push_notifications_for_subscribed_users(db_session, session_factory):
+    from backend.core.encryption import encrypt
+    u = User(
+        id="u-push",
+        eversports_user_id="ev-push",
+        email="push@example.com",
+        encrypted_password=encrypt("secret"),
+        active=True,
+        notification_advance_minutes=60,
+    )
+    db_session.add(u)
+    sub = PushSubscription(user_id="u-push", endpoint="https://push.example.com/x", p256dh="k", auth="a")
+    db_session.add(sub)
+    db_session.commit()
+
+    now = datetime(2026, 5, 6, 9, 0)
+
+    with patch("worker.worker.fetch_upcoming_bookings", return_value=[]) as mock_fetch, \
+         patch("worker.worker.send_push_notifications") as mock_notify:
+        run(now, session_factory)
+        mock_fetch.assert_called_once_with("push@example.com", "secret")
+        mock_notify.assert_called_once()
