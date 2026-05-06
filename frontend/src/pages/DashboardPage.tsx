@@ -307,7 +307,7 @@ useEffect(() => {
                 onEdit={j => { setEditingJob(j); setShowModal(true) }}
                 onDelete={handleDelete}
                 onSelect={handleSelect}
-                onExecute={isAdmin() ? handleExecute : undefined}
+                onExecute={handleExecute}
               />
             ))}
           </div>
