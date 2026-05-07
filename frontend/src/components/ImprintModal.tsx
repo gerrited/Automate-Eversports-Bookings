@@ -5,12 +5,12 @@ interface Props {
 export default function ImprintModal({ onClose }: Props) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60"
+      className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60 touch-none"
       data-testid="imprint-modal-backdrop"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg max-h-[80vh] overflow-y-auto bg-surface-card border border-slate-700/60 rounded-xl p-6 flex flex-col gap-6"
+        className="w-full max-w-lg max-h-[80vh] overflow-y-auto overscroll-contain touch-pan-y bg-surface-card border border-slate-700/60 rounded-xl p-6 flex flex-col gap-6"
         data-testid="imprint-modal-card"
         onClick={e => e.stopPropagation()}
       >

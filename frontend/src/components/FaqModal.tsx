@@ -67,12 +67,12 @@ export default function FaqModal({ onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60"
+      className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60 touch-none"
       data-testid="faq-modal-backdrop"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg max-h-[80vh] overflow-y-auto bg-surface-card border border-slate-700/60 rounded-xl p-6 flex flex-col gap-4"
+        className="w-full max-w-lg max-h-[80vh] overflow-y-auto overscroll-contain touch-pan-y bg-surface-card border border-slate-700/60 rounded-xl p-6 flex flex-col gap-4"
         data-testid="faq-modal-card"
         onClick={e => e.stopPropagation()}
       >
