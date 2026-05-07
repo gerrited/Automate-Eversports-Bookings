@@ -77,4 +77,14 @@ describe('Stepper', () => {
     fireEvent.blur(screen.getByRole('spinbutton'))
     expect(onChange).not.toHaveBeenCalled()
   })
+
+  it('bricht Edit-Modus bei Escape ab ohne onChange aufzurufen', () => {
+    const onChange = vi.fn()
+    render(<Stepper value={4} onChange={onChange} min={1} max={30} aria-label="Tage im Voraus" />)
+    fireEvent.click(screen.getByText('4'))
+    fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '9' } })
+    fireEvent.keyDown(screen.getByRole('spinbutton'), { key: 'Escape' })
+    expect(onChange).not.toHaveBeenCalled()
+    expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument()
+  })
 })

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { KeyboardEvent } from 'react'
 
 interface Props {
@@ -17,8 +17,11 @@ export default function Stepper({ value, onChange, min, max, 'aria-label': ariaL
   function startEdit() {
     setDraft(String(value))
     setEditing(true)
-    setTimeout(() => inputRef.current?.select(), 0)
   }
+
+  useEffect(() => {
+    if (editing) inputRef.current?.select()
+  }, [editing])
 
   function commitEdit() {
     const n = parseInt(draft, 10)
