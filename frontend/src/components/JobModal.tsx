@@ -63,7 +63,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
   }
 
   const rowClass = 'flex items-center gap-3 bg-surface-input border border-slate-700 rounded-lg px-3 min-h-[44px]'
-  const labelClass = 'flex items-center gap-1 text-slate-500 text-xs w-28 shrink-0'
+  const labelClass = 'flex items-center gap-1 text-white text-xs w-28 shrink-0'
 
   return (
     <ModalShell>

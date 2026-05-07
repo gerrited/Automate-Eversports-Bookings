@@ -20,6 +20,7 @@ export default function ModalShell({
       className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center px-4"
       data-testid={testId}
       onClick={onBackdropClick}
+      onTouchMove={e => e.stopPropagation()}
     >
       <div
         className={`relative bg-surface-card border border-slate-700 rounded-xl w-full ${MAX_WIDTHS[maxWidth]} p-6`}
