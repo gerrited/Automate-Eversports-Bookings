@@ -7,6 +7,7 @@ import CourseCombobox from './CourseCombobox'
 import HelpIcon from './HelpIcon'
 import { getCourses } from '../api/facilities'
 import { isAdmin } from '../api/client'
+import { Button, Input, ModalShell } from './ui'
 
 interface Props {
   job?: Job
@@ -59,8 +60,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4">
-      <div className="bg-surface-card rounded-xl w-full max-w-md p-6">
+    <ModalShell>
         <h2 className="text-white font-bold text-lg mb-5">
           {job ? 'Geplante Buchung bearbeiten' : 'Neue Buchung planen'}
         </h2>
@@ -95,13 +95,12 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
               Uhrzeit
               <HelpIcon text="Die Startzeit des Kurses. Wird auch genutzt, um passende Kurse in der Auswahl zu filtern." />
             </span>
-            <input
+            <Input
               aria-label="Uhrzeit"
               type="time"
               value={targetTime}
               onChange={e => setTargetTime(e.target.value)}
               required
-              className="bg-surface-input text-white rounded-lg px-3 py-2 outline-hidden focus:ring-2 focus:ring-brand [color-scheme:dark]"
             />
           </label>
 
@@ -122,7 +121,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
               Tage im Voraus
               <HelpIcon text="Wie viele Tage vor dem Kurs soll die Buchung ausgelöst werden? Eversports öffnet Buchungsslots typischerweise einige Tage im Voraus — stelle den Wert passend zum Anbieter ein." />
             </span>
-            <input
+            <Input
               aria-label="Tage im Voraus"
               type="number"
               min={1}
@@ -130,7 +129,6 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
               value={daysInAdvance}
               onChange={e => setDaysInAdvance(Number(e.target.value))}
               required
-              className="bg-surface-input text-white rounded-lg px-3 py-2 outline-hidden focus:ring-2 focus:ring-brand"
             />
           </label>
 
@@ -169,23 +167,14 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
           )}
 
           <div className="flex gap-3 justify-end mt-2">
-            <button
-              type="submit"
-              disabled={!facility}
-              className="px-4 py-2 bg-brand hover:bg-brand-hover text-white rounded-lg font-semibold transition-colors disabled:opacity-50"
-            >
+            <Button variant="primary" type="submit" disabled={!facility}>
               Speichern
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-slate-400 hover:text-white transition-colors"
-            >
+            </Button>
+            <Button variant="ghost" onClick={onClose}>
               Abbrechen
-            </button>
+            </Button>
           </div>
         </form>
-      </div>
-    </div>
+    </ModalShell>
   )
 }
