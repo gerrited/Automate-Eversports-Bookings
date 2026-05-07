@@ -50,6 +50,11 @@ spec:
                 secretKeyRef:
                   name: eversports-backend-secrets
                   key: from_email
+            - name: VAPID_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: eversports-backend-secrets
+                  key: vapid_public_key
           resources:
             requests:
               memory: "256Mi"

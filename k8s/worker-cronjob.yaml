@@ -44,3 +44,18 @@ spec:
                     secretKeyRef:
                       name: eversports-backend-secrets
                       key: FRONTEND_URL
+                - name: VAPID_PRIVATE_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: eversports-backend-secrets
+                      key: vapid_private_key
+                - name: VAPID_PUBLIC_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: eversports-backend-secrets
+                      key: vapid_public_key
+                - name: VAPID_SUBJECT
+                  valueFrom:
+                    secretKeyRef:
+                      name: eversports-backend-secrets
+                      key: vapid_subject
