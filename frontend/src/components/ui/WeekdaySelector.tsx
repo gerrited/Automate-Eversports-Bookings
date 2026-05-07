@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { WEEKDAY_NAMES } from '../../types'
 
 const LABELS = ['M', 'D', 'M', 'D', 'F', 'S', 'S']
@@ -15,6 +15,13 @@ export default function WeekdaySelector({ value, onChange }: Props) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const autoHideRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const didLongPress = useRef(false)
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+      if (autoHideRef.current) clearTimeout(autoHideRef.current)
+    }
+  }, [])
 
   function handlePointerDown(i: number) {
     didLongPress.current = false
@@ -60,10 +67,11 @@ export default function WeekdaySelector({ value, onChange }: Props) {
             onPointerDown={() => handlePointerDown(i)}
             onPointerUp={() => handlePointerUp(i)}
             onPointerCancel={handlePointerCancel}
+            onPointerLeave={handlePointerCancel}
             className={`w-[30px] h-[30px] rounded-md text-xs font-bold select-none ${
               value === i
                 ? 'bg-brand text-white'
-                : 'bg-surface-card text-slate-500 border border-[#0d3336]'
+                : 'bg-surface-card text-slate-500 border border-slate-700'
             }`}
           >
             {label}
