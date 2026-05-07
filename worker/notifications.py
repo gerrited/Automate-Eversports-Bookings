@@ -64,6 +64,11 @@ def send_push_notifications(
     if not subscriptions:
         return
 
+    log.info(
+        "Push window [%s, %s) for user %s — %d bookings, advance=%d min",
+        window_start, window_end, user.email, len(bookings), user.notification_advance_minutes,
+    )
+
     for booking in bookings:
         try:
             start_dt = datetime.fromisoformat(booking["start_datetime"])
@@ -73,6 +78,7 @@ def send_push_notifications(
             continue
 
         notification_time = start_dt - timedelta(minutes=user.notification_advance_minutes)
+        log.info("Booking %s start=%s notification_time=%s", booking.get("activity_name"), start_dt, notification_time)
         if not (window_start <= notification_time < window_end):
             continue
 
