@@ -27,18 +27,21 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
   const [oneTime, setOneTime] = useState(job?.one_time ?? false)
   const [debug, setDebug] = useState(job?.debug ?? false)
   const [courses, setCourses] = useState<string[]>([])
+  const [isLoadingCourses, setIsLoadingCourses] = useState(false)
 
   const isInitialMount = useRef(true)
 
   useEffect(() => {
     if (!facility) {
       setCourses([])
+      setIsLoadingCourses(false)
       return
     }
     let cancelled = false
+    setIsLoadingCourses(true)
     getCourses(facility.id, weekday, targetTime)
-      .then(data => { if (!cancelled) setCourses(data) })
-      .catch(() => { if (!cancelled) setCourses([]) })
+      .then(data => { if (!cancelled) { setCourses(data); setIsLoadingCourses(false) } })
+      .catch(() => { if (!cancelled) { setCourses([]); setIsLoadingCourses(false) } })
     if (!isInitialMount.current) setClassName('')
     isInitialMount.current = false
     return () => { cancelled = true }
@@ -113,6 +116,8 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
               value={className}
               onChange={setClassName}
               facilityCourses={courses}
+              isLoading={isLoadingCourses}
+              canSearch={!!facility}
             />
           </div>
 
