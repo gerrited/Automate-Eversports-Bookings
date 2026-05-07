@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { sendTestEmail, type TestEmailType } from '../api/adminEmail'
+import { ModalShell } from './ui'
 
 interface Props {
   onClose: () => void
@@ -33,39 +34,37 @@ export default function TestEmailModal({ onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4">
-      <div className="bg-surface-card rounded-xl w-full max-w-md p-6">
-        <div className="flex justify-between items-center mb-5">
-          <h2 className="text-white font-bold text-lg">Test-Mails verschicken</h2>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-white transition-colors text-xl leading-none"
-            aria-label="Schließen"
-          >
-            ✕
-          </button>
-        </div>
-
-        <p className="text-slate-400 text-sm mb-4">
-          Sendet eine Test-Mail an deine eigene Adresse.
-        </p>
-
-        <div className="flex flex-col gap-2">
-          {EMAIL_TYPES.map(({ type, label }) => (
-            <button
-              key={type}
-              onClick={() => handleSend(type)}
-              disabled={sending !== null}
-              className="w-full text-left px-4 py-3 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              {sending === type ? 'Wird gesendet…' : label}
-            </button>
-          ))}
-        </div>
-
-        {success && <p className="text-green-400 text-sm mt-4">{success}</p>}
-        {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
+    <ModalShell onBackdropClick={onClose}>
+      <div className="flex justify-between items-center mb-5">
+        <h2 className="text-white font-bold text-lg">Test-Mails verschicken</h2>
+        <button
+          onClick={onClose}
+          className="text-slate-400 hover:text-white transition-colors text-xl leading-none"
+          aria-label="Schließen"
+        >
+          ✕
+        </button>
       </div>
-    </div>
+
+      <p className="text-slate-400 text-sm mb-4">
+        Sendet eine Test-Mail an deine eigene Adresse.
+      </p>
+
+      <div className="flex flex-col gap-2">
+        {EMAIL_TYPES.map(({ type, label }) => (
+          <button
+            key={type}
+            onClick={() => handleSend(type)}
+            disabled={sending !== null}
+            className="w-full text-left px-4 py-3 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {sending === type ? 'Wird gesendet…' : label}
+          </button>
+        ))}
+      </div>
+
+      {success && <p className="text-green-400 text-sm mt-4">{success}</p>}
+      {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
+    </ModalShell>
   )
 }
