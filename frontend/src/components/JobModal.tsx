@@ -62,7 +62,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
     })
   }
 
-  const rowClass = 'flex items-center gap-3 bg-surface-input rounded-lg px-3 min-h-[44px]'
+  const rowClass = 'flex items-center gap-3 bg-surface-input border border-slate-700 rounded-lg px-3 min-h-[44px]'
   const labelClass = 'flex items-center gap-1 text-slate-500 text-xs w-28 shrink-0'
 
   return (
@@ -121,7 +121,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
         <div className={rowClass}>
           <span className={labelClass}>
             Kursname
-            <HelpIcon text="Der Name des Kurses, der gebucht werden soll. Leer lassen, um den ersten verfügbaren Kurs zu diesem Zeitpunkt zu buchen." />
+            <HelpIcon text="Der Name des Kurses, der gebucht werden soll." />
           </span>
           <div className="flex-1 min-w-0">
             <CourseCombobox
