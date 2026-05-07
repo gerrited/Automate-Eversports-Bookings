@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { Input } from './ui'
 
 interface Props {
   value: string
@@ -32,11 +33,9 @@ export default function CourseCombobox({ value, onChange, facilityCourses }: Pro
     setIsOpen(false)
   }
 
-  const inputClass = 'bg-surface-input text-white rounded-lg px-3 py-2 outline-hidden focus:ring-2 focus:ring-brand w-full'
-
   return (
     <div ref={containerRef} className="relative">
-      <input
+      <Input
         aria-label="Kursname"
         type="text"
         value={isOpen ? query : value}
@@ -48,7 +47,6 @@ export default function CourseCombobox({ value, onChange, facilityCourses }: Pro
         }}
         required
         autoComplete="off"
-        className={inputClass}
       />
 
       {isOpen && (
