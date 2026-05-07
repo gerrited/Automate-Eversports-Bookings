@@ -42,6 +42,7 @@ export default function Stepper({ value, onChange, min, max, 'aria-label': ariaL
       <button
         type="button"
         onClick={() => onChange(Math.max(min, value - 1))}
+        aria-label="Verringern"
         className={`${sideBtnClass} rounded-l-md border-r-0`}
       >
         −
@@ -70,6 +71,7 @@ export default function Stepper({ value, onChange, min, max, 'aria-label': ariaL
       <button
         type="button"
         onClick={() => onChange(Math.min(max, value + 1))}
+        aria-label="Erhöhen"
         className={`${sideBtnClass} rounded-r-md border-l-0`}
       >
         +

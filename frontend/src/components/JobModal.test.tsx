@@ -56,7 +56,7 @@ describe('JobModal', () => {
     ))
   })
 
-  it('befüllt Felder beim Bearbeiten einer vorhandenen Buchung', () => {
+  it('befüllt Felder beim Bearbeiten einer vorhandenen Buchung', async () => {
     const job = {
       id: 'j1', weekday: 2, target_time: '09:00:00', facility_id: '73041',
       facility_name: 'CrossFit Rabbit Hole', class_name: 'Yoga', days_in_advance: 3,
@@ -64,17 +64,19 @@ describe('JobModal', () => {
     }
     render(<JobModal job={job} onSave={onSave} onClose={onClose} />)
 
-    const kursInput = screen.getByLabelText('Kursname', { selector: 'input' }) as HTMLInputElement
-    expect(kursInput.value).toBe('Yoga')
+    await waitFor(() => {
+      const kursInput = screen.getByLabelText('Kursname', { selector: 'input' }) as HTMLInputElement
+      expect(kursInput.value).toBe('Yoga')
 
-    const stepperGroup = screen.getByRole('group', { name: 'Tage im Voraus' })
-    expect(within(stepperGroup).getByText('3')).toBeInTheDocument()
+      const stepperGroup = screen.getByRole('group', { name: 'Tage im Voraus' })
+      expect(within(stepperGroup).getByText('3')).toBeInTheDocument()
 
-    const weekdayGroup = screen.getByRole('group', { name: 'Wochentag' })
-    const dayButtons = within(weekdayGroup).getAllByRole('button')
-    expect(dayButtons[2]).toHaveAttribute('aria-pressed', 'true')
+      const weekdayGroup = screen.getByRole('group', { name: 'Wochentag' })
+      const dayButtons = within(weekdayGroup).getAllByRole('button')
+      expect(dayButtons[2]).toHaveAttribute('aria-pressed', 'true')
 
-    expect((screen.getByRole('checkbox', { name: 'Einmalig' }) as HTMLInputElement).checked).toBe(true)
+      expect((screen.getByRole('checkbox', { name: 'Einmalig' }) as HTMLInputElement).checked).toBe(true)
+    })
   })
 
   it('ruft onClose auf wenn Abbrechen geklickt', () => {
