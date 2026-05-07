@@ -7,8 +7,26 @@ interface Props {
   onClose: () => void
 }
 
+type Group = 'verhalten' | 'konto'
+
+function ChevronIcon({ open }: { open: boolean }) {
+  return (
+    <svg
+      className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+    </svg>
+  )
+}
+
 export default function SettingsModal({ onClose }: Props) {
   const navigate = useNavigate()
+  const [openGroup, setOpenGroup] = useState<Group>('verhalten')
+
   const [confirmText, setConfirmText] = useState('')
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
@@ -66,69 +84,89 @@ export default function SettingsModal({ onClose }: Props) {
           </button>
         </div>
 
-        {/* Terminerinnerung */}
-        <div className="border-t border-slate-700 pt-5 mb-5">
-          <h3 className="text-white font-semibold mb-2">Terminerinnerung</h3>
-          {notificationsSupported ? (
-            <>
-              <label className="flex flex-col gap-1 mb-4">
-                <span className="text-slate-400 text-sm">Minuten vor dem Termin</span>
-                <input
-                  aria-label="Minuten vor dem Termin"
-                  type="number"
-                  min={15}
-                  max={1440}
-                  value={advanceMinutes}
-                  onChange={(e) => setAdvanceMinutes(Number(e.target.value))}
-                  className="bg-surface-input text-white rounded-lg px-3 py-2 outline-hidden focus:ring-2 focus:ring-blue-500 w-32"
-                />
-              </label>
-              {saveError && <p className="text-red-400 text-sm mb-3">{saveError}</p>}
-              {saveSuccess && <p className="text-green-400 text-sm mb-3">Gespeichert.</p>}
-              <button
-                onClick={handleSave}
-                disabled={saveLoading || advanceMinutes < 15 || advanceMinutes > 1440}
-                className="px-4 py-2 bg-blue-700 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {saveLoading ? 'Wird gespeichert…' : 'Speichern'}
-              </button>
-            </>
-          ) : (
-            <p className="text-slate-400 text-sm">
-              Dein Browser unterstützt keine Push-Benachrichtigungen.
-            </p>
+        {/* Gruppe: Verhalten */}
+        <div className="border-t border-slate-700">
+          <button
+            onClick={() => setOpenGroup('verhalten')}
+            aria-expanded={openGroup === 'verhalten'}
+            className="w-full flex justify-between items-center py-4 text-white font-semibold hover:text-slate-200 transition-colors"
+          >
+            <span>Verhalten</span>
+            <ChevronIcon open={openGroup === 'verhalten'} />
+          </button>
+          {openGroup === 'verhalten' && (
+            <div className="pb-5">
+              {notificationsSupported ? (
+                <>
+                  <label className="flex flex-col gap-1 mb-4">
+                    <span className="text-slate-400 text-sm">Minuten vor dem Termin</span>
+                    <input
+                      aria-label="Minuten vor dem Termin"
+                      type="number"
+                      min={15}
+                      max={1440}
+                      value={advanceMinutes}
+                      onChange={(e) => setAdvanceMinutes(Number(e.target.value))}
+                      className="bg-surface-input text-white rounded-lg px-3 py-2 outline-hidden focus:ring-2 focus:ring-blue-500 w-32"
+                    />
+                  </label>
+                  {saveError && <p className="text-red-400 text-sm mb-3">{saveError}</p>}
+                  {saveSuccess && <p className="text-green-400 text-sm mb-3">Gespeichert.</p>}
+                  <button
+                    onClick={handleSave}
+                    disabled={saveLoading || advanceMinutes < 15 || advanceMinutes > 1440}
+                    className="px-4 py-2 bg-blue-700 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {saveLoading ? 'Wird gespeichert…' : 'Speichern'}
+                  </button>
+                </>
+              ) : (
+                <p className="text-slate-400 text-sm">
+                  Dein Browser unterstützt keine Push-Benachrichtigungen.
+                </p>
+              )}
+            </div>
           )}
         </div>
 
-        {/* Konto löschen */}
-        <div className="border-t border-slate-700 pt-5">
-          <h3 className="text-white font-semibold mb-2">Konto löschen</h3>
-          <p className="text-red-400 text-sm mb-4">
-            Diese Aktion ist unwiderruflich. Dein Konto bei FOReversports und alle geplanten Buchungen werden dauerhaft gelöscht.
-          </p>
-
-          <label className="flex flex-col gap-1 mb-4">
-            <span className="text-slate-400 text-sm">
-              Zur Bestätigung <span className="font-mono text-slate-200">DELETE</span> eingeben
-            </span>
-            <input
-              type="text"
-              value={confirmText}
-              onChange={(e) => setConfirmText(e.target.value)}
-              placeholder="DELETE"
-              className="bg-surface-input text-white rounded-lg px-3 py-2 outline-hidden focus:ring-2 focus:ring-red-500 font-mono"
-            />
-          </label>
-
-          {deleteError && <p className="text-red-400 text-sm mb-3">{deleteError}</p>}
-
+        {/* Gruppe: Konto */}
+        <div className="border-t border-slate-700">
           <button
-            onClick={handleDelete}
-            disabled={confirmText !== 'DELETE' || deleteLoading}
-            className="w-full py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            onClick={() => setOpenGroup('konto')}
+            aria-expanded={openGroup === 'konto'}
+            className="w-full flex justify-between items-center py-4 text-white font-semibold hover:text-slate-200 transition-colors"
           >
-            {deleteLoading ? 'Wird gelöscht…' : 'Konto löschen'}
+            <span>Konto</span>
+            <ChevronIcon open={openGroup === 'konto'} />
           </button>
+          {openGroup === 'konto' && (
+            <div className="pb-5">
+              <h3 className="text-white font-semibold mb-2">Konto löschen</h3>
+              <p className="text-red-400 text-sm mb-4">
+                Diese Aktion ist unwiderruflich. Dein Konto bei FOReversports und alle geplanten Buchungen werden dauerhaft gelöscht.
+              </p>
+              <label className="flex flex-col gap-1 mb-4">
+                <span className="text-slate-400 text-sm">
+                  Zur Bestätigung <span className="font-mono text-slate-200">DELETE</span> eingeben
+                </span>
+                <input
+                  type="text"
+                  value={confirmText}
+                  onChange={(e) => setConfirmText(e.target.value)}
+                  placeholder="DELETE"
+                  className="bg-surface-input text-white rounded-lg px-3 py-2 outline-hidden focus:ring-2 focus:ring-red-500 font-mono"
+                />
+              </label>
+              {deleteError && <p className="text-red-400 text-sm mb-3">{deleteError}</p>}
+              <button
+                onClick={handleDelete}
+                disabled={confirmText !== 'DELETE' || deleteLoading}
+                className="w-full py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {deleteLoading ? 'Wird gelöscht…' : 'Konto löschen'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

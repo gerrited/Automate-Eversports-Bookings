@@ -37,9 +37,11 @@ function renderModal(onClose = vi.fn()) {
   )
 }
 
+function openKontoGroup() {
+  fireEvent.click(screen.getByRole('button', { name: /^Konto$/i }))
+}
+
 beforeAll(() => {
-  // jsdom does not expose Notification or serviceWorker; stub them so the
-  // notifications section renders during tests.
   if (!('Notification' in window)) {
     Object.defineProperty(window, 'Notification', {
       value: { requestPermission: vi.fn() },
@@ -59,31 +61,83 @@ afterEach(() => {
 })
 
 describe('SettingsModal', () => {
-  it('renders the settings heading and delete section', () => {
+  it('renders the settings heading', () => {
     renderModal()
     expect(screen.getByRole('heading', { name: 'Einstellungen' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Konto löschen' })).toBeInTheDocument()
   })
 
-  it('shows the irreversibility warning', () => {
+  it('renders Verhalten and Konto group headers', () => {
     renderModal()
+    expect(screen.getByRole('button', { name: /^Verhalten$/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Konto$/i })).toBeInTheDocument()
+  })
+
+  it('Verhalten group is expanded by default', () => {
+    renderModal()
+    expect(screen.getByRole('button', { name: /^Verhalten$/i })).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('Konto group is collapsed by default', () => {
+    renderModal()
+    expect(screen.getByRole('button', { name: /^Konto$/i })).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('Terminerinnerung content is visible when Verhalten is open', async () => {
+    renderModal()
+    expect(await screen.findByLabelText('Minuten vor dem Termin')).toBeInTheDocument()
+  })
+
+  it('Konto löschen content is not visible when Konto is collapsed', () => {
+    renderModal()
+    expect(screen.queryByText(/unwiderruflich/i)).not.toBeInTheDocument()
+  })
+
+  it('opening Konto group shows delete section and marks it expanded', () => {
+    renderModal()
+    openKontoGroup()
+    expect(screen.getByRole('button', { name: /^Konto$/i })).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByText(/unwiderruflich/i)).toBeInTheDocument()
+  })
+
+  it('opening Konto group collapses Verhalten', async () => {
+    renderModal()
+    await screen.findByLabelText('Minuten vor dem Termin')
+    openKontoGroup()
+    expect(screen.queryByLabelText('Minuten vor dem Termin')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Verhalten$/i })).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('opening Verhalten group collapses Konto', () => {
+    renderModal()
+    openKontoGroup()
+    fireEvent.click(screen.getByRole('button', { name: /^Verhalten$/i }))
+    expect(screen.queryByText(/unwiderruflich/i)).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Verhalten$/i })).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('shows the irreversibility warning when Konto is open', () => {
+    renderModal()
+    openKontoGroup()
     expect(screen.getByText(/unwiderruflich/i)).toBeInTheDocument()
   })
 
   it('delete button is disabled when input is empty', () => {
     renderModal()
+    openKontoGroup()
     const btn = screen.getByRole('button', { name: /konto löschen/i })
     expect(btn).toBeDisabled()
   })
 
   it('delete button is disabled when input is wrong', () => {
     renderModal()
+    openKontoGroup()
     fireEvent.change(screen.getByPlaceholderText('DELETE'), { target: { value: 'delete' } })
     expect(screen.getByRole('button', { name: /konto löschen/i })).toBeDisabled()
   })
 
   it('delete button is enabled when DELETE is typed exactly', () => {
     renderModal()
+    openKontoGroup()
     fireEvent.change(screen.getByPlaceholderText('DELETE'), { target: { value: 'DELETE' } })
     expect(screen.getByRole('button', { name: /konto löschen/i })).not.toBeDisabled()
   })
@@ -91,6 +145,7 @@ describe('SettingsModal', () => {
   it('calls deleteAccount, clearToken, and navigates to / on success', async () => {
     vi.mocked(deleteAccount).mockResolvedValue(undefined)
     renderModal()
+    openKontoGroup()
     fireEvent.change(screen.getByPlaceholderText('DELETE'), { target: { value: 'DELETE' } })
     fireEvent.click(screen.getByRole('button', { name: /konto löschen/i }))
     await waitFor(() => {
@@ -103,6 +158,7 @@ describe('SettingsModal', () => {
   it('shows error message when deleteAccount fails', async () => {
     vi.mocked(deleteAccount).mockRejectedValue(new Error('Serverfehler'))
     renderModal()
+    openKontoGroup()
     fireEvent.change(screen.getByPlaceholderText('DELETE'), { target: { value: 'DELETE' } })
     fireEvent.click(screen.getByRole('button', { name: /konto löschen/i }))
     expect(await screen.findByText('Serverfehler')).toBeInTheDocument()
@@ -115,11 +171,6 @@ describe('SettingsModal', () => {
     renderModal(onClose)
     fireEvent.click(screen.getByLabelText('Schließen'))
     expect(onClose).toHaveBeenCalledOnce()
-  })
-
-  it('renders notification advance minutes field', async () => {
-    renderModal()
-    expect(await screen.findByLabelText('Minuten vor dem Termin')).toBeInTheDocument()
   })
 
   it('loads current notification_advance_minutes from API', async () => {
