@@ -38,6 +38,7 @@ export default function CourseCombobox({ value, onChange, facilityCourses, isLoa
   return (
     <div ref={containerRef} className="relative">
       <Input
+        variant="inline"
         aria-label="Kursname"
         type="text"
         value={isOpen ? query : value}

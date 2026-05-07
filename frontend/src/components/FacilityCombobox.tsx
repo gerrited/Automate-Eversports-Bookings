@@ -63,6 +63,7 @@ export default function FacilityCombobox({ value, onChange }: Props) {
   return (
     <div ref={containerRef} className="relative">
       <Input
+        variant="inline"
         aria-label="Anbieter suchen"
         type="text"
         value={isOpen ? query : (value?.name ?? '')}

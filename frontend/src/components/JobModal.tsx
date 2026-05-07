@@ -114,7 +114,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
             value={targetTime}
             onChange={e => setTargetTime(e.target.value)}
             required
-            className="bg-surface-input text-white rounded-lg px-3 py-2 outline-hidden focus:ring-2 focus:ring-brand [color-scheme:dark]"
+            className="bg-transparent text-white text-sm outline-hidden [color-scheme:dark]"
           />
         </div>
 
@@ -159,19 +159,19 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
           <div role="group" aria-label="Häufigkeit" className="flex">
             <button
               type="button"
-              aria-pressed={!oneTime}
-              onClick={() => setOneTime(false)}
-              className={`px-3 h-[30px] text-xs font-semibold rounded-l-md border border-r-0 transition-colors ${!oneTime ? 'bg-brand text-white border-brand' : 'bg-surface-card text-slate-500 border-slate-700'}`}
+              aria-pressed={oneTime}
+              onClick={() => setOneTime(true)}
+              className={`px-3 h-[30px] text-xs font-semibold rounded-l-md border border-r-0 transition-colors ${oneTime ? 'bg-brand text-white border-brand' : 'bg-surface-card text-slate-500 border-slate-700'}`}
             >
-              Wöchentlich
+              Einmalig
             </button>
             <button
               type="button"
-              aria-pressed={oneTime}
-              onClick={() => setOneTime(true)}
-              className={`px-3 h-[30px] text-xs font-semibold rounded-r-md border transition-colors ${oneTime ? 'bg-brand text-white border-brand' : 'bg-surface-card text-slate-500 border-slate-700'}`}
+              aria-pressed={!oneTime}
+              onClick={() => setOneTime(false)}
+              className={`px-3 h-[30px] text-xs font-semibold rounded-r-md border transition-colors ${!oneTime ? 'bg-brand text-white border-brand' : 'bg-surface-card text-slate-500 border-slate-700'}`}
             >
-              Einmalig
+              Wöchentlich
             </button>
           </div>
         </div>
