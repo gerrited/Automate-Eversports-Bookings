@@ -8,3 +8,5 @@ __pycache__/
 .playwright-mcp/
 .superpowers/
 .worktrees/
+private_key.pem
+public_key.pem
