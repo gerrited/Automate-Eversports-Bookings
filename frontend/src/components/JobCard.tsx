@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import type { Job } from '../types'
 import { WEEKDAY_NAMES } from '../types'
+import { Button } from './ui'
 
 interface Props {
   job: Job
@@ -28,12 +29,9 @@ export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect, onE
   const [toggling, setToggling] = useState(false)
   const [feedback, setFeedback] = useState<{ status: string; message: string } | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const mountedRef = useRef(true)
 
   useEffect(() => {
-    mountedRef.current = true
     return () => {
-      mountedRef.current = false
       if (timerRef.current) clearTimeout(timerRef.current)
     }
   }, [])
@@ -44,14 +42,12 @@ export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect, onE
     setFeedback(null)
     try {
       const result = await onExecute(job.id)
-      if (mountedRef.current) setFeedback(result)
+      setFeedback(result)
     } catch {
-      if (mountedRef.current) setFeedback({ status: 'failed', message: 'Unbekannter Fehler' })
+      setFeedback({ status: 'failed', message: 'Unbekannter Fehler' })
     } finally {
-      if (mountedRef.current) {
-        setExecuting(false)
-        timerRef.current = setTimeout(() => setFeedback(null), 10000)
-      }
+      setExecuting(false)
+      timerRef.current = setTimeout(() => setFeedback(null), 10000)
     }
   }
 
@@ -61,13 +57,11 @@ export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect, onE
     try {
       await onToggle(job.id)
     } catch (err) {
-      if (mountedRef.current) {
-        if (timerRef.current) clearTimeout(timerRef.current)
-        setFeedback({ status: 'failed', message: err instanceof Error ? err.message : 'Fehler beim Umschalten' })
-        timerRef.current = setTimeout(() => setFeedback(null), 10000)
-      }
+      if (timerRef.current) clearTimeout(timerRef.current)
+      setFeedback({ status: 'failed', message: err instanceof Error ? err.message : 'Fehler beim Umschalten' })
+      timerRef.current = setTimeout(() => setFeedback(null), 10000)
     } finally {
-      if (mountedRef.current) setToggling(false)
+      setToggling(false)
     }
   }
 
@@ -128,14 +122,15 @@ export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect, onE
 
       {/* Action bar */}
       <div className="flex items-center gap-2 px-4 pb-3 pt-3">
-        <button
+        <Button
+          variant="slate"
+          size="sm"
           aria-label="Bearbeiten"
           onClick={() => onEdit(job)}
           disabled={executing}
-          className="px-3 py-1 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm transition-colors disabled:opacity-50"
         >
           Bearbeiten
-        </button>
+        </Button>
         {onExecute && (
           <button
             aria-label="Jetzt buchen"
@@ -151,14 +146,17 @@ export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect, onE
             ) : 'Jetzt buchen'}
           </button>
         )}
-        <button
-          aria-label="Löschen"
-          onClick={() => onDelete(job.id)}
-          disabled={executing}
-          className="px-3 py-1 rounded-md bg-red-900 hover:bg-red-700 text-red-300 text-sm transition-colors ml-auto disabled:opacity-50"
-        >
-          Löschen
-        </button>
+        <div className="ml-auto">
+          <Button
+            variant="danger"
+            size="sm"
+            aria-label="Löschen"
+            onClick={() => onDelete(job.id)}
+            disabled={executing}
+          >
+            Löschen
+          </Button>
+        </div>
       </div>
 
       {/* Feedback */}
