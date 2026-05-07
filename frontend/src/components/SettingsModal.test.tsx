@@ -89,14 +89,14 @@ describe('SettingsModal', () => {
 
   it('Konto löschen content is not visible when Konto is collapsed', () => {
     renderModal()
-    expect(screen.queryByText(/unwiderruflich/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/dauerhaft gelöscht/i)).not.toBeInTheDocument()
   })
 
   it('opening Konto group shows delete section and marks it expanded', () => {
     renderModal()
     openKontoGroup()
     expect(screen.getByRole('button', { name: /^Konto$/i })).toHaveAttribute('aria-expanded', 'true')
-    expect(screen.getByText(/unwiderruflich/i)).toBeInTheDocument()
+    expect(screen.getByText(/dauerhaft gelöscht/i)).toBeInTheDocument()
   })
 
   it('opening Konto group collapses Verhalten', async () => {
@@ -111,14 +111,14 @@ describe('SettingsModal', () => {
     renderModal()
     openKontoGroup()
     fireEvent.click(screen.getByRole('button', { name: /^Verhalten$/i }))
-    expect(screen.queryByText(/unwiderruflich/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/dauerhaft gelöscht/i)).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^Verhalten$/i })).toHaveAttribute('aria-expanded', 'true')
   })
 
   it('shows the irreversibility warning when Konto is open', () => {
     renderModal()
     openKontoGroup()
-    expect(screen.getByText(/unwiderruflich/i)).toBeInTheDocument()
+    expect(screen.getByText(/dauerhaft gelöscht/i)).toBeInTheDocument()
   })
 
   it('delete button is disabled when input is empty', () => {
