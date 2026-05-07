@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { listAllLogs } from '../api/adminLogs'
 import { WEEKDAY_NAMES } from '../types'
 import type { AdminLogsPage } from '../types'
+import { Button, Input } from './ui'
 
 const PAGE_SIZE = 50
 
@@ -59,12 +60,12 @@ export default function AllLogsSection() {
     <div>
       {loading && !result && <p className="text-slate-400 text-sm">Lädt…</p>}
       <div className="flex flex-col gap-2">
-        <input
+        <Input
+          variant="filter"
           type="text"
           value={emailFilter}
           onChange={e => setEmailFilter(e.target.value)}
           placeholder="Nach E-Mail filtern…"
-          className="flex-1 bg-surface-card border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-slate-500"
         />
         {!loading && !error && result && (
           <p className="text-slate-500 text-xs">
@@ -126,20 +127,12 @@ export default function AllLogsSection() {
         })}
         {result && (
           <div className="flex items-center justify-center gap-3 mt-2">
-            <button
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage(p => p - 1)}
-              className="px-3 py-1 rounded-md text-sm bg-surface-card text-slate-400 border border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:bg-slate-700 transition-colors"
-            >
+            <Button variant="secondary" size="sm" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>
               ← Zurück
-            </button>
-            <button
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage(p => p + 1)}
-              className="px-3 py-1 rounded-md text-sm bg-surface-card text-slate-400 border border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:bg-slate-700 transition-colors"
-            >
+            </Button>
+            <Button variant="secondary" size="sm" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>
               Weiter →
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -153,12 +146,11 @@ export default function AllLogsSection() {
             onClick={e => e.stopPropagation()}
           >
             <p className="text-slate-200 text-sm break-all">{expandedMessage}</p>
-            <button
-              className="mt-3 text-slate-400 text-sm hover:text-white"
-              onClick={() => setExpandedMessage(null)}
-            >
-              Schließen
-            </button>
+            <div className="mt-3">
+              <Button variant="ghost" onClick={() => setExpandedMessage(null)}>
+                Schließen
+              </Button>
+            </div>
           </div>
         </div>
       )}
