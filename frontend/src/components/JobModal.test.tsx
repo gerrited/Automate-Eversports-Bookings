@@ -21,15 +21,17 @@ describe('JobModal', () => {
   const onSave = vi.fn()
   const onClose = vi.fn()
 
-  it('rendert alle Formularfelder', () => {
+  it('rendert alle Formularfelder', async () => {
     render(<JobModal onSave={onSave} onClose={onClose} />)
     const facilityCombos = screen.getAllByRole('textbox')
     expect(facilityCombos.find(el => (el as HTMLInputElement).placeholder?.includes('Anbieter'))).toBeInTheDocument()
-    expect(screen.getByRole('group', { name: 'Wochentag' })).toBeInTheDocument()
-    expect(screen.getByLabelText('Uhrzeit', { selector: 'input' })).toBeInTheDocument()
-    expect(screen.getByLabelText('Kursname', { selector: 'input' })).toBeInTheDocument()
-    expect(screen.getByRole('group', { name: 'Tage im Voraus' })).toBeInTheDocument()
-    expect(screen.getByRole('checkbox', { name: 'Einmalig' })).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByRole('group', { name: 'Wochentag' })).toBeInTheDocument()
+      expect(screen.getByLabelText('Uhrzeit', { selector: 'input' })).toBeInTheDocument()
+      expect(screen.getByLabelText('Kursname', { selector: 'input' })).toBeInTheDocument()
+      expect(screen.getByRole('group', { name: 'Tage im Voraus' })).toBeInTheDocument()
+      expect(screen.getByRole('checkbox', { name: 'Einmalig' })).toBeInTheDocument()
+    })
   })
 
   it('rendert Einmalig-Checkbox deaktiviert per default', () => {

@@ -123,7 +123,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
 
         <div className={rowClass}>
           <span className={labelClass}>
-            Tage voraus
+            Tage im Voraus
             <HelpIcon text="Wie viele Tage vor dem Kurs soll die Buchung ausgelöst werden? Eversports öffnet Buchungsslots typischerweise einige Tage im Voraus — stelle den Wert passend zum Anbieter ein." />
           </span>
           <Stepper
