@@ -100,6 +100,7 @@ export default function AllLogsSection() {
                     <p className="text-slate-500 text-xs mt-0.5">
                       {truncated}
                       {log.message && log.message.length > 60 && (
+                        {/* brand-colored inline link, no matching Button variant */}
                         <button
                           className="ml-1 text-brand hover:text-brand-hover text-xs"
                           onClick={() => setExpandedMessage(log.message)}
