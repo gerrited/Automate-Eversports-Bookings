@@ -30,13 +30,15 @@ describe('JobModal', () => {
       expect(screen.getByLabelText('Uhrzeit', { selector: 'input' })).toBeInTheDocument()
       expect(screen.getByLabelText('Kursname', { selector: 'input' })).toBeInTheDocument()
       expect(screen.getByRole('group', { name: 'Tage im Voraus' })).toBeInTheDocument()
-      expect(screen.getByRole('checkbox', { name: 'Einmalig' })).toBeInTheDocument()
+      expect(screen.getByRole('group', { name: 'Häufigkeit' })).toBeInTheDocument()
     })
   })
 
-  it('rendert Einmalig-Checkbox deaktiviert per default', () => {
+  it('rendert Wöchentlich als Standard-Häufigkeit', () => {
     render(<JobModal onSave={onSave} onClose={onClose} />)
-    expect((screen.getByRole('checkbox', { name: /einmalig/i }) as HTMLInputElement).checked).toBe(false)
+    const group = screen.getByRole('group', { name: 'Häufigkeit' })
+    expect(within(group).getByRole('button', { name: 'Wöchentlich' })).toHaveAttribute('aria-pressed', 'true')
+    expect(within(group).getByRole('button', { name: 'Einmalig' })).toHaveAttribute('aria-pressed', 'false')
   })
 
   it('ruft onSave mit one_time false per default auf', async () => {
@@ -47,9 +49,9 @@ describe('JobModal', () => {
     ))
   })
 
-  it('ruft onSave mit one_time true auf wenn Checkbox aktiviert', async () => {
+  it('ruft onSave mit one_time true auf wenn Einmalig gewählt', async () => {
     render(<JobModal job={jobWithFacility} onSave={onSave} onClose={onClose} />)
-    fireEvent.click(screen.getByRole('checkbox', { name: /einmalig/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'Einmalig' }))
     fireEvent.click(screen.getByRole('button', { name: /speichern/i }))
     await waitFor(() => expect(onSave).toHaveBeenCalledWith(
       expect.objectContaining({ one_time: true })
@@ -75,7 +77,8 @@ describe('JobModal', () => {
       const dayButtons = within(weekdayGroup).getAllByRole('button')
       expect(dayButtons[2]).toHaveAttribute('aria-pressed', 'true')
 
-      expect((screen.getByRole('checkbox', { name: 'Einmalig' }) as HTMLInputElement).checked).toBe(true)
+      const haeufigkeitGroup = screen.getByRole('group', { name: 'Häufigkeit' })
+      expect(within(haeufigkeitGroup).getByRole('button', { name: 'Einmalig' })).toHaveAttribute('aria-pressed', 'true')
     })
   })
 

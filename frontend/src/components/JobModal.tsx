@@ -72,7 +72,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
       </h2>
       <form onSubmit={handleSubmit} className="flex flex-col gap-2">
 
-        <div className="flex items-center gap-3 py-1">
+        <div className={rowClass}>
           <span className={labelClass}>
             Anbieter
             <HelpIcon text="Der Sportanbieter, bei dem du den Kurs buchen möchtest." />
@@ -105,7 +105,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
           />
         </div>
 
-        <div className="flex items-center gap-3 py-1">
+        <div className={rowClass}>
           <span className={labelClass}>
             Kursname
             <HelpIcon text="Der Name des Kurses, der gebucht werden soll. Leer lassen, um den ersten verfügbaren Kurs zu diesem Zeitpunkt zu buchen." />
@@ -137,16 +137,27 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
 
         <div className={rowClass}>
           <span className={labelClass}>
-            Einmalig
-            <HelpIcon text="Aktiviert: nur einmal ausführen, dann automatisch löschen. Deaktiviert: jede Woche wiederholen." />
+            Häufigkeit
+            <HelpIcon text="Einmalig: nur einmal ausführen, dann automatisch löschen. Wöchentlich: jede Woche wiederholen." />
           </span>
-          <input
-            aria-label="Einmalig"
-            type="checkbox"
-            checked={oneTime}
-            onChange={e => setOneTime(e.target.checked)}
-            className="w-4 h-4 rounded accent-brand"
-          />
+          <div role="group" aria-label="Häufigkeit" className="flex">
+            <button
+              type="button"
+              aria-pressed={!oneTime}
+              onClick={() => setOneTime(false)}
+              className={`px-3 h-[30px] text-xs font-semibold rounded-l-md border border-r-0 transition-colors ${!oneTime ? 'bg-brand text-white border-brand' : 'bg-surface-card text-slate-500 border-slate-700'}`}
+            >
+              Wöchentlich
+            </button>
+            <button
+              type="button"
+              aria-pressed={oneTime}
+              onClick={() => setOneTime(true)}
+              className={`px-3 h-[30px] text-xs font-semibold rounded-r-md border transition-colors ${oneTime ? 'bg-brand text-white border-brand' : 'bg-surface-card text-slate-500 border-slate-700'}`}
+            >
+              Einmalig
+            </button>
+          </div>
         </div>
 
         {isAdmin() && (
