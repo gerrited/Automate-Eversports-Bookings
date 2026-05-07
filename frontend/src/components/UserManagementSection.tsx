@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { listUsers, setUserActive, setUserLimit, sendUserMessage } from '../api/users'
 import { getEmail } from '../api/client'
 import type { UserRecord } from '../types'
+import { Button, Input, ModalShell } from './ui'
 
 const PAGE_SIZE = 25
 
@@ -140,13 +141,15 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
       {!loading && (
         <div className="flex flex-col gap-2">
           <div className="flex gap-2">
-            <input
-              type="text"
-              value={emailFilter}
-              onChange={e => handleFilterChange(e.target.value)}
-              placeholder="Nach E-Mail filtern…"
-              className="flex-1 bg-surface-card border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-slate-500"
-            />
+            <div className="flex-1">
+              <Input
+                variant="filter"
+                type="text"
+                value={emailFilter}
+                onChange={e => handleFilterChange(e.target.value)}
+                placeholder="Nach E-Mail filtern…"
+              />
+            </div>
             <button
               onClick={handleActiveFilterCycle}
               className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors border ${
@@ -233,59 +236,57 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => openMessageModal(user)}
-                    className="px-3 py-1 rounded-md text-sm font-medium transition-colors bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700"
+                  <Button
+                    variant="slate"
+                    size="sm"
                     aria-label="Nachricht senden"
+                    onClick={() => openMessageModal(user)}
                   >
                     <svg className="sm:hidden w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path d="M2.003 5.884 10 9.882l7.997-3.998A2 2 0 0 0 16 4H4a2 2 0 0 0-1.997 1.884z"/><path d="m18 8.118-8 4-8-4V14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8.118z"/></svg>
                     <span className="hidden sm:inline">Nachricht</span>
-                  </button>
-                  <button
-                    disabled={isSelf}
-                    onClick={() => handleToggle(user)}
-                    aria-label={user.active ? 'Deaktivieren' : 'Aktivieren'}
-                    className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                      isSelf
-                        ? 'opacity-40 cursor-not-allowed bg-slate-700 text-slate-400'
-                        : user.active
-                        ? 'bg-red-900 hover:bg-red-700 text-red-300'
-                        : 'bg-green-900 hover:bg-green-700 text-green-300'
-                    }`}
-                  >
-                    <svg className="sm:hidden w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                      {user.active
-                        ? <path fillRule="evenodd" d="M4.293 4.293a1 1 0 0 1 1.414 0L10 8.586l4.293-4.293a1 1 0 1 1 1.414 1.414L11.414 10l4.293 4.293a1 1 0 0 1-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 0 1-1.414-1.414L8.586 10 4.293 5.707a1 1 0 0 1 0-1.414z" clipRule="evenodd"/>
-                        : <path fillRule="evenodd" d="M16.707 5.293a1 1 0 0 1 0 1.414l-8 8a1 1 0 0 1-1.414 0l-4-4a1 1 0 0 1 1.414-1.414L8 12.586l7.293-7.293a1 1 0 0 1 1.414 0z" clipRule="evenodd"/>
-                      }
-                    </svg>
-                    <span className="hidden sm:inline">{user.active ? 'Deaktivieren' : 'Aktivieren'}</span>
-                  </button>
+                  </Button>
+                  {user.active ? (
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      disabled={isSelf}
+                      aria-label="Deaktivieren"
+                      onClick={() => handleToggle(user)}
+                    >
+                      <svg className="sm:hidden w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 0 1 1.414 0L10 8.586l4.293-4.293a1 1 0 1 1 1.414 1.414L11.414 10l4.293 4.293a1 1 0 0 1-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 0 1-1.414-1.414L8.586 10 4.293 5.707a1 1 0 0 1 0-1.414z" clipRule="evenodd"/>
+                      </svg>
+                      <span className="hidden sm:inline">Deaktivieren</span>
+                    </Button>
+                  ) : (
+                    <button
+                      disabled={isSelf}
+                      onClick={() => handleToggle(user)}
+                      aria-label="Aktivieren"
+                      className="px-3 py-1 rounded-md text-sm font-medium transition-colors bg-green-900 hover:bg-green-700 text-green-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <svg className="sm:hidden w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 0 1 0 1.414l-8 8a1 1 0 0 1-1.414 0l-4-4a1 1 0 0 1 1.414-1.414L8 12.586l7.293-7.293a1 1 0 0 1 1.414 0z" clipRule="evenodd"/>
+                      </svg>
+                      <span className="hidden sm:inline">Aktivieren</span>
+                    </button>
+                  )}
                 </div>
               </div>
             )
           })}
           <div className="flex items-center justify-center gap-3 mt-2">
-            <button
-              disabled={safePage === 1}
-              onClick={() => setCurrentPage(p => p - 1)}
-              className="px-3 py-1 rounded-md text-sm bg-surface-card text-slate-400 border border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:bg-slate-700 transition-colors"
-            >
+            <Button variant="secondary" size="sm" disabled={safePage === 1} onClick={() => setCurrentPage(p => p - 1)}>
               ← Zurück
-            </button>
-            <button
-              disabled={safePage === totalPages}
-              onClick={() => setCurrentPage(p => p + 1)}
-              className="px-3 py-1 rounded-md text-sm bg-surface-card text-slate-400 border border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:bg-slate-700 transition-colors"
-            >
+            </Button>
+            <Button variant="secondary" size="sm" disabled={safePage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>
               Weiter →
-            </button>
+            </Button>
           </div>
         </div>
       )}
       {pendingLimit && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-surface-card border border-slate-700 rounded-xl p-6 max-w-sm w-full mx-4">
+        <ModalShell maxWidth="sm">
             <p className="text-white font-semibold mb-3">Alle Jobs werden deaktiviert</p>
             <p className="text-slate-400 text-sm mb-5">
               Das neue Limit von{' '}
@@ -294,25 +295,17 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
               <strong className="text-white">{pendingLimit.user.email}</strong>. Alle aktiven Jobs werden deaktiviert und der Benutzer per E-Mail informiert.
             </p>
             <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setPendingLimit(null)}
-                className="px-4 py-2 text-sm text-slate-400 hover:text-white border border-slate-700 rounded-lg transition-colors"
-              >
+              <Button variant="ghost" onClick={() => setPendingLimit(null)}>
                 Abbrechen
-              </button>
-              <button
-                onClick={handleConfirmLimit}
-                className="px-4 py-2 text-sm bg-red-900 hover:bg-red-700 text-red-300 rounded-lg transition-colors"
-              >
+              </Button>
+              <Button variant="danger" onClick={handleConfirmLimit}>
                 Ja, Limit setzen
-              </button>
+              </Button>
             </div>
-          </div>
-        </div>
+        </ModalShell>
       )}
       {messagingUser && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-surface-card border border-slate-700 rounded-xl p-6 max-w-sm w-full mx-4">
+        <ModalShell maxWidth="sm">
             {messageSent ? (
               <>
                 <p className="text-white font-semibold mb-3">Nachricht gesendet</p>
@@ -320,24 +313,21 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
                   Die Nachricht wurde an {messagingUser.email} gesendet.
                 </div>
                 <div className="flex justify-end">
-                  <button
-                    onClick={closeMessageModal}
-                    className="px-4 py-2 bg-brand hover:bg-brand-hover text-white rounded-lg font-semibold transition-colors"
-                  >
+                  <Button variant="primary" onClick={closeMessageModal}>
                     Schließen
-                  </button>
+                  </Button>
                 </div>
               </>
             ) : (
               <>
                 <p className="text-white font-semibold mb-4">Nachricht an {messagingUser.email}</p>
                 <div className="flex flex-col gap-3 mb-4">
-                  <input
+                  <Input
+                    variant="filter"
                     type="text"
                     value={messageSubject}
                     onChange={e => setMessageSubject(e.target.value)}
                     placeholder="Betreff"
-                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-slate-500"
                   />
                   <textarea
                     value={messageContent}
@@ -351,25 +341,16 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
                   <p className="text-red-400 text-sm mb-3">{messageError}</p>
                 )}
                 <div className="flex justify-end gap-3">
-                  <button
-                    onClick={handleSendMessage}
-                    disabled={messageSending || !messageSubject.trim() || !messageContent.trim()}
-                    className="px-4 py-2 bg-brand hover:bg-brand-hover text-white rounded-lg font-semibold transition-colors disabled:opacity-50"
-                  >
-                    {messageSending ? 'Wird gesendet…' : 'Senden'}
-                  </button>
-                  <button
-                    onClick={closeMessageModal}
-                    disabled={messageSending}
-                    className="px-4 py-2 text-slate-400 hover:text-white transition-colors"
-                  >
+                  <Button variant="primary" loading={messageSending} disabled={!messageSubject.trim() || !messageContent.trim()} onClick={handleSendMessage}>
+                    Senden
+                  </Button>
+                  <Button variant="ghost" disabled={messageSending} onClick={closeMessageModal}>
                     Abbrechen
-                  </button>
+                  </Button>
                 </div>
               </>
             )}
-          </div>
-        </div>
+        </ModalShell>
       )}
     </div>
   )
