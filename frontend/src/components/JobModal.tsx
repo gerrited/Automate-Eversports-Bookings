@@ -38,6 +38,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
       return
     }
     let cancelled = false
+    setCourses([])
     setIsLoadingCourses(true)
     getCourses(facility.id, weekday, targetTime)
       .then(data => { if (!cancelled) { setCourses(data); setIsLoadingCourses(false) } })

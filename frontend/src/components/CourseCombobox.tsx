@@ -41,7 +41,7 @@ export default function CourseCombobox({ value, onChange, facilityCourses, isLoa
         aria-label="Kursname"
         type="text"
         value={isOpen ? query : value}
-        placeholder={isOpen ? '' : (value || 'Kurs suchen…')}
+        placeholder={isOpen ? '' : (value || 'Kurs auswählen…')}
         onFocus={() => { setIsOpen(true); setQuery('') }}
         onChange={e => {
           setQuery(e.target.value)
