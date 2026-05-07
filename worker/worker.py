@@ -20,8 +20,10 @@ from backend.models.booking_job import BookingJob
 from backend.models.booking_log import BookingLog
 from backend.models.user import User
 from backend.core.encryption import decrypt
-from backend.core.booking import book_session, cancel_booking
+from backend.core.booking import book_session, cancel_booking, fetch_upcoming_bookings
 from worker.email import send_booking_failure_email, send_admin_booking_failure_email, send_debug_cancel_failure_email, send_waitlist_notification
+from backend.models.push_subscription import PushSubscription
+from worker.notifications import send_push_notifications
 
 logging.basicConfig(
     level=logging.INFO,
@@ -182,6 +184,30 @@ def run(now: datetime, session_factory=None) -> None:
                 future.result()
             except Exception as exc:
                 log.error("Job %s: unhandled thread error — %s", futures[future], exc)
+
+    _run_push_notifications(now, session_factory)
+
+
+def _run_push_notifications(now: datetime, session_factory) -> None:
+    db = session_factory()
+    try:
+        users_with_subs = (
+            db.query(User)
+            .join(PushSubscription, PushSubscription.user_id == User.id)
+            .filter(User.active.is_(True))
+            .distinct()
+            .all()
+        )
+        log.info("Push notifications: checking %d users with subscriptions", len(users_with_subs))
+        for user in users_with_subs:
+            try:
+                password = decrypt(user.encrypted_password)
+                bookings = fetch_upcoming_bookings(user.email, password)
+                send_push_notifications(db, user, bookings, now)
+            except Exception as exc:
+                log.error("Push notification error for user %s: %s", user.email, exc)
+    finally:
+        db.close()
 
 
 def main() -> None:

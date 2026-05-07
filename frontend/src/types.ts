@@ -73,6 +73,7 @@ export interface BookedAppointment {
 export interface CurrentUser {
   total_bookings_executed: number
   max_active_jobs: number | null
+  notification_advance_minutes: number
 }
 
 export interface AdminLog {

@@ -16,6 +16,7 @@ import { getUpcomingBookings, cancelBooking } from '../api/bookedAppointments'
 import { getMe } from '../api/account'
 import BookedAppointmentCard from '../components/BookedAppointmentCard'
 import type { BookedAppointment } from '../types'
+import { usePushNotifications } from '../hooks/usePushNotifications'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
@@ -65,6 +66,8 @@ export default function DashboardPage() {
 
   const [totalBookingsExecuted, setTotalBookingsExecuted] = useState<number>(0)
   const [maxActiveJobs, setMaxActiveJobs] = useState<number | null | undefined>(undefined)
+
+  usePushNotifications()
 
   useEffect(() => {
     getMe().then(data => {

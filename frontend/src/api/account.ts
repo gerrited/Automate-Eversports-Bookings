@@ -8,3 +8,10 @@ export function deleteAccount(): Promise<void> {
 export function getMe(): Promise<CurrentUser> {
   return apiFetch<CurrentUser>('/api/me')
 }
+
+export function updateAccount(data: { notification_advance_minutes?: number }): Promise<CurrentUser> {
+  return apiFetch<CurrentUser>('/api/account', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}

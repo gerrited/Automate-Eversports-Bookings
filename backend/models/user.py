@@ -17,5 +17,7 @@ class User(Base):
     max_active_jobs = Column(Integer, nullable=True)
     total_bookings_executed = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    notification_advance_minutes = Column(Integer, nullable=False, server_default="60", default=60)
 
     jobs = relationship("BookingJob", back_populates="user", cascade="all, delete-orphan")
+    push_subscriptions = relationship("PushSubscription", back_populates="user", cascade="all, delete-orphan")
