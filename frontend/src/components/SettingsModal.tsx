@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { clearToken } from '../api/client'
 import { deleteAccount, getMe, updateAccount } from '../api/account'
+import { Button, Input, ModalShell } from './ui'
 
 interface Props {
   onClose: () => void
@@ -71,18 +72,17 @@ export default function SettingsModal({ onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4">
-      <div className="bg-surface-card rounded-xl w-full max-w-md p-6">
-        <div className="flex justify-between items-center mb-5">
-          <h2 className="text-white font-bold text-lg">Einstellungen</h2>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-white transition-colors text-xl leading-none"
-            aria-label="Schließen"
-          >
-            ✕
-          </button>
-        </div>
+    <ModalShell>
+      <div className="flex justify-between items-center mb-5">
+        <h2 className="text-white font-bold text-lg">Einstellungen</h2>
+        <button
+          onClick={onClose}
+          className="text-slate-400 hover:text-white transition-colors text-xl leading-none"
+          aria-label="Schließen"
+        >
+          ✕
+        </button>
+      </div>
 
         {/* Gruppe: Verhalten */}
         <div className="border-t border-slate-700">
@@ -100,25 +100,27 @@ export default function SettingsModal({ onClose }: Props) {
                 <>
                   <label className="flex flex-col gap-1 mb-4">
                     <span className="text-slate-400 text-sm">Minuten vor dem Termin</span>
-                    <input
-                      aria-label="Minuten vor dem Termin"
-                      type="number"
-                      min={15}
-                      max={1440}
-                      value={advanceMinutes}
-                      onChange={(e) => setAdvanceMinutes(Number(e.target.value))}
-                      className="bg-surface-input text-white rounded-lg px-3 py-2 outline-hidden focus:ring-2 focus:ring-blue-500 w-32"
-                    />
+                    <div className="w-32">
+                      <Input
+                        aria-label="Minuten vor dem Termin"
+                        type="number"
+                        min={15}
+                        max={1440}
+                        value={advanceMinutes}
+                        onChange={(e) => setAdvanceMinutes(Number(e.target.value))}
+                      />
+                    </div>
                   </label>
                   {saveError && <p className="text-red-400 text-sm mb-3">{saveError}</p>}
                   {saveSuccess && <p className="text-green-400 text-sm mb-3">Gespeichert.</p>}
-                  <button
+                  <Button
+                    variant="primary"
+                    loading={saveLoading}
+                    disabled={advanceMinutes < 15 || advanceMinutes > 1440}
                     onClick={handleSave}
-                    disabled={saveLoading || advanceMinutes < 15 || advanceMinutes > 1440}
-                    className="px-4 py-2 bg-blue-700 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    {saveLoading ? 'Wird gespeichert…' : 'Speichern'}
-                  </button>
+                    Speichern
+                  </Button>
                 </>
               ) : (
                 <p className="text-slate-400 text-sm">
@@ -149,26 +151,26 @@ export default function SettingsModal({ onClose }: Props) {
                 <span className="text-slate-400 text-sm">
                   Zur Bestätigung <span className="font-mono text-slate-200">DELETE</span> eingeben
                 </span>
-                <input
+                <Input
                   type="text"
                   value={confirmText}
                   onChange={(e) => setConfirmText(e.target.value)}
                   placeholder="DELETE"
-                  className="bg-surface-input text-white rounded-lg px-3 py-2 outline-hidden focus:ring-2 focus:ring-red-500 font-mono"
                 />
               </label>
               {deleteError && <p className="text-red-400 text-sm mb-3">{deleteError}</p>}
-              <button
+              <Button
+                variant="danger"
+                loading={deleteLoading}
+                disabled={confirmText !== 'DELETE'}
+                fullWidth
                 onClick={handleDelete}
-                disabled={confirmText !== 'DELETE' || deleteLoading}
-                className="w-full py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                {deleteLoading ? 'Wird gelöscht…' : 'Konto löschen'}
-              </button>
+                Konto löschen
+              </Button>
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </ModalShell>
   )
 }
