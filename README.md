@@ -10,7 +10,7 @@ The name is a recursive acronym. It stands for: Fast On-time Reservation for Eve
 
 ## Process
 
-Booking jobs are configured through a React frontend, stored in a PostgreSQL database, and executed by a Kubernetes cronjobs that use the Eversports GraphQL API directly (no browser required).
+Booking jobs are configured through a React frontend, stored in a PostgreSQL database, and executed by Kubernetes cronjobs that use the Eversports GraphQL API directly (no browser required).
 
 ## Architecture
 
