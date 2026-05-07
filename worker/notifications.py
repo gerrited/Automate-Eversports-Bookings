@@ -56,7 +56,8 @@ def send_push_notifications(
     bookings: list[dict],
     now: datetime,
 ) -> None:
-    window_start = now.replace(tzinfo=None) if now.tzinfo else now
+    now_naive = now.replace(tzinfo=None) if now.tzinfo else now
+    window_start = now_naive.replace(second=0, microsecond=0)
     window_end = window_start + timedelta(minutes=WORKER_INTERVAL_MINUTES)
 
     subscriptions = db.query(PushSubscription).filter_by(user_id=user.id).all()
