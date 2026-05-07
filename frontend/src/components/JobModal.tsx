@@ -156,7 +156,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
             Häufigkeit
             <HelpIcon text="Einmalig: nur einmal ausführen, dann automatisch löschen. Wöchentlich: jede Woche wiederholen." />
           </span>
-          <div role="group" aria-label="Häufigkeit" className="flex">
+          <div role="group" aria-label="Häufigkeit" className="flex overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <button
               type="button"
               aria-pressed={oneTime}
