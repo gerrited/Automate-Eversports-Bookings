@@ -6,7 +6,7 @@ import CourseCombobox from './CourseCombobox'
 import HelpIcon from './HelpIcon'
 import { getCourses } from '../api/facilities'
 import { isAdmin } from '../api/client'
-import { Button, ModalShell, WeekdaySelector, Stepper } from './ui'
+import { Button, ModalShell, Stepper } from './ui'
 
 interface Props {
   job?: Job
@@ -87,7 +87,20 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
             Wochentag
             <HelpIcon text="Der Wochentag, an dem der Kurs regelmäßig stattfindet." />
           </span>
-          <WeekdaySelector value={weekday} onChange={setWeekday} />
+          <select
+            aria-label="Wochentag"
+            value={weekday}
+            onChange={e => setWeekday(Number(e.target.value))}
+            className="bg-transparent text-white text-sm flex-1 outline-hidden focus:ring-2 focus:ring-brand rounded [color-scheme:dark]"
+          >
+            <option value={0}>Montag</option>
+            <option value={1}>Dienstag</option>
+            <option value={2}>Mittwoch</option>
+            <option value={3}>Donnerstag</option>
+            <option value={4}>Freitag</option>
+            <option value={5}>Samstag</option>
+            <option value={6}>Sonntag</option>
+          </select>
         </div>
 
         <div className={rowClass}>
@@ -123,16 +136,19 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
 
         <div className={rowClass}>
           <span className={labelClass}>
-            Tage im Voraus
+            Durchführung
             <HelpIcon text="Wie viele Tage vor dem Kurs soll die Buchung ausgelöst werden? Eversports öffnet Buchungsslots typischerweise einige Tage im Voraus — stelle den Wert passend zum Anbieter ein." />
           </span>
-          <Stepper
-            aria-label="Tage im Voraus"
-            value={daysInAdvance}
-            onChange={setDaysInAdvance}
-            min={1}
-            max={30}
-          />
+          <div className="flex items-center gap-2">
+            <Stepper
+              aria-label="Tage im Voraus"
+              value={daysInAdvance}
+              onChange={setDaysInAdvance}
+              min={1}
+              max={30}
+            />
+            <span className="text-slate-500 text-xs">Tage im Voraus</span>
+          </div>
         </div>
 
         <div className={rowClass}>

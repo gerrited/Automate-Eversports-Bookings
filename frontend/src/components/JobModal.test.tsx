@@ -26,7 +26,7 @@ describe('JobModal', () => {
     const facilityCombos = screen.getAllByRole('textbox')
     expect(facilityCombos.find(el => (el as HTMLInputElement).placeholder?.includes('Anbieter'))).toBeInTheDocument()
     await waitFor(() => {
-      expect(screen.getByRole('group', { name: 'Wochentag' })).toBeInTheDocument()
+      expect(screen.getByRole('combobox', { name: 'Wochentag' })).toBeInTheDocument()
       expect(screen.getByLabelText('Uhrzeit', { selector: 'input' })).toBeInTheDocument()
       expect(screen.getByLabelText('Kursname', { selector: 'input' })).toBeInTheDocument()
       expect(screen.getByRole('group', { name: 'Tage im Voraus' })).toBeInTheDocument()
@@ -73,9 +73,8 @@ describe('JobModal', () => {
       const stepperGroup = screen.getByRole('group', { name: 'Tage im Voraus' })
       expect(within(stepperGroup).getByText('3')).toBeInTheDocument()
 
-      const weekdayGroup = screen.getByRole('group', { name: 'Wochentag' })
-      const dayButtons = within(weekdayGroup).getAllByRole('button')
-      expect(dayButtons[2]).toHaveAttribute('aria-pressed', 'true')
+      const weekdaySelect = screen.getByRole('combobox', { name: 'Wochentag' }) as HTMLSelectElement
+      expect(weekdaySelect.value).toBe('2')
 
       const haeufigkeitGroup = screen.getByRole('group', { name: 'Häufigkeit' })
       expect(within(haeufigkeitGroup).getByRole('button', { name: 'Einmalig' })).toHaveAttribute('aria-pressed', 'true')
