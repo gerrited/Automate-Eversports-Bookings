@@ -63,7 +63,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
   }
 
   const rowClass = 'flex items-center gap-3 bg-surface-input border border-slate-700 rounded-lg px-3 min-h-[44px]'
-  const labelClass = 'flex items-center gap-2 text-white text-xs w-28 shrink-0'
+  const labelClass = 'flex items-center gap-2 text-white w-28 shrink-0'
 
   return (
     <ModalShell>
@@ -91,7 +91,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
             aria-label="Wochentag"
             value={weekday}
             onChange={e => setWeekday(Number(e.target.value))}
-            className="bg-transparent text-white text-sm flex-1 outline-hidden focus:ring-2 focus:ring-brand rounded [color-scheme:dark]"
+            className="bg-transparent text-white flex-1 outline-hidden focus:ring-2 focus:ring-brand rounded [color-scheme:dark]"
           >
             <option value={0}>Montag</option>
             <option value={1}>Dienstag</option>
@@ -114,7 +114,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
             value={targetTime}
             onChange={e => setTargetTime(e.target.value)}
             required
-            className="bg-transparent text-white text-sm outline-hidden [color-scheme:dark]"
+            className="bg-transparent text-white outline-hidden [color-scheme:dark]"
           />
         </div>
 
@@ -147,7 +147,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
               min={1}
               max={30}
             />
-            <span className="text-slate-500 text-xs">Tage vorher</span>
+            <span className="text-slate-500">Tage vorher</span>
           </div>
         </div>
 

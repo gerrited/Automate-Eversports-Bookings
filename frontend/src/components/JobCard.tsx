@@ -95,7 +95,7 @@ export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect, onE
       >
         <div className="flex justify-between items-start">
           <div>
-            <p className="text-white text-sm font-semibold">
+            <p className="text-white font-semibold">
               {WEEKDAY_NAMES[job.weekday]} · {time} Uhr · {job.class_name}
             </p>
             <p className="text-slate-400 text-sm mt-1">
