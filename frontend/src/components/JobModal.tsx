@@ -63,7 +63,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
   }
 
   const rowClass = 'flex items-center gap-3 bg-surface-input border border-slate-700 rounded-lg px-3 min-h-[44px]'
-  const labelClass = 'flex items-center gap-2 text-white w-28 shrink-0'
+  const labelClass = 'flex items-center gap-2 text-white w-32 shrink-0'
 
   return (
     <ModalShell>
@@ -133,6 +133,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
         <div className={rowClass}>
           <span className={labelClass}>
             Durchführung
+            <HelpIcon text="Wie viele Tage vor dem Kurs soll die Buchung ausgelöst werden? Eversports öffnet Buchungsslots typischerweise einige Tage im Voraus — stelle den Wert passend zum Anbieter ein." />
           </span>
           <div className="flex items-center gap-2">
             <Stepper
@@ -143,13 +144,13 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
               max={30}
             />
             <span className="text-slate-500">Tage vorher</span>
-            <HelpIcon text="Wie viele Tage vor dem Kurs soll die Buchung ausgelöst werden? Eversports öffnet Buchungsslots typischerweise einige Tage im Voraus — stelle den Wert passend zum Anbieter ein." />
           </div>
         </div>
 
         <div className={rowClass}>
           <span className={labelClass}>
             Häufigkeit
+            <HelpIcon text="Einmalig: nur einmal ausführen, dann automatisch löschen. Wöchentlich: jede Woche wiederholen." />
           </span>
           <div role="group" aria-label="Häufigkeit" className="flex overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <button
@@ -169,13 +170,13 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
               Wöchentlich
             </button>
           </div>
-          <HelpIcon text="Einmalig: nur einmal ausführen, dann automatisch löschen. Wöchentlich: jede Woche wiederholen." />
         </div>
 
         {isAdmin() && (
           <div className={rowClass}>
             <span className={labelClass}>
               Test
+              <HelpIcon text="Testmodus — die Buchung wird sofort nach Abschluss wieder storniert." />
             </span>
             <input
               aria-label="Test"
@@ -184,7 +185,6 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
               onChange={e => setDebug(e.target.checked)}
               className="w-4 h-4 rounded accent-brand"
             />
-            <HelpIcon text="Testmodus — die Buchung wird sofort nach Abschluss wieder storniert." />
           </div>
         )}
 
