@@ -143,7 +143,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
               min={1}
               max={30}
             />
-            <span className="text-slate-500">Tage vorher</span>
+            <span className="text-slate-500 text-xs">Tage vorher</span>
           </div>
         </div>
 
