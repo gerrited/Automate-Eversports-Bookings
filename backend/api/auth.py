@@ -31,7 +31,7 @@ def _set_refresh_cookie(response: Response, token: str) -> None:
         value=token,
         httponly=True,
         secure=True,
-        samesite="strict",
+        samesite="lax",
         path=_REFRESH_PATH,
         max_age=_REFRESH_MAX_AGE,
     )
@@ -108,5 +108,5 @@ def logout(response: Response):
         path=_REFRESH_PATH,
         httponly=True,
         secure=True,
-        samesite="strict",
+        samesite="lax",
     )

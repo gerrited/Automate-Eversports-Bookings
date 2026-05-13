@@ -74,6 +74,11 @@ async function _refreshAccessToken(): Promise<string | null> {
   return data.access_token
 }
 
+export async function refreshAccessToken(): Promise<boolean> {
+  const token = await _refreshAccessToken()
+  return token !== null
+}
+
 export async function apiFetch<T>(
   path: string,
   options: RequestInit = {}

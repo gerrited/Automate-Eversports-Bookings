@@ -5,6 +5,7 @@ import DashboardPage from './pages/DashboardPage'
 import Footer from './components/Footer'
 import NoticeBanner from './components/NoticeBanner'
 import { useNotice } from './hooks/useNotice'
+import { useAuthInit } from './hooks/useAuthInit'
 
 function RequireAuth({ children }: { children: ReactElement }) {
   const token = localStorage.getItem('token')
@@ -21,6 +22,9 @@ function NoticeArea() {
 }
 
 export default function App() {
+  const ready = useAuthInit()
+  if (!ready) return null
+
   return (
     <BrowserRouter>
       <NoticeArea />

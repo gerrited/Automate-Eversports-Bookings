@@ -32,6 +32,27 @@ function mockFetch(...responses: Partial<Response>[]) {
   return fn
 }
 
+describe('refreshAccessToken', () => {
+  it('gibt true zurück und speichert neuen Token wenn Refresh erfolgreich', async () => {
+    mockFetch({ status: 200, ok: true, json: async () => ({ access_token: 'fresh-token' }) })
+
+    const { refreshAccessToken } = await import('./client')
+    const result = await refreshAccessToken()
+
+    expect(result).toBe(true)
+    expect(window.localStorage.getItem('token')).toBe('fresh-token')
+  })
+
+  it('gibt false zurück wenn Refresh-Endpoint 401 liefert', async () => {
+    mockFetch({ status: 401, ok: false })
+
+    const { refreshAccessToken } = await import('./client')
+    const result = await refreshAccessToken()
+
+    expect(result).toBe(false)
+  })
+})
+
 describe('apiFetch', () => {
   it('sendet credentials: include bei jedem Request', async () => {
     const fetch = mockFetch({ status: 200, ok: true, json: async () => ({ ok: true }) })
