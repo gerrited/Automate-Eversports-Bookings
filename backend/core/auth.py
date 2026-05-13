@@ -42,23 +42,22 @@ def create_refresh_token(user_id: str) -> str:
     )
 
 
-def verify_token(token: str) -> str:
-    """Returns user_id. Raises jwt.PyJWTError on invalid/expired/wrong-type token."""
+def _verify(token: str, expected_type: str) -> str:
+    """Private helper: decodes token and validates type. Returns user_id."""
     payload = jwt.decode(token, _secret(), algorithms=[_ALGORITHM])
-    if payload.get("type") != "access":
-        raise jwt.PyJWTError("Token is not an access token")
+    if payload.get("type") != expected_type:
+        raise jwt.PyJWTError(f"Token is not a {expected_type} token")
     user_id: str | None = payload.get("sub")
     if not user_id:
         raise jwt.PyJWTError("Token missing subject")
     return user_id
+
+
+def verify_token(token: str) -> str:
+    """Returns user_id. Raises jwt.PyJWTError on invalid/expired/wrong-type token."""
+    return _verify(token, "access")
 
 
 def verify_refresh_token(token: str) -> str:
     """Returns user_id. Raises jwt.PyJWTError on invalid/expired/wrong-type token."""
-    payload = jwt.decode(token, _secret(), algorithms=[_ALGORITHM])
-    if payload.get("type") != "refresh":
-        raise jwt.PyJWTError("Token is not a refresh token")
-    user_id: str | None = payload.get("sub")
-    if not user_id:
-        raise jwt.PyJWTError("Token missing subject")
-    return user_id
+    return _verify(token, "refresh")

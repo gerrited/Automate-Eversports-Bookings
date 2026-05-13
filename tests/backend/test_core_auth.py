@@ -1,3 +1,8 @@
+import jwt
+import os
+
+import pytest
+
 from backend.core.auth import (
     create_access_token,
     create_refresh_token,
@@ -5,7 +10,6 @@ from backend.core.auth import (
     verify_refresh_token,
     JWTError,
 )
-import pytest
 
 
 def test_create_and_verify_token():
@@ -27,14 +31,12 @@ def test_verify_tampered_token_raises():
 
 
 def test_access_token_has_type_claim():
-    import jwt, os
     token = create_access_token("user-1")
     payload = jwt.decode(token, os.environ["JWT_SECRET"], algorithms=["HS256"])
     assert payload["type"] == "access"
 
 
 def test_refresh_token_has_type_claim():
-    import jwt, os
     token = create_refresh_token("user-1")
     payload = jwt.decode(token, os.environ["JWT_SECRET"], algorithms=["HS256"])
     assert payload["type"] == "refresh"
