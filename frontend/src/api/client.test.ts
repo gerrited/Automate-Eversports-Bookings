@@ -64,7 +64,7 @@ describe('apiFetch', () => {
       { status: 401, ok: false, json: async () => ({}) }
     )
 
-    await apiFetch('/api/test').catch(() => {})
+    await expect(apiFetch('/api/test')).rejects.toThrow('Session expired')
 
     expect(window.localStorage.getItem('token')).toBeNull()
     expect((window.location as { href: string }).href).toBe('/')

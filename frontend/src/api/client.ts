@@ -58,6 +58,11 @@ export function getAvatarUrl(): string | null {
   return localStorage.getItem('avatarUrl')
 }
 
+async function _throwResponseError(resp: Response, fallback: string): Promise<never> {
+  const body = await resp.json().catch(() => ({}))
+  throw new Error((body as { detail?: string }).detail ?? fallback)
+}
+
 async function _refreshAccessToken(): Promise<string | null> {
   const resp = await fetch(`${BASE}/api/auth/refresh`, {
     method: 'POST',
@@ -89,23 +94,21 @@ export async function apiFetch<T>(
       const retryResp = await fetch(`${BASE}${path}`, { ...options, headers: retryHeaders, credentials: 'include' })
       if (retryResp.status === 204) return undefined as T
       if (!retryResp.ok) {
-        const body = await retryResp.json().catch(() => ({}))
-        throw new Error(body.detail ?? `HTTP ${retryResp.status}`)
+        return _throwResponseError(retryResp, `HTTP ${retryResp.status}`)
       }
       return retryResp.json()
     }
     clearToken()
     window.location.href = '/'
+    throw new Error('Session expired')
   }
 
   if (resp.status === 401) {
-    const body = await resp.json().catch(() => ({}))
-    throw new Error(body.detail ?? 'Unauthorized')
+    return _throwResponseError(resp, 'Unauthorized')
   }
 
   if (!resp.ok) {
-    const body = await resp.json().catch(() => ({}))
-    throw new Error(body.detail ?? `HTTP ${resp.status}`)
+    return _throwResponseError(resp, `HTTP ${resp.status}`)
   }
 
   if (resp.status === 204) return undefined as T
