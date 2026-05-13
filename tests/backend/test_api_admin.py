@@ -615,3 +615,34 @@ def test_send_message_requires_auth(client):
         json={"subject": "Test", "content": "Hallo"},
     )
     assert resp.status_code == 401
+
+
+# --- push_subscription_count ---
+
+def _make_push_subscription(db_session, user_id: str, endpoint: str = "https://push.example.com/1"):
+    from backend.models.push_subscription import PushSubscription
+    sub = PushSubscription(user_id=user_id, endpoint=endpoint, p256dh="k", auth="a")
+    db_session.add(sub)
+    db_session.commit()
+    return sub
+
+
+def test_list_users_includes_push_subscription_count(client, db_session):
+    admin = _make_admin(db_session)
+    user = _make_user(db_session, ev_id="ev-push", email="push@x.com")
+    _make_push_subscription(db_session, user.id)
+    resp = client.get("/api/admin/users", headers=_auth_header(admin.id))
+    assert resp.status_code == 200
+    users_data = resp.json()
+    push_user = next(u for u in users_data if u["email"] == "push@x.com")
+    assert push_user["push_subscription_count"] == 1
+
+
+def test_list_users_push_subscription_count_zero_when_none(client, db_session):
+    admin = _make_admin(db_session)
+    _make_user(db_session, ev_id="ev-nopush", email="nopush@x.com")
+    resp = client.get("/api/admin/users", headers=_auth_header(admin.id))
+    assert resp.status_code == 200
+    users_data = resp.json()
+    no_push_user = next(u for u in users_data if u["email"] == "nopush@x.com")
+    assert no_push_user["push_subscription_count"] == 0

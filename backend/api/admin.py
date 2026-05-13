@@ -4,7 +4,7 @@ from typing import List, Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
-from sqlalchemy import case, func
+from sqlalchemy import case, func, select as sa_select
 from sqlalchemy.orm import Session
 
 from backend.api.deps import require_admin
@@ -12,6 +12,7 @@ from backend.core.email import send_account_status_email, send_admin_message, se
 from backend.db import get_db
 from backend.models.booking_job import BookingJob
 from backend.models.booking_log import BookingLog
+from backend.models.push_subscription import PushSubscription
 from backend.models.user import User
 from backend.schemas.job import AdminJobResponse
 from backend.schemas.log import AdminLogsPage, AdminLogResponse
@@ -27,11 +28,18 @@ def list_users(
     current_user: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
+    push_count_sq = (
+        sa_select(func.count(PushSubscription.id))
+        .where(PushSubscription.user_id == User.id)
+        .correlate(User)
+        .scalar_subquery()
+    )
     rows = (
         db.query(
             User,
             func.count(BookingJob.id).label("job_count"),
             func.sum(case((BookingJob.enabled == True, 1), else_=0)).label("active_job_count"),
+            push_count_sq.label("push_subscription_count"),
         )
         .outerjoin(BookingJob, BookingJob.user_id == User.id)
         .group_by(User.id)
@@ -48,8 +56,9 @@ def list_users(
             active_job_count=active_job_count or 0,
             max_active_jobs=user.max_active_jobs,
             created_at=user.created_at,
+            push_subscription_count=push_subscription_count or 0,
         )
-        for user, job_count, active_job_count in rows
+        for user, job_count, active_job_count, push_subscription_count in rows
     ]
 
 
@@ -76,6 +85,9 @@ def set_user_active(
     active_job_count = db.query(func.count(BookingJob.id)).filter(
         BookingJob.user_id == user.id, BookingJob.enabled == True
     ).scalar()
+    push_subscription_count = db.query(func.count(PushSubscription.id)).filter(
+        PushSubscription.user_id == user.id
+    ).scalar()
     return UserResponse(
         id=user.id,
         email=user.email,
@@ -85,6 +97,7 @@ def set_user_active(
         active_job_count=active_job_count or 0,
         max_active_jobs=user.max_active_jobs,
         created_at=user.created_at,
+        push_subscription_count=push_subscription_count or 0,
     )
 
 
@@ -126,6 +139,9 @@ def set_user_limit(
     active_job_count = db.query(func.count(BookingJob.id)).filter(
         BookingJob.user_id == user.id, BookingJob.enabled == True
     ).scalar()
+    push_subscription_count = db.query(func.count(PushSubscription.id)).filter(
+        PushSubscription.user_id == user.id
+    ).scalar()
     return UserResponse(
         id=user.id,
         email=user.email,
@@ -135,6 +151,7 @@ def set_user_limit(
         active_job_count=active_job_count or 0,
         max_active_jobs=user.max_active_jobs,
         created_at=user.created_at,
+        push_subscription_count=push_subscription_count or 0,
     )
 
 

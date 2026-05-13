@@ -13,6 +13,7 @@ class UserResponse(BaseModel):
     active_job_count: int
     max_active_jobs: Optional[int] = None
     created_at: datetime
+    push_subscription_count: int = 0
 
     model_config = {"from_attributes": True}
 
