@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { listUsers, setUserActive, setUserLimit, sendUserMessage } from '../api/users'
+import { listUsers, setUserActive, setUserLimit, sendUserMessage, sendTestPush } from '../api/users'
 import { getEmail } from '../api/client'
 import type { UserRecord } from '../types'
 import { Button, Input, ModalShell } from './ui'
@@ -23,6 +23,8 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
   const [messageError, setMessageError] = useState<string | null>(null)
   const [messageSending, setMessageSending] = useState(false)
   const [messageSent, setMessageSent] = useState(false)
+  const [pushingUserId, setPushingUserId] = useState<string | null>(null)
+  const [pushSuccessUserId, setPushSuccessUserId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     try {
@@ -108,6 +110,19 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
     setMessageError(null)
     setMessageSending(false)
     setMessageSent(false)
+  }
+
+  async function handleSendTestPush(userId: string) {
+    setPushingUserId(userId)
+    try {
+      await sendTestPush(userId)
+      setPushSuccessUserId(userId)
+      setTimeout(() => setPushSuccessUserId(null), 2000)
+    } catch {
+      // Admin-Werkzeug: kein UI-Fehler
+    } finally {
+      setPushingUserId(null)
+    }
   }
 
   async function handleSendMessage() {
@@ -236,6 +251,27 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  <Button
+                    variant="slate"
+                    size="sm"
+                    aria-label="Test-Push senden"
+                    disabled={user.push_subscription_count === 0 || pushingUserId === user.id}
+                    title={user.push_subscription_count === 0 ? 'Kein Gerät registriert' : undefined}
+                    onClick={() => handleSendTestPush(user.id)}
+                  >
+                    {pushSuccessUserId === user.id ? (
+                      <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 0 1 0 1.414l-8 8a1 1 0 0 1-1.414 0l-4-4a1 1 0 0 1 1.414-1.414L8 12.586l7.293-7.293a1 1 0 0 1 1.414 0z" clipRule="evenodd"/>
+                      </svg>
+                    ) : (
+                      <>
+                        <svg className="sm:hidden w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M10 2a6 6 0 0 0-6 6v3.586l-.707.707A1 1 0 0 0 4 14h12a1 1 0 0 0 .707-1.707L16 11.586V8a6 6 0 0 0-6-6zm0 16a2 2 0 0 1-2-2h4a2 2 0 0 1-2 2z"/>
+                        </svg>
+                        <span className="hidden sm:inline">Push</span>
+                      </>
+                    )}
+                  </Button>
                   <Button
                     variant="slate"
                     size="sm"

@@ -25,3 +25,7 @@ export async function sendUserMessage(id: string, subject: string, content: stri
     body: JSON.stringify({ subject, content }),
   })
 }
+
+export async function sendTestPush(userId: string): Promise<void> {
+  await apiFetch(`/api/admin/users/${userId}/push-test`, { method: 'POST' })
+}

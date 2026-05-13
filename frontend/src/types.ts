@@ -48,6 +48,7 @@ export interface UserRecord {
   active_job_count: number
   max_active_jobs: number | null
   created_at: string
+  push_subscription_count: number
 }
 
 export interface AdminJob extends Job {

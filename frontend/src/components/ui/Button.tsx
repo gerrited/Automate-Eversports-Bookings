@@ -10,6 +10,7 @@ interface ButtonProps {
   fullWidth?: boolean
   type?: 'button' | 'submit' | 'reset'
   disabled?: boolean
+  title?: string
   onClick?: (e: MouseEvent<HTMLButtonElement>) => void
   'aria-label'?: string
   children: ReactNode
@@ -37,6 +38,7 @@ export default function Button({
   fullWidth = false,
   type = 'button',
   disabled = false,
+  title,
   onClick,
   'aria-label': ariaLabel,
   children,
@@ -47,6 +49,7 @@ export default function Button({
       disabled={disabled || loading}
       onClick={onClick}
       aria-label={ariaLabel}
+      title={title}
       className={[BASE, VARIANTS[variant], SIZES[size], fullWidth ? 'w-full' : ''].filter(Boolean).join(' ')}
     >
       {loading && (
