@@ -263,7 +263,8 @@ def test_refresh_returns_new_access_token(client, db_session):
     db_session.refresh(user)
 
     token = create_refresh_token(user.id)
-    resp = client.post("/api/auth/refresh", cookies={"refresh_token": token})
+    client.cookies.set("refresh_token", token)
+    resp = client.post("/api/auth/refresh")
     assert resp.status_code == 200
     body = resp.json()
     assert "access_token" in body
@@ -276,7 +277,8 @@ def test_refresh_without_cookie_returns_401(client):
 
 
 def test_refresh_with_invalid_token_returns_401(client):
-    resp = client.post("/api/auth/refresh", cookies={"refresh_token": "not.a.valid.token"})
+    client.cookies.set("refresh_token", "not.a.valid.token")
+    resp = client.post("/api/auth/refresh")
     assert resp.status_code == 401
 
 
@@ -296,7 +298,8 @@ def test_refresh_inactive_user_returns_403(client, db_session):
     db_session.refresh(user)
 
     token = create_refresh_token(user.id)
-    resp = client.post("/api/auth/refresh", cookies={"refresh_token": token})
+    client.cookies.set("refresh_token", token)
+    resp = client.post("/api/auth/refresh")
     assert resp.status_code == 403
 
 
