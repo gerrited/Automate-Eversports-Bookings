@@ -689,3 +689,17 @@ def test_send_push_test_returns_204(client, db_session):
         )
     assert resp.status_code == 204
     mock_send.assert_called_once_with(ANY, user.id)
+
+
+def test_send_push_test_returns_503_when_push_not_configured(client, db_session):
+    from unittest.mock import patch
+    admin = _make_admin(db_session)
+    user = _make_user(db_session, ev_id="ev-503", email="c503@x.com")
+    env_without_vapid = {k: v for k, v in os.environ.items()
+                         if k not in ("VAPID_PRIVATE_KEY", "VAPID_SUBJECT")}
+    with patch.dict(os.environ, env_without_vapid, clear=True):
+        resp = client.post(
+            f"/api/admin/users/{user.id}/push-test",
+            headers=_auth_header(admin.id),
+        )
+    assert resp.status_code == 503
