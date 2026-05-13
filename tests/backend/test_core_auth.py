@@ -1,4 +1,10 @@
-from backend.core.auth import create_access_token, verify_token, JWTError
+from backend.core.auth import (
+    create_access_token,
+    create_refresh_token,
+    verify_token,
+    verify_refresh_token,
+    JWTError,
+)
 import pytest
 
 
@@ -18,15 +24,6 @@ def test_verify_tampered_token_raises():
     tampered = token[:-5] + "XXXXX"
     with pytest.raises(JWTError):
         verify_token(tampered)
-
-
-from backend.core.auth import (
-    create_access_token,
-    create_refresh_token,
-    verify_token,
-    verify_refresh_token,
-    JWTError,
-)
 
 
 def test_access_token_has_type_claim():
