@@ -1,4 +1,4 @@
-import { apiFetch, setToken, setEmail, setRole, setAvatarUrl, setIsActualAdmin } from './client'
+import { apiFetch, setToken, setEmail, setRole, setAvatarUrl, setIsActualAdmin, clearToken } from './client'
 
 export async function login(email: string, password: string): Promise<void> {
   const data = await apiFetch<{ access_token: string; role: string; avatar_url?: string | null }>('/api/auth/login', {
@@ -10,4 +10,12 @@ export async function login(email: string, password: string): Promise<void> {
   setIsActualAdmin(data.role === 'admin')
   setEmail(email)
   if (data.avatar_url) setAvatarUrl(data.avatar_url)
+}
+
+export async function logout(): Promise<void> {
+  try {
+    await apiFetch('/api/auth/logout', { method: 'POST' })
+  } finally {
+    clearToken()
+  }
 }

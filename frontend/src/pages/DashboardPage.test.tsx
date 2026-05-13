@@ -37,6 +37,11 @@ vi.mock('../api/client', () => ({
   apiFetch: vi.fn(),
 }))
 
+vi.mock('../api/auth', () => ({
+  login: vi.fn(),
+  logout: vi.fn(),
+}))
+
 import { getMe } from '../api/account'
 import { listJobs } from '../api/jobs'
 import DashboardPage from './DashboardPage'

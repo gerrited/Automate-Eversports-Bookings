@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { clearToken, isAdmin, isActualAdmin, getEmail, getAvatarUrl } from '../api/client'
+import { isAdmin, isActualAdmin, getEmail, getAvatarUrl } from '../api/client'
+import { logout } from '../api/auth'
 import { listJobs, createJob, updateJob, toggleJob, deleteJob, getJobLogs, executeJob } from '../api/jobs'
 import type { Job, BookingLog, JobFormData } from '../types'
 import JobCard from '../components/JobCard'
@@ -166,8 +167,8 @@ useEffect(() => {
     )
   }
 
-  function handleLogout() {
-    clearToken()
+  async function handleLogout() {
+    await logout()
     navigate('/')
   }
 
