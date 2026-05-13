@@ -3,14 +3,12 @@ Push-Benachrichtigungen für bevorstehende Termine.
 """
 from __future__ import annotations
 
-import json
 import logging
-import os
 from datetime import datetime, timezone, timedelta
 
-from pywebpush import webpush, WebPushException
 from sqlalchemy.orm import Session
 
+from backend.core.push import send_to_subscription
 from backend.models.push_subscription import PushSubscription
 from backend.models.user import User
 
@@ -28,26 +26,6 @@ def format_advance_time(minutes: int) -> str:
     if hours > 0:
         return f"{hours} {'Stunde' if hours == 1 else 'Stunden'}"
     return f"{minutes} {'Minute' if minutes == 1 else 'Minuten'}"
-
-
-def _send_to_subscription(sub: PushSubscription, payload: dict, db: Session) -> None:
-    try:
-        webpush(
-            subscription_info={
-                "endpoint": sub.endpoint,
-                "keys": {"p256dh": sub.p256dh, "auth": sub.auth},
-            },
-            data=json.dumps(payload),
-            vapid_private_key=os.environ["VAPID_PRIVATE_KEY"],
-            vapid_claims={"sub": os.environ["VAPID_SUBJECT"]},
-        )
-    except WebPushException as exc:
-        if exc.response is not None and exc.response.status_code == 410:
-            log.info("Push subscription gone, removing: %s", sub.endpoint)
-            db.delete(sub)
-            db.commit()
-        else:
-            log.error("Push failed for endpoint %s: %s", sub.endpoint, exc)
 
 
 def send_push_notifications(
@@ -90,4 +68,4 @@ def send_push_notifications(
         }
 
         for sub in subscriptions:
-            _send_to_subscription(sub, payload, db)
+            send_to_subscription(sub, payload, db)

@@ -91,7 +91,7 @@ def test_sends_notification_when_booking_in_window(db_session):
     # start_datetime in 60 min = 10:00 → notification_time = 09:00 → im Fenster [09:00, 09:15)
     bookings = [{"start_datetime": "2026-05-06T10:00:00", "activity_name": "Yoga", "facility_name": "FitX"}]
 
-    with patch("worker.notifications.webpush") as mock_wp:
+    with patch("backend.core.push.webpush") as mock_wp:
         send_push_notifications(db_session, user, bookings, now)
         assert mock_wp.call_count == 1
         call_kwargs = mock_wp.call_args[1]
@@ -109,7 +109,7 @@ def test_no_notification_when_booking_outside_window(db_session):
     # Termin in 2 Stunden → notification_time = 10:00 → außerhalb [09:00, 09:15)
     bookings = [{"start_datetime": "2026-05-06T11:00:00", "activity_name": "Yoga", "facility_name": "FitX"}]
 
-    with patch("worker.notifications.webpush") as mock_wp:
+    with patch("backend.core.push.webpush") as mock_wp:
         send_push_notifications(db_session, user, bookings, now)
         assert mock_wp.call_count == 0
 
@@ -125,7 +125,7 @@ def test_deletes_gone_subscription(db_session):
     gone_exc = WebPushException("Gone")
     gone_exc.response = MagicMock(status_code=410)
 
-    with patch("worker.notifications.webpush", side_effect=gone_exc):
+    with patch("backend.core.push.webpush", side_effect=gone_exc):
         send_push_notifications(db_session, user, bookings, now)
 
     db_session.expire_all()
