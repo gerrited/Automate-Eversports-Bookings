@@ -58,6 +58,17 @@ export function getAvatarUrl(): string | null {
   return localStorage.getItem('avatarUrl')
 }
 
+async function _refreshAccessToken(): Promise<string | null> {
+  const resp = await fetch(`${BASE}/api/auth/refresh`, {
+    method: 'POST',
+    credentials: 'include',
+  })
+  if (!resp.ok) return null
+  const data = await resp.json()
+  setToken(data.access_token)
+  return data.access_token
+}
+
 export async function apiFetch<T>(
   path: string,
   options: RequestInit = {}
@@ -69,13 +80,25 @@ export async function apiFetch<T>(
   }
   if (token) headers['Authorization'] = `Bearer ${token}`
 
-  const resp = await fetch(`${BASE}${path}`, { ...options, headers })
+  const resp = await fetch(`${BASE}${path}`, { ...options, headers, credentials: 'include' })
+
+  if (resp.status === 401 && getToken()) {
+    const newToken = await _refreshAccessToken()
+    if (newToken) {
+      const retryHeaders = { ...headers, 'Authorization': `Bearer ${newToken}` }
+      const retryResp = await fetch(`${BASE}${path}`, { ...options, headers: retryHeaders, credentials: 'include' })
+      if (retryResp.status === 204) return undefined as T
+      if (!retryResp.ok) {
+        const body = await retryResp.json().catch(() => ({}))
+        throw new Error(body.detail ?? `HTTP ${retryResp.status}`)
+      }
+      return retryResp.json()
+    }
+    clearToken()
+    window.location.href = '/'
+  }
 
   if (resp.status === 401) {
-    if (getToken()) {
-      clearToken()
-      window.location.href = '/'
-    }
     const body = await resp.json().catch(() => ({}))
     throw new Error(body.detail ?? 'Unauthorized')
   }
