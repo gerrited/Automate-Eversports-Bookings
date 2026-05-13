@@ -309,3 +309,61 @@ def test_logout_clears_refresh_cookie(client):
     set_cookie = resp.headers.get("set-cookie", "")
     assert "refresh_token" in set_cookie
     assert "max-age=0" in set_cookie.lower()
+
+
+# --- refresh_token im Response-Body (für PWA/localStorage) ---
+
+def test_login_gibt_refresh_token_im_body_zurueck(client, mocker):
+    mocker.patch(
+        "backend.api.auth.eversports_login",
+        return_value={"user_id": "ev-rt-body", "session": None},
+    )
+    resp = client.post("/api/auth/login", json={"email": "rt@x.com", "password": "pw"})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "refresh_token" in body
+    assert body["refresh_token"]
+
+
+def test_refresh_mit_body_token_gibt_neues_access_token(client, db_session):
+    from backend.models.user import User
+    from backend.core.auth import create_refresh_token
+
+    user = User(
+        eversports_user_id="ev-body-refresh",
+        email="body-refresh@x.com",
+        encrypted_password="x",
+        active=True,
+        role="user",
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+
+    token = create_refresh_token(user.id)
+    resp = client.post("/api/auth/refresh", json={"refresh_token": token})
+    assert resp.status_code == 200
+    assert "access_token" in resp.json()
+
+
+def test_refresh_body_token_hat_vorrang_vor_cookie(client, db_session):
+    from backend.models.user import User
+    from backend.core.auth import create_refresh_token
+
+    user = User(
+        eversports_user_id="ev-precedence",
+        email="precedence@x.com",
+        encrypted_password="x",
+        active=True,
+        role="user",
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+
+    valid_token = create_refresh_token(user.id)
+    # Cookie ist ungültig, Body-Token gültig → Body soll gewinnen
+    client.cookies.set("refresh_token", "invalid.cookie.token")
+    resp = client.post("/api/auth/refresh", json={"refresh_token": valid_token})
+    assert resp.status_code == 200
+    assert "access_token" in resp.json()

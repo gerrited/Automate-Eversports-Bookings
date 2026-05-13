@@ -51,6 +51,18 @@ describe('refreshAccessToken', () => {
 
     expect(result).toBe(false)
   })
+
+  it('sendet gespeicherten refresh_token im Request-Body', async () => {
+    window.localStorage.setItem('refresh_token', 'stored-refresh-token')
+    const fetchMock = mockFetch({ status: 200, ok: true, json: async () => ({ access_token: 'new-token' }) })
+
+    const { refreshAccessToken } = await import('./client')
+    await refreshAccessToken()
+
+    const [, options] = fetchMock.mock.calls[0]
+    const body = JSON.parse((options as RequestInit).body as string)
+    expect(body.refresh_token).toBe('stored-refresh-token')
+  })
 })
 
 describe('apiFetch', () => {

@@ -32,8 +32,17 @@ export function isActualAdmin(): boolean {
   return localStorage.getItem('isActualAdmin') === 'true'
 }
 
+export function setRefreshToken(token: string): void {
+  localStorage.setItem('refresh_token', token)
+}
+
+export function getRefreshToken(): string | null {
+  return localStorage.getItem('refresh_token')
+}
+
 export function clearToken(): void {
   localStorage.removeItem('token')
+  localStorage.removeItem('refresh_token')
   localStorage.removeItem('email')
   localStorage.removeItem('role')
   localStorage.removeItem('avatarUrl')
@@ -64,9 +73,12 @@ async function _throwResponseError(resp: Response, fallback: string): Promise<ne
 }
 
 async function _refreshAccessToken(): Promise<string | null> {
+  const storedRefreshToken = getRefreshToken()
   const resp = await fetch(`${BASE}/api/auth/refresh`, {
     method: 'POST',
     credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: storedRefreshToken ? JSON.stringify({ refresh_token: storedRefreshToken }) : undefined,
   })
   if (!resp.ok) return null
   const data = await resp.json()
