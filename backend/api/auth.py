@@ -1,23 +1,44 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 
-from backend.core.auth import create_access_token
+from backend.core.auth import (
+    create_access_token,
+    create_refresh_token,
+    verify_refresh_token,
+    JWTError,
+)
 from backend.core.booking import eversports_login
 from backend.core.email import send_new_user_notification
 from backend.core.encryption import encrypt
 from backend.db import get_db
 from backend.models.user import User
-from backend.schemas.auth import LoginRequest, TokenResponse
+from backend.schemas.auth import LoginRequest, RefreshResponse, TokenResponse
 
 log = logging.getLogger(__name__)
 
 router = APIRouter()
 
+_REFRESH_COOKIE = "refresh_token"
+_REFRESH_MAX_AGE = 90 * 24 * 60 * 60  # 7 776 000 Sekunden
+_REFRESH_PATH = "/api/auth/refresh"
+
+
+def _set_refresh_cookie(response: Response, token: str) -> None:
+    response.set_cookie(
+        key=_REFRESH_COOKIE,
+        value=token,
+        httponly=True,
+        secure=True,
+        samesite="strict",
+        path=_REFRESH_PATH,
+        max_age=_REFRESH_MAX_AGE,
+    )
+
 
 @router.post("/auth/login", response_model=TokenResponse)
-def login(req: LoginRequest, db: Session = Depends(get_db)):
+def login(req: LoginRequest, response: Response, db: Session = Depends(get_db)):
     result = eversports_login(req.email, req.password)
     if result is None:
         raise HTTPException(status_code=401, detail="Invalid Eversports credentials")
@@ -53,8 +74,39 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(user)
 
+    _set_refresh_cookie(response, create_refresh_token(user.id))
     return TokenResponse(
         access_token=create_access_token(user.id),
         role=user.role,
         avatar_url=result.get("avatar_url"),
+    )
+
+
+@router.post("/auth/refresh", response_model=RefreshResponse)
+def refresh(
+    db: Session = Depends(get_db),
+    refresh_token: str | None = Cookie(default=None),
+):
+    if not refresh_token:
+        raise HTTPException(status_code=401, detail="Missing refresh token")
+    try:
+        user_id = verify_refresh_token(refresh_token)
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None:
+        raise HTTPException(status_code=401, detail="User not found")
+    if not user.active:
+        raise HTTPException(status_code=403, detail="Account nicht freigegeben")
+    return RefreshResponse(access_token=create_access_token(user.id))
+
+
+@router.post("/auth/logout", status_code=204)
+def logout(response: Response):
+    response.delete_cookie(
+        key=_REFRESH_COOKIE,
+        path=_REFRESH_PATH,
+        httponly=True,
+        secure=True,
+        samesite="strict",
     )

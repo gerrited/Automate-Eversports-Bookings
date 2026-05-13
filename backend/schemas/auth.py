@@ -11,3 +11,8 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     role: str
     avatar_url: str | None = None
+
+
+class RefreshResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"

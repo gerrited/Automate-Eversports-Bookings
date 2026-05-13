@@ -235,3 +235,74 @@ def test_login_succeeds_even_if_notification_fails(client, mocker, db_session):
     resp = client.post("/api/auth/login", json={"email": "failmail@x.com", "password": "pw"})
     assert resp.status_code == 403
     assert resp.json()["detail"] == "Account nicht freigegeben"
+
+
+def test_login_sets_refresh_cookie(client, mocker):
+    mocker.patch(
+        "backend.api.auth.eversports_login",
+        return_value={"user_id": "ev-cookie-1", "session": None},
+    )
+    resp = client.post("/api/auth/login", json={"email": "cookie@x.com", "password": "pw"})
+    assert resp.status_code == 200
+    assert "refresh_token" in resp.cookies
+
+
+def test_refresh_returns_new_access_token(client, db_session):
+    from backend.models.user import User
+    from backend.core.auth import create_refresh_token
+
+    user = User(
+        eversports_user_id="ev-refresh-ok",
+        email="refresh-ok@x.com",
+        encrypted_password="x",
+        active=True,
+        role="user",
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+
+    token = create_refresh_token(user.id)
+    resp = client.post("/api/auth/refresh", cookies={"refresh_token": token})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "access_token" in body
+    assert body["token_type"] == "bearer"
+
+
+def test_refresh_without_cookie_returns_401(client):
+    resp = client.post("/api/auth/refresh")
+    assert resp.status_code == 401
+
+
+def test_refresh_with_invalid_token_returns_401(client):
+    resp = client.post("/api/auth/refresh", cookies={"refresh_token": "not.a.valid.token"})
+    assert resp.status_code == 401
+
+
+def test_refresh_inactive_user_returns_403(client, db_session):
+    from backend.models.user import User
+    from backend.core.auth import create_refresh_token
+
+    user = User(
+        eversports_user_id="ev-refresh-inactive",
+        email="refresh-inactive@x.com",
+        encrypted_password="x",
+        active=False,
+        role="user",
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+
+    token = create_refresh_token(user.id)
+    resp = client.post("/api/auth/refresh", cookies={"refresh_token": token})
+    assert resp.status_code == 403
+
+
+def test_logout_clears_refresh_cookie(client):
+    resp = client.post("/api/auth/logout")
+    assert resp.status_code == 204
+    set_cookie = resp.headers.get("set-cookie", "")
+    assert "refresh_token" in set_cookie
+    assert "max-age=0" in set_cookie.lower()
