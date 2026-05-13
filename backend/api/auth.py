@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 router = APIRouter()
 
 _REFRESH_COOKIE = "refresh_token"
-_REFRESH_MAX_AGE = 90 * 24 * 60 * 60  # 7 776 000 Sekunden
+_REFRESH_MAX_AGE = 90 * 24 * 60 * 60  # 90 Tage
 _REFRESH_PATH = "/api/auth/refresh"
 
 
