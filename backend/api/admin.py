@@ -2,13 +2,14 @@ import logging
 import os
 from typing import List, Literal, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel, Field
 from sqlalchemy import case, func, select as sa_select
 from sqlalchemy.orm import Session
 
 from backend.api.deps import require_admin
 from backend.core.email import send_account_status_email, send_admin_message, send_limit_enforced_email, send_test_email
+from backend.core.push import send_test_push_to_user
 from backend.db import get_db
 from backend.models.booking_job import BookingJob
 from backend.models.booking_log import BookingLog
@@ -256,6 +257,21 @@ def send_message_to_user(
         raise HTTPException(status_code=404, detail="User not found")
     send_admin_message(user.email, body.subject, body.content)
     return {"detail": "Nachricht gesendet"}
+
+
+@router.post("/admin/users/{user_id}/push-test", status_code=204)
+def send_push_test(
+    user_id: str,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    if not os.environ.get("VAPID_PRIVATE_KEY") or not os.environ.get("VAPID_SUBJECT"):
+        raise HTTPException(status_code=503, detail="Push not configured")
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    send_test_push_to_user(db, user_id)
+    return Response(status_code=204)
 
 
 class TestEmailRequest(BaseModel):

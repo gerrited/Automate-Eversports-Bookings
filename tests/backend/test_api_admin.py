@@ -5,6 +5,8 @@ os.environ.setdefault("ENCRYPTION_KEY", os.urandom(32).hex())
 os.environ.setdefault("JWT_SECRET", "test-jwt-secret-do-not-use-in-prod")
 os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 os.environ.setdefault("FRONTEND_URL", "http://localhost:5173")
+os.environ.setdefault("VAPID_PRIVATE_KEY", "test-private-key")
+os.environ.setdefault("VAPID_SUBJECT", "mailto:test@example.com")
 
 from backend.core.auth import create_access_token
 from backend.models.booking_job import BookingJob
@@ -646,3 +648,44 @@ def test_list_users_push_subscription_count_zero_when_none(client, db_session):
     users_data = resp.json()
     no_push_user = next(u for u in users_data if u["email"] == "nopush@x.com")
     assert no_push_user["push_subscription_count"] == 0
+
+
+# --- push-test endpoint ---
+
+def test_send_push_test_requires_auth(client, db_session):
+    user = _make_user(db_session)
+    resp = client.post(f"/api/admin/users/{user.id}/push-test")
+    assert resp.status_code == 401
+
+
+def test_send_push_test_requires_admin(client, db_session):
+    user = _make_user(db_session)
+    resp = client.post(
+        f"/api/admin/users/{user.id}/push-test",
+        headers=_auth_header(user.id),
+    )
+    assert resp.status_code == 403
+
+
+def test_send_push_test_returns_404_for_unknown_user(client, db_session):
+    from unittest.mock import patch
+    admin = _make_admin(db_session)
+    with patch("backend.api.admin.send_test_push_to_user"):
+        resp = client.post(
+            "/api/admin/users/nonexistent-id/push-test",
+            headers=_auth_header(admin.id),
+        )
+    assert resp.status_code == 404
+
+
+def test_send_push_test_returns_204(client, db_session):
+    from unittest.mock import patch, ANY
+    admin = _make_admin(db_session)
+    user = _make_user(db_session, ev_id="ev-pt", email="pt@x.com")
+    with patch("backend.api.admin.send_test_push_to_user") as mock_send:
+        resp = client.post(
+            f"/api/admin/users/{user.id}/push-test",
+            headers=_auth_header(admin.id),
+        )
+    assert resp.status_code == 204
+    mock_send.assert_called_once_with(ANY, user.id)
