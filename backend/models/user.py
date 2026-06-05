@@ -18,6 +18,7 @@ class User(Base):
     total_bookings_executed = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     notification_advance_minutes = Column(Integer, nullable=False, server_default="60", default=60)
+    calendar_token = Column(String, unique=True, nullable=True)
 
     jobs = relationship("BookingJob", back_populates="user", cascade="all, delete-orphan")
     push_subscriptions = relationship("PushSubscription", back_populates="user", cascade="all, delete-orphan")
