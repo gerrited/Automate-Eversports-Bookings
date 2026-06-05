@@ -77,6 +77,7 @@ def test_ics_feed_valid_token(client, db_session):
     body = resp.text
     assert "BEGIN:VCALENDAR" in body
     assert "BEGIN:VEVENT" in body
+    assert "DTSTAMP:" in body
     assert "Yoga" in body
     assert "Sport XY" in body
     assert "evt-abc@eversports-bookings" in body

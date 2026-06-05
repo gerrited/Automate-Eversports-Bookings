@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
@@ -44,6 +44,10 @@ def regenerate_calendar_token(
     return CalendarTokenResponse(token=current_user.calendar_token)
 
 
+def _escape_ics_text(text: str) -> str:
+    return text.replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", "\\n")
+
+
 def _format_ics_dt(iso_str: str) -> str:
     try:
         return datetime.fromisoformat(iso_str).strftime("%Y%m%dT%H%M%S")
@@ -59,14 +63,16 @@ def _generate_ics(bookings: list[dict]) -> str:
         "CALSCALE:GREGORIAN",
         "X-WR-CALNAME:Meine Eversports Buchungen",
     ]
+    dtstamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     for b in bookings:
         lines += [
             "BEGIN:VEVENT",
             f"UID:{b['event_id']}@eversports-bookings",
+            f"DTSTAMP:{dtstamp}",
             f"DTSTART:{_format_ics_dt(b['start_datetime'])}",
             f"DTEND:{_format_ics_dt(b['end_datetime'])}",
-            f"SUMMARY:{b['activity_name']}",
-            f"LOCATION:{b['facility_name']}, {b['address']}",
+            f"SUMMARY:{_escape_ics_text(b['activity_name'])}",
+            f"LOCATION:{_escape_ics_text(b['facility_name'])}, {_escape_ics_text(b['address'])}",
             "END:VEVENT",
         ]
     lines.append("END:VCALENDAR")
