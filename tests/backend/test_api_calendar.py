@@ -49,3 +49,51 @@ def test_regenerate_calendar_token_returns_new_token(client, db_session):
     new_token = resp.json()["token"]
     assert new_token != old
     assert len(new_token) == 36
+
+
+SAMPLE_BOOKINGS = [
+    {
+        "activity_name": "Yoga",
+        "facility_name": "Sport XY",
+        "facility_slug": "sport-xy",
+        "start_datetime": "2026-06-09T09:00:00",
+        "end_datetime": "2026-06-09T10:00:00",
+        "address": "Musterstraße 1, 1010 Wien",
+        "event_id": "evt-abc",
+        "event_participant_id": "ep-123",
+        "session_id": "sess-456",
+        "facility_id": "fac-789",
+    }
+]
+
+
+def test_ics_feed_valid_token(client, db_session):
+    token = str(uuid.uuid4())
+    _create_user(db_session, calendar_token=token)
+    with patch("backend.api.calendar.fetch_upcoming_bookings", return_value=SAMPLE_BOOKINGS):
+        resp = client.get(f"/api/calendar/feed.ics?token={token}")
+    assert resp.status_code == 200
+    assert "text/calendar" in resp.headers["content-type"]
+    body = resp.text
+    assert "BEGIN:VCALENDAR" in body
+    assert "BEGIN:VEVENT" in body
+    assert "Yoga" in body
+    assert "Sport XY" in body
+    assert "evt-abc@eversports-bookings" in body
+    assert "20260609T090000" in body
+
+
+def test_ics_feed_invalid_token(client, db_session):
+    _create_user(db_session)
+    resp = client.get("/api/calendar/feed.ics?token=nonexistent-token")
+    assert resp.status_code == 404
+
+
+def test_ics_feed_eversports_error_returns_empty_calendar(client, db_session):
+    token = str(uuid.uuid4())
+    _create_user(db_session, calendar_token=token)
+    with patch("backend.api.calendar.fetch_upcoming_bookings", side_effect=RuntimeError("down")):
+        resp = client.get(f"/api/calendar/feed.ics?token={token}")
+    assert resp.status_code == 200
+    assert "BEGIN:VCALENDAR" in resp.text
+    assert "BEGIN:VEVENT" not in resp.text
