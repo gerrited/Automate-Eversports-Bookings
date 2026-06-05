@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 import backend.models  # noqa: F401 — ensures all models are registered with Base.metadata
-from backend.api import auth, jobs, admin, facilities, account, bookings, push
+from backend.api import auth, jobs, admin, facilities, account, bookings, push, calendar
 
 
 @asynccontextmanager
@@ -32,3 +32,4 @@ app.include_router(facilities.router, prefix="/api")
 app.include_router(account.router, prefix="/api")
 app.include_router(bookings.router, prefix="/api")
 app.include_router(push.router, prefix="/api")
+app.include_router(calendar.router, prefix="/api")
