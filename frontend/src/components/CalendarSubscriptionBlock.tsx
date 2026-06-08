@@ -33,7 +33,7 @@ export default function CalendarSubscriptionBlock() {
   }
 
   return (
-    <div className="mt-6 rounded-xl bg-surface-card p-4">
+    <div className="rounded-xl bg-surface-card p-4">
       {token ? (
         <>
           <input
