@@ -39,7 +39,6 @@ export default function CalendarSubscriptionBlock() {
 
   return (
     <div className="mt-6 rounded-xl bg-surface-card p-4">
-      <p className="text-sm font-semibold text-slate-300 mb-3">Kalender abonnieren</p>
       {token ? (
         <>
           <input
