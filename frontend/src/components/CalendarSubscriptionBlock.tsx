@@ -5,11 +5,6 @@ function buildWebcalUrl(token: string): string {
   return `webcal://${window.location.host}/api/calendar/feed.ics?token=${token}`
 }
 
-function buildGoogleCalendarUrl(token: string): string {
-  const httpsUrl = `https://${window.location.host}/api/calendar/feed.ics?token=${token}`
-  return `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(httpsUrl)}`
-}
-
 export default function CalendarSubscriptionBlock() {
   const [token, setToken] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
@@ -53,14 +48,6 @@ export default function CalendarSubscriptionBlock() {
             >
               {copied ? 'Kopiert!' : 'Kopieren'}
             </button>
-            <a
-              href={buildGoogleCalendarUrl(token)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-3 py-2 text-sm font-medium rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 transition-colors"
-            >
-              In Google Kalender öffnen
-            </a>
           </div>
           <p className="text-xs text-slate-500 mt-3 mb-1">
             Der Kalender aktualisiert sich automatisch.
