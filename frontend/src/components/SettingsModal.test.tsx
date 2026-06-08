@@ -18,6 +18,10 @@ vi.mock('../api/account', () => ({
 vi.mock('../api/client', () => ({
   clearToken: vi.fn(),
 }))
+vi.mock('../api/calendar', () => ({
+  getCalendarToken: vi.fn().mockResolvedValue({ token: 'test-token' }),
+  regenerateCalendarToken: vi.fn().mockResolvedValue({ token: 'new-token' }),
+}))
 
 import SettingsModal from './SettingsModal'
 import { deleteAccount } from '../api/account'
@@ -39,6 +43,10 @@ function renderModal(onClose = vi.fn()) {
 
 function openKontoGroup() {
   fireEvent.click(screen.getByRole('button', { name: /^Konto$/i }))
+}
+
+function openVerhaltenGroup() {
+  fireEvent.click(screen.getByRole('button', { name: /^Verhalten$/i }))
 }
 
 beforeAll(() => {
@@ -66,15 +74,17 @@ describe('SettingsModal', () => {
     expect(screen.getByRole('heading', { name: 'Einstellungen' })).toBeInTheDocument()
   })
 
-  it('renders Verhalten and Konto group headers', () => {
+  it('renders Termine, Verhalten and Konto group headers', () => {
     renderModal()
+    expect(screen.getByRole('button', { name: /^Termine$/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^Verhalten$/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^Konto$/i })).toBeInTheDocument()
   })
 
-  it('Verhalten group is expanded by default', () => {
+  it('Termine group is expanded by default', () => {
     renderModal()
-    expect(screen.getByRole('button', { name: /^Verhalten$/i })).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('button', { name: /^Termine$/i })).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('button', { name: /^Verhalten$/i })).toHaveAttribute('aria-expanded', 'false')
   })
 
   it('Konto group is collapsed by default', () => {
@@ -84,6 +94,7 @@ describe('SettingsModal', () => {
 
   it('Terminerinnerung content is visible when Verhalten is open', async () => {
     renderModal()
+    openVerhaltenGroup()
     expect(await screen.findByLabelText('Minuten vor dem Termin')).toBeInTheDocument()
   })
 
@@ -99,18 +110,16 @@ describe('SettingsModal', () => {
     expect(screen.getByText(/dauerhaft gelöscht/i)).toBeInTheDocument()
   })
 
-  it('opening Konto group collapses Verhalten', async () => {
+  it('opening Konto group collapses Termine', () => {
     renderModal()
-    await screen.findByLabelText('Minuten vor dem Termin')
     openKontoGroup()
-    expect(screen.queryByLabelText('Minuten vor dem Termin')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /^Verhalten$/i })).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.getByRole('button', { name: /^Termine$/i })).toHaveAttribute('aria-expanded', 'false')
   })
 
   it('opening Verhalten group collapses Konto', () => {
     renderModal()
     openKontoGroup()
-    fireEvent.click(screen.getByRole('button', { name: /^Verhalten$/i }))
+    openVerhaltenGroup()
     expect(screen.queryByText(/dauerhaft gelöscht/i)).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^Verhalten$/i })).toHaveAttribute('aria-expanded', 'true')
   })
@@ -175,6 +184,7 @@ describe('SettingsModal', () => {
 
   it('loads current notification_advance_minutes from API', async () => {
     renderModal()
+    openVerhaltenGroup()
     const input = await screen.findByLabelText('Minuten vor dem Termin') as HTMLInputElement
     expect(input.value).toBe('60')
   })
@@ -182,6 +192,7 @@ describe('SettingsModal', () => {
   it('saves notification_advance_minutes on submit', async () => {
     const { updateAccount } = await import('../api/account')
     renderModal()
+    openVerhaltenGroup()
     const input = await screen.findByLabelText('Minuten vor dem Termin')
     fireEvent.change(input, { target: { value: '30' } })
     fireEvent.click(screen.getByRole('button', { name: 'Speichern' }))
