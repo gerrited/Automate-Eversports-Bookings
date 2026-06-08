@@ -33,7 +33,7 @@ export default function CalendarSubscriptionBlock() {
   }
 
   return (
-    <div className="rounded-xl bg-surface-card p-4">
+    <>
       {token ? (
         <>
           <input
@@ -63,6 +63,6 @@ export default function CalendarSubscriptionBlock() {
       ) : (
         <p className="text-xs text-slate-500">Lädt…</p>
       )}
-    </div>
+    </>
   )
 }
