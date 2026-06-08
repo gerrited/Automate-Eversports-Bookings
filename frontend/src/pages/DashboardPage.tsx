@@ -18,7 +18,6 @@ import { getMe } from '../api/account'
 import BookedAppointmentCard from '../components/BookedAppointmentCard'
 import type { BookedAppointment } from '../types'
 import { usePushNotifications } from '../hooks/usePushNotifications'
-import CalendarSubscriptionBlock from '../components/CalendarSubscriptionBlock'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
@@ -348,7 +347,6 @@ useEffect(() => {
               onCancel={handleCancelBooking}
             />
           ))}
-          {!bookedLoading && !bookedError && <CalendarSubscriptionBlock />}
         </div>
       )}
 

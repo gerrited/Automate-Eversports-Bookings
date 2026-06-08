@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { clearToken } from '../api/client'
 import { deleteAccount, getMe, updateAccount } from '../api/account'
 import { Button, Input, ModalShell } from './ui'
+import CalendarSubscriptionBlock from './CalendarSubscriptionBlock'
 
 interface Props {
   onClose: () => void
 }
 
-type Group = 'verhalten' | 'konto'
+type Group = 'termine' | 'verhalten' | 'konto'
 
 function ChevronIcon({ open }: { open: boolean }) {
   return (
@@ -26,7 +27,7 @@ function ChevronIcon({ open }: { open: boolean }) {
 
 export default function SettingsModal({ onClose }: Props) {
   const navigate = useNavigate()
-  const [openGroup, setOpenGroup] = useState<Group>('verhalten')
+  const [openGroup, setOpenGroup] = useState<Group>('termine')
 
   const [confirmText, setConfirmText] = useState('')
   const [deleteLoading, setDeleteLoading] = useState(false)
@@ -83,6 +84,23 @@ export default function SettingsModal({ onClose }: Props) {
           ✕
         </button>
       </div>
+
+        {/* Gruppe: Termine */}
+        <div className="border-t border-slate-700">
+          <button
+            onClick={() => setOpenGroup('termine')}
+            aria-expanded={openGroup === 'termine'}
+            className="w-full flex justify-between items-center py-4 text-white font-semibold hover:text-slate-200 transition-colors"
+          >
+            <span>Termine</span>
+            <ChevronIcon open={openGroup === 'termine'} />
+          </button>
+          {openGroup === 'termine' && (
+            <div className="pb-5">
+              <CalendarSubscriptionBlock />
+            </div>
+          )}
+        </div>
 
         {/* Gruppe: Verhalten */}
         <div className="border-t border-slate-700">
