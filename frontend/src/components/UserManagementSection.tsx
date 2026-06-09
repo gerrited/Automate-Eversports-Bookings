@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { listUsers, setUserActive, setUserLimit, sendUserMessage, sendTestPush } from '../api/users'
 import { getEmail } from '../api/client'
 import type { UserRecord } from '../types'
-import { Button, Input, ModalShell } from './ui'
+import { AlertMessage, Button, Input, ModalShell } from './ui'
 
 const PAGE_SIZE = 25
 
@@ -224,7 +224,7 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
                             if (e.key === 'Escape') cancelEditLimit()
                           }}
                           placeholder="∞"
-                          className="w-12 px-1 py-0.5 text-xs bg-slate-800 border border-slate-600 rounded text-center text-white focus:outline-none focus:border-violet-500"
+                          className="w-12 px-1 py-0.5 text-xs bg-slate-800 border border-slate-700 rounded text-center text-white focus:outline-none focus:border-violet-500"
                           autoFocus
                         />
                         <button
@@ -295,17 +295,18 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
                       <span className="hidden sm:inline">Deaktivieren</span>
                     </Button>
                   ) : (
-                    <button
+                    <Button
+                      variant="success"
+                      size="sm"
                       disabled={isSelf}
-                      onClick={() => handleToggle(user)}
                       aria-label="Aktivieren"
-                      className="px-3 py-1 rounded-md text-sm font-medium transition-colors bg-green-900 hover:bg-green-700 text-green-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => handleToggle(user)}
                     >
                       <svg className="sm:hidden w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 0 1 0 1.414l-8 8a1 1 0 0 1-1.414 0l-4-4a1 1 0 0 1 1.414-1.414L8 12.586l7.293-7.293a1 1 0 0 1 1.414 0z" clipRule="evenodd"/>
                       </svg>
                       <span className="hidden sm:inline">Aktivieren</span>
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>
@@ -370,11 +371,11 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
                     onChange={e => setMessageContent(e.target.value)}
                     placeholder="Nachricht"
                     rows={5}
-                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-slate-500 resize-none"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-slate-500 resize-none"
                   />
                 </div>
                 {messageError && (
-                  <p className="text-red-400 text-sm mb-3">{messageError}</p>
+                  <AlertMessage type="error" className="mb-3">{messageError}</AlertMessage>
                 )}
                 <div className="flex justify-end gap-3">
                   <Button variant="primary" loading={messageSending} disabled={!messageSubject.trim() || !messageContent.trim()} onClick={handleSendMessage}>

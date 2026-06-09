@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { sendTestEmail, type TestEmailType } from '../api/adminEmail'
-import { ModalShell } from './ui'
+import { AlertMessage, ModalShell } from './ui'
 
 interface Props {
   onClose: () => void
@@ -63,8 +63,8 @@ export default function TestEmailModal({ onClose }: Props) {
         ))}
       </div>
 
-      {success && <p className="text-green-400 text-sm mt-4">{success}</p>}
-      {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
+      {success && <AlertMessage type="success" className="mt-4">{success}</AlertMessage>}
+      {error && <AlertMessage type="error" className="mt-4">{error}</AlertMessage>}
     </ModalShell>
   )
 }

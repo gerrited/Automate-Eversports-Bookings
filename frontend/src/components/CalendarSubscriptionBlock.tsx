@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getCalendarToken, regenerateCalendarToken } from '../api/calendar'
+import { Button } from './ui'
 
 function buildWebcalUrl(token: string): string {
   return `webcal://${window.location.host}/api/calendar/feed.ics?token=${token}`
@@ -42,12 +43,9 @@ export default function CalendarSubscriptionBlock() {
             className="w-full rounded-lg bg-slate-800 px-3 py-2 text-xs text-slate-400 font-mono mb-3 truncate focus:outline-none"
           />
           <div className="flex flex-wrap gap-2">
-            <button
-              onClick={handleCopy}
-              className="px-3 py-2 text-sm font-medium rounded-lg bg-brand hover:bg-brand-hover text-white transition-colors"
-            >
+            <Button variant="primary" size="sm" onClick={handleCopy}>
               {copied ? 'Kopiert!' : 'Kopieren'}
-            </button>
+            </Button>
           </div>
           <p className="text-xs text-slate-500 mt-3 mb-1">
             Der Kalender aktualisiert sich automatisch.

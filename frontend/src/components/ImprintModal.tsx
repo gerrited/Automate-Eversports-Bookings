@@ -1,19 +1,19 @@
+import { ModalShell } from './ui'
+
 interface Props {
   onClose: () => void
 }
 
 export default function ImprintModal({ onClose }: Props) {
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60 touch-none"
-      data-testid="imprint-modal-backdrop"
-      onClick={onClose}
+    <ModalShell
+      onBackdropClick={onClose}
+      maxWidth="lg"
+      scrollable
+      testId="imprint-modal-backdrop"
+      cardTestId="imprint-modal-card"
     >
-      <div
-        className="w-full max-w-lg max-h-[80vh] overflow-y-auto overscroll-contain touch-pan-y bg-surface-card border border-slate-700/60 rounded-xl p-6 flex flex-col gap-6"
-        data-testid="imprint-modal-card"
-        onClick={e => e.stopPropagation()}
-      >
+      <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-white">Impressum & Datenschutz</h2>
           <button
@@ -166,6 +166,6 @@ export default function ImprintModal({ onClose }: Props) {
           Erstellt für das private Projekt foreversports.cc | Stand: Mai 2026
         </p>
       </div>
-    </div>
+    </ModalShell>
   )
 }

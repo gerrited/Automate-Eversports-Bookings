@@ -1,6 +1,6 @@
 import type { ReactNode, MouseEvent } from 'react'
 
-export type ButtonVariant = 'primary' | 'ghost' | 'secondary' | 'danger' | 'slate'
+export type ButtonVariant = 'primary' | 'ghost' | 'secondary' | 'danger' | 'slate' | 'success'
 export type ButtonSize = 'sm' | 'md'
 
 interface ButtonProps {
@@ -24,6 +24,7 @@ const VARIANTS: Record<ButtonVariant, string> = {
   secondary: 'bg-surface-card border border-slate-700 text-slate-400 hover:enabled:bg-slate-700 rounded-md',
   danger:  'bg-red-900 hover:bg-red-700 text-red-300 rounded-lg',
   slate:   'bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-md',
+  success: 'bg-green-900 hover:bg-green-700 text-green-300 rounded-md',
 }
 
 const SIZES: Record<ButtonSize, string> = {
