@@ -52,6 +52,7 @@ _EVERSPORTS_QUERY      = (
 _DEFAULT_COORDINATE = {"latitude": 50.1109, "longitude": 8.6821}
 _SEARCH_LIMIT = 20
 _CALENDAR_URL = "https://www.eversports.de/api/eventsession/calendar"
+_TIMEOUT = 8
 
 _HEADERS = {
     "Content-Type": "application/json",
@@ -116,7 +117,7 @@ def _eversports_search(term: str) -> List[dict]:
         },
     }
     try:
-        resp = requests.post(_EVERSPORTS_SEARCH_URL, json=payload, headers=_HEADERS, timeout=8)
+        resp = requests.post(_EVERSPORTS_SEARCH_URL, json=payload, headers=_HEADERS, timeout=_TIMEOUT)
         resp.raise_for_status()
     except requests.RequestException as exc:
         raise RuntimeError(str(exc)) from exc
@@ -187,7 +188,7 @@ def get_facility_courses(
                         "startDate": week_start.isoformat(),
                         "activeEventType": event_type,
                     },
-                    timeout=8,
+                    timeout=_TIMEOUT,
                 )
                 resp.raise_for_status()
                 html = resp.json()["data"]["html"]
