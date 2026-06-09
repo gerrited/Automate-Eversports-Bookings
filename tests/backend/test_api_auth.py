@@ -311,6 +311,24 @@ def test_logout_clears_refresh_cookie(client):
     assert "max-age=0" in set_cookie.lower()
 
 
+# --- Rate-Limiting auf Login ---
+
+def test_login_wird_nach_zu_vielen_versuchen_geblockt(client, mocker):
+    mocker.patch("backend.api.auth.eversports_login", return_value=None)
+    for _ in range(10):
+        resp = client.post("/api/auth/login", json={"email": "brute@x.com", "password": "wrong"})
+        assert resp.status_code == 401
+    resp = client.post("/api/auth/login", json={"email": "brute@x.com", "password": "wrong"})
+    assert resp.status_code == 429
+
+
+def test_geblocktes_login_erreicht_eversports_nicht(client, mocker):
+    mock_login = mocker.patch("backend.api.auth.eversports_login", return_value=None)
+    for _ in range(11):
+        client.post("/api/auth/login", json={"email": "brute2@x.com", "password": "wrong"})
+    assert mock_login.call_count == 10
+
+
 # --- Refresh-Token nur als httpOnly-Cookie (nicht im Body, nicht aus dem Body) ---
 
 def test_login_body_enthaelt_keinen_refresh_token(client, mocker):

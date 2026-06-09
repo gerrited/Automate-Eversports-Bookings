@@ -42,6 +42,9 @@ def client(db_session):
     def override_get_db():
         yield db_session
 
+    from backend.api.auth import login_limiter
+    login_limiter.reset()
+
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as c:
         yield c
