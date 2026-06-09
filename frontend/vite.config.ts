@@ -12,6 +12,13 @@ export default defineConfig({
       },
     },
     setupFiles: './src/test-setup.ts',
+    coverage: {
+      provider: 'v8',
+      // json-summary + json braucht die Coverage-Report-Action in der CI,
+      // lcov der Codecov-Upload
+      reporter: ['text', 'json-summary', 'json', 'lcov'],
+      include: ['src/**'],
+    },
   },
   server: {
     proxy: {

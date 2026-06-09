@@ -14,19 +14,46 @@ jobs:
   test:
     name: tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
       - run: pip install -r requirements-backend.txt
-      - run: pytest tests/ -v
+      - run: pytest tests/ -v --cov=backend --cov=worker --cov-report=xml --cov-report=term
         env:
           JWT_SECRET: test-secret
+      - name: Coverage-Zusammenfassung erzeugen
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: coverage.xml
+          badge: true
+          format: markdown
+          output: both
+      - name: Coverage in Job Summary schreiben
+        run: cat code-coverage-results.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Coverage als PR-Kommentar
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: backend-coverage
+          path: code-coverage-results.md
+      - name: Upload zu Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage.xml
+          flags: backend
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   test-frontend:
     name: frontend tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     defaults:
       run:
         working-directory: frontend
@@ -38,7 +65,17 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
-      - run: npm test
+      - run: npm test -- --coverage
+      - name: Coverage in Job Summary und PR-Kommentar
+        uses: davelosert/vitest-coverage-report-action@v2
+        with:
+          working-directory: frontend
+      - name: Upload zu Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: frontend/coverage/lcov.info
+          flags: frontend
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   build:
     name: build images

@@ -1,6 +1,10 @@
 ![logo](frontend/public/logo.png)
 
 # FOReversports - Automate Eversports Bookings
+
+[![CI](https://github.com/gerrited/Automate-Eversports-Bookings/actions/workflows/ci.yml/badge.svg)](https://github.com/gerrited/Automate-Eversports-Bookings/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/gerrited/Automate-Eversports-Bookings/graph/badge.svg)](https://codecov.io/gh/gerrited/Automate-Eversports-Bookings)
+
 FOReversports handles the heavy lifting by automatically booking spots in Eversports classes.
 
 The name is a recursive acronym. It stands for: Fast On-time Reservation for Eversports.
