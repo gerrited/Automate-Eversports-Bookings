@@ -41,12 +41,30 @@ function renderModal(onClose = vi.fn()) {
   )
 }
 
+// Gruppen-Header tragen aria-expanded — so lassen sie sich von gleichnamigen
+// Aktions-Buttons unterscheiden (z.B. „Konto löschen" als Header und als Lösch-Button)
+function groupHeader(name: RegExp): HTMLElement {
+  const header = screen
+    .getAllByRole('button', { name })
+    .find((b) => b.hasAttribute('aria-expanded'))
+  if (!header) throw new Error(`Gruppen-Header ${name} nicht gefunden`)
+  return header
+}
+
+function deleteButton(): HTMLElement {
+  const btn = screen
+    .getAllByRole('button', { name: /konto löschen/i })
+    .find((b) => !b.hasAttribute('aria-expanded'))
+  if (!btn) throw new Error('Lösch-Button nicht gefunden')
+  return btn
+}
+
 function openKontoGroup() {
-  fireEvent.click(screen.getByRole('button', { name: /^Konto$/i }))
+  fireEvent.click(groupHeader(/^Konto löschen$/i))
 }
 
 function openVerhaltenGroup() {
-  fireEvent.click(screen.getByRole('button', { name: /^Verhalten$/i }))
+  fireEvent.click(groupHeader(/^Verhalten$/i))
 }
 
 beforeAll(() => {
@@ -74,22 +92,22 @@ describe('SettingsModal', () => {
     expect(screen.getByRole('heading', { name: 'Einstellungen' })).toBeInTheDocument()
   })
 
-  it('renders Termine, Verhalten and Konto group headers', () => {
+  it('renders Kalender abonnieren, Verhalten and Konto löschen group headers', () => {
     renderModal()
-    expect(screen.getByRole('button', { name: /^Termine$/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /^Verhalten$/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /^Konto$/i })).toBeInTheDocument()
+    expect(groupHeader(/^Kalender abonnieren$/i)).toBeInTheDocument()
+    expect(groupHeader(/^Verhalten$/i)).toBeInTheDocument()
+    expect(groupHeader(/^Konto löschen$/i)).toBeInTheDocument()
   })
 
-  it('Termine group is expanded by default', () => {
+  it('Kalender abonnieren group is expanded by default', () => {
     renderModal()
-    expect(screen.getByRole('button', { name: /^Termine$/i })).toHaveAttribute('aria-expanded', 'true')
-    expect(screen.getByRole('button', { name: /^Verhalten$/i })).toHaveAttribute('aria-expanded', 'false')
+    expect(groupHeader(/^Kalender abonnieren$/i)).toHaveAttribute('aria-expanded', 'true')
+    expect(groupHeader(/^Verhalten$/i)).toHaveAttribute('aria-expanded', 'false')
   })
 
-  it('Konto group is collapsed by default', () => {
+  it('Konto löschen group is collapsed by default', () => {
     renderModal()
-    expect(screen.getByRole('button', { name: /^Konto$/i })).toHaveAttribute('aria-expanded', 'false')
+    expect(groupHeader(/^Konto löschen$/i)).toHaveAttribute('aria-expanded', 'false')
   })
 
   it('Terminerinnerung content is visible when Verhalten is open', async () => {
@@ -106,14 +124,14 @@ describe('SettingsModal', () => {
   it('opening Konto group shows delete section and marks it expanded', () => {
     renderModal()
     openKontoGroup()
-    expect(screen.getByRole('button', { name: /^Konto$/i })).toHaveAttribute('aria-expanded', 'true')
+    expect(groupHeader(/^Konto löschen$/i)).toHaveAttribute('aria-expanded', 'true')
     expect(screen.getByText(/dauerhaft gelöscht/i)).toBeInTheDocument()
   })
 
-  it('opening Konto group collapses Termine', () => {
+  it('opening Konto group collapses Kalender abonnieren', () => {
     renderModal()
     openKontoGroup()
-    expect(screen.getByRole('button', { name: /^Termine$/i })).toHaveAttribute('aria-expanded', 'false')
+    expect(groupHeader(/^Kalender abonnieren$/i)).toHaveAttribute('aria-expanded', 'false')
   })
 
   it('opening Verhalten group collapses Konto', () => {
@@ -133,22 +151,21 @@ describe('SettingsModal', () => {
   it('delete button is disabled when input is empty', () => {
     renderModal()
     openKontoGroup()
-    const btn = screen.getByRole('button', { name: /konto löschen/i })
-    expect(btn).toBeDisabled()
+    expect(deleteButton()).toBeDisabled()
   })
 
   it('delete button is disabled when input is wrong', () => {
     renderModal()
     openKontoGroup()
     fireEvent.change(screen.getByPlaceholderText('DELETE'), { target: { value: 'delete' } })
-    expect(screen.getByRole('button', { name: /konto löschen/i })).toBeDisabled()
+    expect(deleteButton()).toBeDisabled()
   })
 
   it('delete button is enabled when DELETE is typed exactly', () => {
     renderModal()
     openKontoGroup()
     fireEvent.change(screen.getByPlaceholderText('DELETE'), { target: { value: 'DELETE' } })
-    expect(screen.getByRole('button', { name: /konto löschen/i })).not.toBeDisabled()
+    expect(deleteButton()).not.toBeDisabled()
   })
 
   it('calls deleteAccount, clearToken, and navigates to / on success', async () => {
@@ -156,7 +173,7 @@ describe('SettingsModal', () => {
     renderModal()
     openKontoGroup()
     fireEvent.change(screen.getByPlaceholderText('DELETE'), { target: { value: 'DELETE' } })
-    fireEvent.click(screen.getByRole('button', { name: /konto löschen/i }))
+    fireEvent.click(deleteButton())
     await waitFor(() => {
       expect(deleteAccount).toHaveBeenCalledOnce()
       expect(clearToken).toHaveBeenCalledOnce()
@@ -169,7 +186,7 @@ describe('SettingsModal', () => {
     renderModal()
     openKontoGroup()
     fireEvent.change(screen.getByPlaceholderText('DELETE'), { target: { value: 'DELETE' } })
-    fireEvent.click(screen.getByRole('button', { name: /konto löschen/i }))
+    fireEvent.click(deleteButton())
     expect(await screen.findByText('Serverfehler')).toBeInTheDocument()
     expect(clearToken).not.toHaveBeenCalled()
     expect(mockNavigate).not.toHaveBeenCalled()
