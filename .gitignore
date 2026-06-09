@@ -1,6 +1,9 @@
 k8s/secret.yaml
 node_modules/
 __pycache__/
+.coverage
+coverage.xml
+frontend/coverage/
 *.py[cod]
 *.pyo
 *.db

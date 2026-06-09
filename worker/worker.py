@@ -20,6 +20,7 @@ from backend.models.booking_job import BookingJob
 from backend.models.booking_log import BookingLog
 from backend.models.user import User
 from backend.core.encryption import decrypt
+from backend.core.status import BookingStatus
 from backend.core.booking import book_session, cancel_booking, fetch_upcoming_bookings
 from worker.email import send_booking_failure_email, send_admin_booking_failure_email, send_debug_cancel_failure_email, send_waitlist_notification
 from backend.models.push_subscription import PushSubscription
@@ -100,10 +101,10 @@ def process_job(job_id: str, now: datetime, session_factory, admin_emails: list[
                 message=result.get("order_id"),
             )
             log.info("Job %s: %s order=%s event_type=%s", job.id, result["status"], result.get("order_id"), result.get("event_type"))
-            if result["status"] == "success" and result.get("event_type") and job.event_type != result["event_type"]:
+            if result["status"] == BookingStatus.SUCCESS and result.get("event_type") and job.event_type != result["event_type"]:
                 job.event_type = result["event_type"]
                 db.add(job)
-            if result["status"] == "waitlist":
+            if result["status"] == BookingStatus.WAITLIST:
                 try:
                     send_waitlist_notification(user.email, job, target_date)
                 except Exception as email_exc:
@@ -112,7 +113,7 @@ def process_job(job_id: str, now: datetime, session_factory, admin_emails: list[
             log_entry = BookingLog(
                 job_id=job.id,
                 target_date=target_date,
-                status="failed",
+                status=BookingStatus.FAILED,
                 message=str(exc),
             )
             log.error("Job %s: failed — %s", job.id, exc)
@@ -126,7 +127,7 @@ def process_job(job_id: str, now: datetime, session_factory, admin_emails: list[
                 except Exception as email_exc:
                     log.error("Job %s: could not send admin failure email — %s", job.id, email_exc)
 
-        if job.debug and log_entry.status == "success":
+        if job.debug and log_entry.status == BookingStatus.SUCCESS:
             try:
                 cancel_booking(
                     email=user.email,

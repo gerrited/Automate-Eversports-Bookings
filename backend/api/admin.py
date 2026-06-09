@@ -11,6 +11,7 @@ from backend.api.deps import require_admin
 from backend.core.email import send_account_status_email, send_admin_message, send_limit_enforced_email, send_test_email
 from backend.core.push import send_test_push_to_user
 from backend.db import get_db
+from backend.core.status import BookingStatus
 from backend.models.booking_job import BookingJob
 from backend.models.booking_log import BookingLog
 from backend.models.push_subscription import PushSubscription
@@ -165,9 +166,9 @@ def list_all_jobs(
         db.query(
             BookingJob,
             User.email.label("user_email"),
-            func.sum(case((BookingLog.status == "success", 1), else_=0)).label("success_count"),
-            func.sum(case((BookingLog.status == "failed", 1), else_=0)).label("failed_count"),
-            func.sum(case((BookingLog.status == "already_booked", 1), else_=0)).label("already_booked_count"),
+            func.sum(case((BookingLog.status == BookingStatus.SUCCESS, 1), else_=0)).label("success_count"),
+            func.sum(case((BookingLog.status == BookingStatus.FAILED, 1), else_=0)).label("failed_count"),
+            func.sum(case((BookingLog.status == BookingStatus.ALREADY_BOOKED, 1), else_=0)).label("already_booked_count"),
         )
         .join(User, User.id == BookingJob.user_id)
         .outerjoin(BookingLog, BookingLog.job_id == BookingJob.id)

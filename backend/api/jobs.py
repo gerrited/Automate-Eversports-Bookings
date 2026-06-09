@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from backend.api.deps import get_current_active_user
 from backend.core.booking import book_session, _cancel_with_session, eversports_login
 from backend.core.encryption import decrypt
+from backend.core.status import BookingStatus
 from backend.db import get_db
 from backend.models.booking_job import BookingJob
 from backend.models.booking_log import BookingLog
@@ -215,10 +216,10 @@ def execute_job(
         status = result["status"]
         message = str(target_date)
 
-        if status == "success" and result.get("event_type") and job.event_type != result["event_type"]:
+        if status == BookingStatus.SUCCESS and result.get("event_type") and job.event_type != result["event_type"]:
             job.event_type = result["event_type"]
 
-        if status == "success" and job.debug:
+        if status == BookingStatus.SUCCESS and job.debug:
             background_tasks.add_task(
                 _run_debug_cancel,
                 job_id=job.id,
@@ -233,7 +234,7 @@ def execute_job(
             log.info("Job %s: debug cancel scheduled", job.id)
 
     except Exception as exc:
-        status = "failed"
+        status = BookingStatus.FAILED
         message = str(exc)
 
     db.add(BookingLog(job_id=job.id, target_date=target_date, status=status, message=message))
