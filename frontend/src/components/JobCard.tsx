@@ -132,19 +132,15 @@ export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect, onE
           Bearbeiten
         </Button>
         {onExecute && (
-          <button
+          <Button
+            variant="primary"
+            size="sm"
             aria-label="Jetzt buchen"
             onClick={handleExecute}
-            disabled={executing}
-            className="px-3 py-1 rounded-md bg-blue-700 hover:bg-blue-600 text-white text-sm transition-colors disabled:opacity-60 flex items-center gap-1"
+            loading={executing}
           >
-            {executing ? (
-              <>
-                <span className="inline-block h-3 w-3 rounded-full border-2 border-blue-300 border-t-transparent animate-spin" />
-                Bucht…
-              </>
-            ) : 'Jetzt buchen'}
-          </button>
+            {executing ? 'Bucht…' : 'Jetzt buchen'}
+          </Button>
         )}
         <div className="ml-auto">
           <Button

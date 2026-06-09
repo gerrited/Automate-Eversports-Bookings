@@ -6,7 +6,7 @@ import CourseCombobox from './CourseCombobox'
 import HelpIcon from './HelpIcon'
 import { getCourses } from '../api/facilities'
 import { isAdmin } from '../api/client'
-import { Button, ModalShell, Stepper } from './ui'
+import { AlertMessage, Button, ModalShell, Stepper } from './ui'
 
 interface Props {
   job?: Job
@@ -188,7 +188,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
           </div>
         )}
 
-        {error && <p className="text-red-400 text-sm">{error}</p>}
+        {error && <AlertMessage type="error">{error}</AlertMessage>}
 
         <div className="flex gap-3 justify-end mt-2">
           <Button variant="primary" type="submit" disabled={!facility}>

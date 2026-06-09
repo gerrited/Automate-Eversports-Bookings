@@ -2,23 +2,10 @@ import { useState, useEffect, useCallback } from 'react'
 import { listAllLogs } from '../api/adminLogs'
 import { WEEKDAY_NAMES } from '../types'
 import type { AdminLogsPage } from '../types'
-import { Button, Input } from './ui'
+import { Button, Input, AlertMessage } from './ui'
+import { STATUS_STYLES, STATUS_LABELS } from '../utils/statusLabels'
 
 const PAGE_SIZE = 50
-
-const STATUS_STYLES: Record<string, string> = {
-  success: 'text-green-400',
-  failed: 'text-red-400',
-  already_booked: 'text-slate-400',
-  waitlist: 'text-yellow-400',
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  success: 'Erfolgreich',
-  failed: 'Fehlgeschlagen',
-  already_booked: 'Bereits gebucht',
-  waitlist: 'Warteliste',
-}
 
 export default function AllLogsSection() {
   const [result, setResult] = useState<AdminLogsPage | null>(null)
@@ -72,7 +59,7 @@ export default function AllLogsSection() {
             {total} Einträge · Seite {currentPage} von {totalPages}
           </p>
         )}
-        {error && <p className="text-red-400 text-sm">{error}</p>}
+        {error && <AlertMessage type="error">{error}</AlertMessage>}
         {!loading && !error && items.length === 0 && (
           <p className="text-slate-400 text-sm text-center mt-12">Keine Logs gefunden.</p>
         )}
