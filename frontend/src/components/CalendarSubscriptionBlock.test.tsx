@@ -24,8 +24,10 @@ beforeEach(() => {
 
 describe('CalendarSubscriptionBlock', () => {
   it('shows loading state initially', () => {
+    // Promise bleibt offen → Komponente bleibt im Lade-Zustand
+    mockGetCalendarToken.mockReturnValue(new Promise(() => {}))
     render(<CalendarSubscriptionBlock />)
-    expect(screen.getByText('Kalender abonnieren')).toBeInTheDocument()
+    expect(screen.getByText('Lädt…')).toBeInTheDocument()
   })
 
   it('shows subscription URL after token loads', async () => {

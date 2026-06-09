@@ -4,6 +4,7 @@ name: CI
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 
 env:
@@ -23,9 +24,27 @@ jobs:
         env:
           JWT_SECRET: test-secret
 
+  test-frontend:
+    name: frontend tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm test
+
   build:
     name: build images
-    needs: test
+    # Images nur auf main bauen — PR-Läufe sind reine Test-Läufe
+    if: github.event_name != 'pull_request'
+    needs: [test, test-frontend]
     uses: ./.github/workflows/build-images.yml
     secrets: inherit
     permissions:
