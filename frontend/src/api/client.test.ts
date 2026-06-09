@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { apiFetch, setToken, clearToken } from './client'
+import { apiFetch, setToken } from './client'
 
 // window.location.href ist in jsdom read-only — überschreiben
 const locationDescriptor = Object.getOwnPropertyDescriptor(window, 'location')
