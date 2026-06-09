@@ -86,7 +86,7 @@ def get_calendar_feed(token: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Invalid token")
 
     try:
-        password = decrypt(user.encrypted_password)
+        password = decrypt(user.encrypted_password, aad=user.eversports_user_id)
         bookings = fetch_upcoming_bookings(user.email, password)
     except Exception:
         bookings = []

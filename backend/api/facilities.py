@@ -153,7 +153,7 @@ def get_facility_courses(
     current_user: User = Depends(get_current_active_user),
 ) -> List[str]:
     try:
-        password = decrypt(current_user.encrypted_password)
+        password = decrypt(current_user.encrypted_password, aad=current_user.eversports_user_id)
         login_result = eversports_login(current_user.email, password)
         if login_result is None:
             return []

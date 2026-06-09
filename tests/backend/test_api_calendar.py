@@ -14,7 +14,7 @@ def _create_user(db_session, *, calendar_token: str | None = None) -> User:
     user = User(
         eversports_user_id="ev-1",
         email="a@b.com",
-        encrypted_password=encrypt("password123"),
+        encrypted_password=encrypt("password123", aad="ev-1"),
         active=True,
         calendar_token=calendar_token,
     )

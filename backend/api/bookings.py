@@ -21,7 +21,7 @@ class CancelRequest(BaseModel):
 def get_upcoming_bookings(
     current_user: User = Depends(get_current_active_user),
 ):
-    password = decrypt(current_user.encrypted_password)
+    password = decrypt(current_user.encrypted_password, aad=current_user.eversports_user_id)
     try:
         bookings = fetch_upcoming_bookings(current_user.email, password)
     except RuntimeError as e:
@@ -35,7 +35,7 @@ def cancel_booking(
     body: CancelRequest,
     current_user: User = Depends(get_current_active_user),
 ):
-    password = decrypt(current_user.encrypted_password)
+    password = decrypt(current_user.encrypted_password, aad=current_user.eversports_user_id)
     try:
         cancel_booking_by_ids(
             email=current_user.email,

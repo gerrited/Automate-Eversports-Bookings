@@ -60,7 +60,7 @@ def login(req: LoginRequest, request: Request, response: Response, db: Session =
         raise HTTPException(status_code=401, detail="Invalid Eversports credentials")
 
     eversports_user_id: str = result["user_id"]
-    encrypted_pw = encrypt(req.password)
+    encrypted_pw = encrypt(req.password, aad=eversports_user_id)
 
     user = db.query(User).filter(User.eversports_user_id == eversports_user_id).first()
     if user is None:
