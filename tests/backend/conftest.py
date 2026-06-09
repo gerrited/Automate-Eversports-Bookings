@@ -43,7 +43,9 @@ def client(db_session):
         yield db_session
 
     from backend.api.auth import login_limiter
+    from backend.api.calendar import bookings_cache
     login_limiter.reset()
+    bookings_cache.clear()
 
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as c:
