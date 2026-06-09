@@ -92,7 +92,7 @@ export default function SettingsModal({ onClose }: Props) {
             aria-expanded={openGroup === 'termine'}
             className="w-full flex justify-between items-center py-4 text-white font-semibold hover:text-slate-200 transition-colors"
           >
-            <span>Termine</span>
+            <span>Kalender abonnieren</span>
             <ChevronIcon open={openGroup === 'termine'} />
           </button>
           {openGroup === 'termine' && (
@@ -156,12 +156,11 @@ export default function SettingsModal({ onClose }: Props) {
             aria-expanded={openGroup === 'konto'}
             className="w-full flex justify-between items-center py-4 text-white font-semibold hover:text-slate-200 transition-colors"
           >
-            <span>Konto</span>
+            <span>Konto löschen</span>
             <ChevronIcon open={openGroup === 'konto'} />
           </button>
           {openGroup === 'konto' && (
             <div className="pb-5">
-              <h3 className="text-white font-semibold mb-2">Konto löschen</h3>
               <p className="text-red-400 text-sm mb-4">
                 Dein Konto bei FOReversports und alle geplanten Buchungen werden dauerhaft gelöscht. Dein Konto und die Buchungen bei Eversports bleiben erhalten.
               </p>
