@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Body, Cookie, Depends, HTTPException, Response
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 
 from backend.core.auth import (
@@ -14,7 +14,7 @@ from backend.core.email import send_new_user_notification
 from backend.core.encryption import encrypt
 from backend.db import get_db
 from backend.models.user import User
-from backend.schemas.auth import LoginRequest, RefreshRequest, RefreshResponse, TokenResponse
+from backend.schemas.auth import LoginRequest, RefreshResponse, TokenResponse
 
 log = logging.getLogger(__name__)
 
@@ -74,11 +74,9 @@ def login(req: LoginRequest, response: Response, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(user)
 
-    refresh_token = create_refresh_token(user.id)
-    _set_refresh_cookie(response, refresh_token)
+    _set_refresh_cookie(response, create_refresh_token(user.id))
     return TokenResponse(
         access_token=create_access_token(user.id),
-        refresh_token=refresh_token,
         role=user.role,
         avatar_url=result.get("avatar_url"),
     )
@@ -87,10 +85,8 @@ def login(req: LoginRequest, response: Response, db: Session = Depends(get_db)):
 @router.post("/auth/refresh", response_model=RefreshResponse)
 def refresh(
     db: Session = Depends(get_db),
-    body: RefreshRequest | None = Body(default=None),
-    cookie_token: str | None = Cookie(alias="refresh_token", default=None),
+    refresh_token: str | None = Cookie(alias="refresh_token", default=None),
 ):
-    refresh_token = (body.refresh_token if body else None) or cookie_token
     if not refresh_token:
         raise HTTPException(status_code=401, detail="Missing refresh token")
     try:
