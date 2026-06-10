@@ -8,9 +8,10 @@ import logging
 import sys
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -22,6 +23,7 @@ from backend.models.user import User
 from backend.core.encryption import decrypt
 from backend.core.status import BookingStatus
 from backend.core.booking import book_session, cancel_booking, fetch_upcoming_bookings
+from backend.core.schedule import compute_next_run
 from worker.email import send_booking_failure_email, send_admin_booking_failure_email, send_debug_cancel_failure_email, send_waitlist_notification
 from backend.models.push_subscription import PushSubscription
 from worker.notifications import send_push_notifications
@@ -37,15 +39,14 @@ BERLIN = ZoneInfo("Europe/Berlin")
 MAX_WORKERS = 10
 
 
-def is_due(job: BookingJob, now: datetime) -> bool:
-    """True if today + days_in_advance lands on job.weekday AND the current
-    Berlin-local time falls within the same 15-minute slot as target_time."""
-    target_date = now.date() + timedelta(days=job.days_in_advance)
-    return (
-        target_date.weekday() == job.weekday
-        and now.hour == job.target_time.hour
-        and (now.minute // 15) == (job.target_time.minute // 15)
-    )
+def _normalize_now(now: datetime) -> datetime:
+    """Naive Zeitangaben werden als Europe/Berlin interpretiert."""
+    return now.replace(tzinfo=BERLIN) if now.tzinfo is None else now
+
+
+def _as_utc(dt: datetime) -> datetime:
+    """DB-Werte normalisieren: SQLite liefert naive Datetimes (gespeichert als UTC)."""
+    return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt.astimezone(timezone.utc)
 
 
 def already_booked(db: Session, job: BookingJob, target_date: date) -> bool:
@@ -64,18 +65,57 @@ def already_booked(db: Session, job: BookingJob, target_date: date) -> bool:
 
 def process_job(job_id: str, now: datetime, session_factory, admin_emails: list[str]) -> None:
     """Processes a single booking job in its own DB session. Designed to run in a thread."""
+    now = _normalize_now(now)
     db = session_factory()
     try:
-        job = db.query(BookingJob).filter(BookingJob.id == job_id).first()
+        # Claim per Row-Lock: parallele Worker überspringen gelockte Jobs
+        # (SKIP LOCKED greift auf PostgreSQL; SQLite kennt kein FOR UPDATE)
+        job = (
+            db.query(BookingJob)
+            .filter(BookingJob.id == job_id, BookingJob.enabled.is_(True))
+            .with_for_update(skip_locked=True)
+            .first()
+        )
         if job is None:
-            log.error("Job %s: not found", job_id)
+            log.info("Job %s: nicht gefunden, deaktiviert oder von anderem Worker gelockt", job_id)
             return
 
-        target_date = now.date() + timedelta(days=job.days_in_advance)
-        log.info("Job %s: due for %s", job.id, target_date)
+        def advance() -> None:
+            job.next_run_at = compute_next_run(job.weekday, job.target_time, job.days_in_advance, after=now)
+
+        if job.next_run_at is None:
+            # Bestandsdaten: einplanen, aber nicht rückwirkend ausführen
+            advance()
+            db.commit()
+            log.info("Job %s: next_run_at initialisiert auf %s", job.id, job.next_run_at)
+            return
+
+        scheduled_at = _as_utc(job.next_run_at)
+        if scheduled_at > now:
+            return  # bereits von einem anderen Lauf weitergeschaltet
+
+        # target_date leitet sich vom geplanten Lauf ab — bei Nachholläufen
+        # bleibt so das ursprünglich gemeinte Kursdatum erhalten
+        target_date = scheduled_at.astimezone(BERLIN).date() + timedelta(days=job.days_in_advance)
+        log.info("Job %s: due for %s (geplant %s)", job.id, target_date, scheduled_at)
+
+        class_start = datetime.combine(target_date, job.target_time, tzinfo=BERLIN)
+        if class_start <= now:
+            log.warning("Job %s: Lauf verpasst, Kurs am %s liegt in der Vergangenheit", job.id, target_date)
+            db.add(BookingLog(
+                job_id=job.id,
+                target_date=target_date,
+                status=BookingStatus.FAILED,
+                message="Lauf verpasst: Der Worker war zum geplanten Zeitpunkt nicht aktiv und der Termin liegt bereits in der Vergangenheit.",
+            ))
+            advance()
+            db.commit()
+            return
 
         if already_booked(db, job, target_date):
             log.info("Job %s: already booked for %s, skipping", job.id, target_date)
+            advance()
+            db.commit()
             return
 
         user = db.query(User).filter(User.id == job.user_id).first()
@@ -148,6 +188,7 @@ def process_job(job_id: str, now: datetime, session_factory, admin_emails: list[
         db.add(log_entry)
         if log_entry.status in ("success", "already_booked", "waitlist"):
             user.total_bookings_executed += 1
+        advance()
         db.commit()
 
         if job.one_time and log_entry.status in ("success", "already_booked"):
@@ -162,19 +203,25 @@ def run(now: datetime, session_factory=None) -> None:
     if session_factory is None:
         session_factory = SessionLocal
 
+    now = _normalize_now(now)
+    now_utc = now.astimezone(timezone.utc)
     db = session_factory()
     try:
-        jobs = (
-            db.query(BookingJob)
+        due_job_ids = [
+            row.id
+            for row in db.query(BookingJob.id)
             .join(User, BookingJob.user_id == User.id)
-            .filter(BookingJob.enabled.is_(True), User.active.is_(True))
+            .filter(
+                BookingJob.enabled.is_(True),
+                User.active.is_(True),
+                or_(BookingJob.next_run_at.is_(None), BookingJob.next_run_at <= now_utc),
+            )
             .all()
-        )
-        due_job_ids = [j.id for j in jobs if is_due(j, now)]
+        ]
         admin_emails = [
             u.email for u in db.query(User).filter(User.role == "admin", User.active.is_(True)).all()
         ]
-        log.info("Found %d active jobs, %d due, %d admins", len(jobs), len(due_job_ids), len(admin_emails))
+        log.info("Found %d due jobs, %d admins", len(due_job_ids), len(admin_emails))
     finally:
         db.close()
 

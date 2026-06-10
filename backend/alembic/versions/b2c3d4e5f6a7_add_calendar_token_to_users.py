@@ -16,10 +16,14 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column('users', sa.Column('calendar_token', sa.String(), nullable=True))
-    op.create_unique_constraint('uq_users_calendar_token', 'users', ['calendar_token'])
+    # batch_alter_table: nötig für SQLite (kein ALTER für Constraints),
+    # auf PostgreSQL identisch zu add_column + create_unique_constraint
+    with op.batch_alter_table('users') as batch_op:
+        batch_op.add_column(sa.Column('calendar_token', sa.String(), nullable=True))
+        batch_op.create_unique_constraint('uq_users_calendar_token', ['calendar_token'])
 
 
 def downgrade() -> None:
-    op.drop_constraint('uq_users_calendar_token', 'users', type_='unique')
-    op.drop_column('users', 'calendar_token')
+    with op.batch_alter_table('users') as batch_op:
+        batch_op.drop_constraint('uq_users_calendar_token', type_='unique')
+        batch_op.drop_column('calendar_token')
