@@ -81,6 +81,12 @@ In der Produktion führt das Backend-Dockerfile `alembic upgrade head` automatis
 pytest tests/ -x
 ```
 
+Standardmäßig läuft die Suite gegen SQLite. Mit `TEST_DATABASE_URL` läuft sie gegen PostgreSQL (macht die CI zusätzlich, um Produktions-DB-Verhalten wie `FOR UPDATE SKIP LOCKED` abzudecken):
+
+```bash
+TEST_DATABASE_URL=postgresql://test:test@localhost:5432/eversports_test pytest tests/ -x
+```
+
 ### Frontend
 
 ```bash
