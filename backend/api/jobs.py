@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import time
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import List
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
@@ -12,6 +12,8 @@ from sqlalchemy.orm import Session
 from backend.api.deps import get_current_active_user
 from backend.core.booking import book_session, _cancel_with_session, eversports_login
 from backend.core.encryption import decrypt
+from backend.core.schedule import compute_next_run
+from backend.core.status import BookingStatus
 from backend.db import get_db
 from backend.models.booking_job import BookingJob
 from backend.models.booking_log import BookingLog
@@ -124,6 +126,9 @@ def create_job(
         raise HTTPException(status_code=409, detail="Ein identischer Job existiert bereits.")
     _check_job_limit(current_user, db)
     job = BookingJob(**body.model_dump(), user_id=current_user.id)
+    job.next_run_at = compute_next_run(
+        job.weekday, job.target_time, job.days_in_advance, after=datetime.now(timezone.utc)
+    )
     db.add(job)
     db.commit()
     db.refresh(job)
@@ -141,8 +146,13 @@ def update_job(
     updated = {**{f: getattr(job, f) for f in ("weekday", "target_time", "facility_id", "class_name")}, **body.model_dump(exclude_unset=True)}
     if _find_duplicate(current_user.id, updated["weekday"], updated["target_time"], updated["facility_id"], updated["class_name"], db, exclude_id=job_id):
         raise HTTPException(status_code=409, detail="Ein identischer Job existiert bereits.")
-    for field, value in body.model_dump(exclude_unset=True).items():
+    changes = body.model_dump(exclude_unset=True)
+    for field, value in changes.items():
         setattr(job, field, value)
+    if {"weekday", "target_time", "days_in_advance"} & changes.keys():
+        job.next_run_at = compute_next_run(
+            job.weekday, job.target_time, job.days_in_advance, after=datetime.now(timezone.utc)
+        )
     db.commit()
     db.refresh(job)
     return job
@@ -157,6 +167,10 @@ def toggle_job(
     job = _get_owned_job(job_id, current_user, db)
     if not job.enabled:
         _check_job_limit(current_user, db)
+        # Beim Reaktivieren neu planen — kein Nachhol-Lauf aus der Deaktivierungs-Zeit
+        job.next_run_at = compute_next_run(
+            job.weekday, job.target_time, job.days_in_advance, after=datetime.now(timezone.utc)
+        )
     job.enabled = not job.enabled
     db.commit()
     db.refresh(job)
@@ -215,10 +229,10 @@ def execute_job(
         status = result["status"]
         message = str(target_date)
 
-        if status == "success" and result.get("event_type") and job.event_type != result["event_type"]:
+        if status == BookingStatus.SUCCESS and result.get("event_type") and job.event_type != result["event_type"]:
             job.event_type = result["event_type"]
 
-        if status == "success" and job.debug:
+        if status == BookingStatus.SUCCESS and job.debug:
             background_tasks.add_task(
                 _run_debug_cancel,
                 job_id=job.id,
@@ -233,7 +247,7 @@ def execute_job(
             log.info("Job %s: debug cancel scheduled", job.id)
 
     except Exception as exc:
-        status = "failed"
+        status = BookingStatus.FAILED
         message = str(exc)
 
     db.add(BookingLog(job_id=job.id, target_date=target_date, status=status, message=message))

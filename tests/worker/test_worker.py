@@ -1,10 +1,18 @@
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timezone
+from zoneinfo import ZoneInfo
 
 from backend.models.booking_job import BookingJob
 from backend.models.booking_log import BookingLog
 from backend.models.user import User
-from worker.worker import MAX_WORKERS, already_booked, is_due, process_job, run
+from worker.worker import MAX_WORKERS, already_booked, process_job, run
 from worker.email import send_admin_booking_failure_email
+
+BERLIN = ZoneInfo("Europe/Berlin")
+
+
+def _utc(naive_berlin: datetime) -> datetime:
+    """Naive Berlin-Zeit → UTC-aware (so wie next_run_at gespeichert wird)."""
+    return naive_berlin.replace(tzinfo=BERLIN).astimezone(timezone.utc)
 
 
 def _user(db, uid="u1", ev="ev1", email="a@b.com", active=True):
@@ -14,38 +22,21 @@ def _user(db, uid="u1", ev="ev1", email="a@b.com", active=True):
     return u
 
 
-def _job(db, jid="j1", uid="u1", weekday=1, days=4, one_time=False):
+# Standard-Lauf in den Tests: Freitag 2026-04-10 18:00 Berlin (+4 Tage = Dienstag 14.04.)
+DEFAULT_NEXT_RUN = datetime(2026, 4, 10, 18, 0)
+
+
+def _job(db, jid="j1", uid="u1", weekday=1, days=4, one_time=False, next_run=DEFAULT_NEXT_RUN):
     j = BookingJob(
         id=jid, user_id=uid, weekday=weekday,
         target_time=time(18, 0), facility_id="73041",
         class_name="CrossFit", days_in_advance=days, enabled=True,
         one_time=one_time,
+        next_run_at=_utc(next_run) if next_run else None,
     )
     db.add(j)
     db.commit()
     return j
-
-
-# --- is_due ---
-
-def test_is_due_when_today_plus_advance_matches_weekday_and_hour():
-    # Friday 2026-04-10 18:00 + 4 days = Tuesday 2026-04-14 (weekday=1), hour matches
-    friday_18 = datetime(2026, 4, 10, 18, 0)
-    job = BookingJob(weekday=1, days_in_advance=4, target_time=time(18, 0))
-    assert is_due(job, friday_18) is True
-
-
-def test_is_not_due_when_weekday_doesnt_match():
-    thursday_18 = datetime(2026, 4, 9, 18, 0)
-    job = BookingJob(weekday=1, days_in_advance=4, target_time=time(18, 0))
-    assert is_due(job, thursday_18) is False
-
-
-def test_is_not_due_when_hour_doesnt_match():
-    # Richtige Datum-Kombination, aber falsche Stunde (07:00 statt 18:00)
-    friday_07 = datetime(2026, 4, 10, 7, 0)
-    job = BookingJob(weekday=1, days_in_advance=4, target_time=time(18, 0))
-    assert is_due(job, friday_07) is False
 
 
 # --- already_booked ---
@@ -172,23 +163,13 @@ def test_run_books_due_job_and_writes_success_log(db_session, session_factory, m
     assert log.target_date == date(2026, 4, 14)
 
 
-def test_run_skips_not_due_job(db_session, session_factory, mocker):
+def test_run_skips_job_with_future_next_run_at(db_session, session_factory, mocker):
     _user(db_session, uid="u3", ev="ev3", email="c@b.com")
-    _job(db_session, jid="j3", uid="u3", weekday=3, days=4)  # Wednesday
-    friday_18 = datetime(2026, 4, 10, 18, 0)  # Friday+4=Tuesday≠Wednesday
+    # Lauf erst um 19:00 — um 18:00 noch nicht fällig
+    _job(db_session, jid="j3", uid="u3", next_run=datetime(2026, 4, 10, 19, 0))
 
     mock_book = mocker.patch("worker.worker.book_session")
-    run(friday_18, session_factory)
-    mock_book.assert_not_called()
-
-
-def test_run_skips_wrong_hour(db_session, session_factory, mocker):
-    _user(db_session, uid="u3b", ev="ev3b", email="c2@b.com")
-    _job(db_session, jid="j3b", uid="u3b", weekday=1, days=4)  # target 18:00
-    friday_07 = datetime(2026, 4, 10, 7, 0)  # richtige Datum-Kombo, falsche Stunde
-
-    mock_book = mocker.patch("worker.worker.book_session")
-    run(friday_07, session_factory)
+    run(datetime(2026, 4, 10, 18, 0), session_factory)
     mock_book.assert_not_called()
 
 
@@ -381,6 +362,108 @@ def test_run_keeps_regular_job_after_success(db_session, session_factory, mocker
 
     remaining = db_session.query(BookingJob).filter(BookingJob.id == "jot4").first()
     assert remaining is not None
+
+
+# --- next_run_at-Scheduling ---
+
+def test_run_initialisiert_null_next_run_at_ohne_zu_buchen(db_session, session_factory, mocker):
+    # Bestandsdaten: next_run_at ist NULL → Worker plant den Job ein, bucht aber nicht
+    _user(db_session, uid="nr1", ev="ev_nr1", email="nr1@b.com")
+    _job(db_session, jid="jnr1", uid="nr1", next_run=None)
+
+    mock_book = mocker.patch("worker.worker.book_session")
+    now = datetime(2026, 4, 10, 18, 0)
+    run(now, session_factory)
+
+    mock_book.assert_not_called()
+    db_session.expire_all()
+    job = db_session.query(BookingJob).filter(BookingJob.id == "jnr1").first()
+    assert job.next_run_at is not None
+    # Nächster Lauf: Freitag 17.04. 18:00 Berlin (Kurs Di, 4 Tage Vorlauf), strikt nach now
+    assert job.next_run_at.replace(tzinfo=timezone.utc) == _utc(datetime(2026, 4, 17, 18, 0))
+
+
+def test_process_job_schaltet_next_run_at_nach_erfolg_weiter(db_session, session_factory, mocker):
+    _user(db_session, uid="nr2", ev="ev_nr2", email="nr2@b.com")
+    _job(db_session, jid="jnr2", uid="nr2")
+
+    mocker.patch("worker.worker.decrypt", return_value="pass")
+    mocker.patch("worker.worker.book_session", return_value={"status": "success", "order_id": "ord"})
+
+    process_job("jnr2", datetime(2026, 4, 10, 18, 0), session_factory, [])
+
+    db_session.expire_all()
+    job = db_session.query(BookingJob).filter(BookingJob.id == "jnr2").first()
+    assert job.next_run_at.replace(tzinfo=timezone.utc) == _utc(datetime(2026, 4, 17, 18, 0))
+
+
+def test_next_run_at_wird_auch_nach_fehler_weitergeschaltet(db_session, session_factory, mocker):
+    # Ein Slot wird genau einmal versucht — wie bisher beim 15-Minuten-Fenster
+    _user(db_session, uid="nr3", ev="ev_nr3", email="nr3@b.com")
+    _job(db_session, jid="jnr3", uid="nr3")
+
+    mocker.patch("worker.worker.decrypt", return_value="pass")
+    mocker.patch("worker.worker.book_session", side_effect=RuntimeError("Class full"))
+    mocker.patch("worker.worker.send_booking_failure_email")
+
+    process_job("jnr3", datetime(2026, 4, 10, 18, 0), session_factory, [])
+
+    db_session.expire_all()
+    job = db_session.query(BookingJob).filter(BookingJob.id == "jnr3").first()
+    assert job.next_run_at.replace(tzinfo=timezone.utc) == _utc(datetime(2026, 4, 17, 18, 0))
+
+
+def test_verspaeteter_lauf_wird_nachgeholt(db_session, session_factory, mocker):
+    # Worker war beim geplanten Lauf (Fr 18:00) down; Sa 09:00 wird nachgeholt,
+    # denn der Kurs (Di 14.04. 18:00) liegt noch in der Zukunft
+    _user(db_session, uid="nr4", ev="ev_nr4", email="nr4@b.com")
+    _job(db_session, jid="jnr4", uid="nr4", next_run=datetime(2026, 4, 10, 18, 0))
+
+    mocker.patch("worker.worker.decrypt", return_value="pass")
+    mock_book = mocker.patch("worker.worker.book_session", return_value={"status": "success", "order_id": "ord"})
+
+    run(datetime(2026, 4, 11, 9, 0), session_factory)
+
+    mock_book.assert_called_once()
+    log = db_session.query(BookingLog).filter(BookingLog.job_id == "jnr4").first()
+    # target_date leitet sich vom geplanten Lauf ab, nicht von now
+    assert log.target_date == date(2026, 4, 14)
+    db_session.expire_all()
+    job = db_session.query(BookingJob).filter(BookingJob.id == "jnr4").first()
+    assert job.next_run_at.replace(tzinfo=timezone.utc) == _utc(datetime(2026, 4, 17, 18, 0))
+
+
+def test_zu_spaeter_lauf_wird_uebersprungen_und_geloggt(db_session, session_factory, mocker):
+    # Worker war so lange down, dass der Kurs (Di 14.04. 18:00) schon vorbei ist
+    _user(db_session, uid="nr5", ev="ev_nr5", email="nr5@b.com")
+    _job(db_session, jid="jnr5", uid="nr5", next_run=datetime(2026, 4, 10, 18, 0))
+
+    mock_book = mocker.patch("worker.worker.book_session")
+
+    run(datetime(2026, 4, 15, 10, 0), session_factory)
+
+    mock_book.assert_not_called()
+    log = db_session.query(BookingLog).filter(BookingLog.job_id == "jnr5").first()
+    assert log is not None
+    assert log.status == "failed"
+    assert "verpasst" in log.message.lower()
+    assert log.target_date == date(2026, 4, 14)
+    db_session.expire_all()
+    job = db_session.query(BookingJob).filter(BookingJob.id == "jnr5").first()
+    # Nächster Lauf: Freitag 17.04. 18:00
+    assert job.next_run_at.replace(tzinfo=timezone.utc) == _utc(datetime(2026, 4, 17, 18, 0))
+
+
+def test_process_job_ueberspringt_wenn_next_run_at_in_zukunft(db_session, session_factory, mocker):
+    # Schutz gegen Doppelausführung: ein anderer Worker hat den Job schon weitergeschaltet
+    _user(db_session, uid="nr6", ev="ev_nr6", email="nr6@b.com")
+    _job(db_session, jid="jnr6", uid="nr6", next_run=datetime(2026, 4, 17, 18, 0))
+
+    mock_book = mocker.patch("worker.worker.book_session")
+    process_job("jnr6", datetime(2026, 4, 10, 18, 0), session_factory, [])
+    mock_book.assert_not_called()
+    # und es darf auch kein Log geschrieben werden
+    assert db_session.query(BookingLog).filter(BookingLog.job_id == "jnr6").first() is None
 
 
 # --- admin failure notifications ---

@@ -15,14 +15,21 @@ from sqlalchemy.pool import StaticPool
 from backend.db import Base, get_db
 from backend.main import app
 
+# Standard: SQLite in-memory. In der CI läuft die Suite zusätzlich gegen
+# PostgreSQL (TEST_DATABASE_URL), um Produktions-DB-Verhalten abzudecken.
+TEST_DATABASE_URL = os.environ.get("TEST_DATABASE_URL", "sqlite:///:memory:")
+
 
 @pytest.fixture(scope="function")
 def db_engine():
-    engine = create_engine(
-        "sqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
+    if TEST_DATABASE_URL.startswith("sqlite"):
+        engine = create_engine(
+            TEST_DATABASE_URL,
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool,
+        )
+    else:
+        engine = create_engine(TEST_DATABASE_URL)
     Base.metadata.create_all(bind=engine)
     yield engine
     Base.metadata.drop_all(bind=engine)
