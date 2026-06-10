@@ -1,5 +1,3 @@
-import pytest
-
 from backend.eversports.errors import (
     EversportsError, AuthFailed, SlotNotFound, MarkupDrift, PlatformError,
 )
@@ -11,8 +9,7 @@ def test_alle_fehler_erben_von_eversports_error():
 
 
 def test_eversports_error_erbt_von_runtime_error():
-    # Übergangs-Kompatibilität: bestehende `except RuntimeError`-Handler
-    # (z.B. worker/worker.py) fangen die neuen Fehler weiterhin
+    # Übergangs-Kompatibilität: bestehende RuntimeError-Handler (z.B. backend/api/bookings.py, backend/api/facilities.py) fangen die neuen Fehler weiterhin
     assert issubclass(EversportsError, RuntimeError)
 
 
