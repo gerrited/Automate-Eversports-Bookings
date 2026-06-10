@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { apiFetch, setToken, clearToken } from './client'
+import { apiFetch, setToken } from './client'
 
 // window.location.href ist in jsdom read-only — überschreiben
 const locationDescriptor = Object.getOwnPropertyDescriptor(window, 'location')
@@ -52,16 +52,16 @@ describe('refreshAccessToken', () => {
     expect(result).toBe(false)
   })
 
-  it('sendet gespeicherten refresh_token im Request-Body', async () => {
-    window.localStorage.setItem('refresh_token', 'stored-refresh-token')
+  it('sendet keinen Body — Refresh läuft ausschließlich über das httpOnly-Cookie', async () => {
+    window.localStorage.setItem('refresh_token', 'legacy-stored-token')
     const fetchMock = mockFetch({ status: 200, ok: true, json: async () => ({ access_token: 'new-token' }) })
 
     const { refreshAccessToken } = await import('./client')
     await refreshAccessToken()
 
     const [, options] = fetchMock.mock.calls[0]
-    const body = JSON.parse((options as RequestInit).body as string)
-    expect(body.refresh_token).toBe('stored-refresh-token')
+    expect((options as RequestInit).body).toBeUndefined()
+    expect((options as RequestInit).credentials).toBe('include')
   })
 })
 

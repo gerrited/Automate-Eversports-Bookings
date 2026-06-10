@@ -77,6 +77,22 @@ jobs:
           flags: frontend
           token: ${{ secrets.CODECOV_TOKEN }}
 
+  test-frontend:
+    name: frontend tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm test
+
   build:
     name: build images
     # Images nur auf main bauen — PR-Läufe sind reine Test-Läufe

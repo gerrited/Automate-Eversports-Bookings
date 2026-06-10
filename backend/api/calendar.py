@@ -10,11 +10,16 @@ from sqlalchemy.orm import Session
 
 from backend.api.deps import get_current_active_user
 from backend.core.booking import fetch_upcoming_bookings
+from backend.core.cache import TTLCache
 from backend.core.encryption import decrypt
 from backend.db import get_db
 from backend.models.user import User
 
 router = APIRouter()
+
+# Kalender-Apps pollen den Feed teils alle paar Minuten — jeder ungecachte
+# Abruf wäre ein voller Eversports-Login + Scraping.
+bookings_cache = TTLCache(ttl_seconds=15 * 60)
 
 
 class CalendarTokenResponse(BaseModel):
@@ -85,11 +90,14 @@ def get_calendar_feed(token: str, db: Session = Depends(get_db)):
     if user is None:
         raise HTTPException(status_code=404, detail="Invalid token")
 
-    try:
-        password = decrypt(user.encrypted_password)
-        bookings = fetch_upcoming_bookings(user.email, password)
-    except Exception:
-        bookings = []
+    bookings = bookings_cache.get(user.id)
+    if bookings is None:
+        try:
+            password = decrypt(user.encrypted_password, aad=user.eversports_user_id)
+            bookings = fetch_upcoming_bookings(user.email, password)
+            bookings_cache.set(user.id, bookings)
+        except Exception:
+            bookings = []  # Fehler nicht cachen — nächster Abruf versucht es erneut
 
     ics_content = _generate_ics(bookings)
     return Response(

@@ -83,7 +83,7 @@ def process_job(job_id: str, now: datetime, session_factory, admin_emails: list[
             return
 
         try:
-            password = decrypt(user.encrypted_password)
+            password = decrypt(user.encrypted_password, aad=user.eversports_user_id)
             result = book_session(
                 email=user.email,
                 password=password,
@@ -201,7 +201,7 @@ def _run_push_notifications(now: datetime, session_factory) -> None:
         log.info("Push notifications: checking %d users with subscriptions", len(users_with_subs))
         for user in users_with_subs:
             try:
-                password = decrypt(user.encrypted_password)
+                password = decrypt(user.encrypted_password, aad=user.eversports_user_id)
                 bookings = fetch_upcoming_bookings(user.email, password)
                 send_push_notifications(db, user, bookings, now)
             except Exception as exc:

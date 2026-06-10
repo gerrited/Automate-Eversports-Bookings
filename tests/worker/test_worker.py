@@ -572,7 +572,7 @@ def test_run_calls_push_notifications_for_subscribed_users(db_session, session_f
         id="u-push",
         eversports_user_id="ev-push",
         email="push@example.com",
-        encrypted_password=encrypt("secret"),
+        encrypted_password=encrypt("secret", aad="ev-push"),
         active=True,
         notification_advance_minutes=60,
     )

@@ -200,7 +200,7 @@ def execute_job(
     job = _get_owned_job(job_id, current_user, db)
     target_date = _next_weekday(job.weekday)
 
-    password = decrypt(current_user.encrypted_password)
+    password = decrypt(current_user.encrypted_password, aad=current_user.eversports_user_id)
 
     try:
         result = book_session(
