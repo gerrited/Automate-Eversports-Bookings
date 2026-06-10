@@ -12,7 +12,7 @@ FIXTURES = Path(__file__).parent / "fixtures"
 
 
 def _calendar() -> str:
-    return (FIXTURES / "calendar_week.html").read_text()
+    return (FIXTURES / "calendar_week.html").read_text(encoding="utf-8")
 
 
 def test_kalender_findet_passenden_slot():
@@ -28,7 +28,7 @@ def test_kalender_filtert_nach_name_zeit_und_datum():
 
 
 def test_profilseite_liefert_strukturierte_buchung():
-    bookings = parse_upcoming_bookings((FIXTURES / "profile_bookings.html").read_text())
+    bookings = parse_upcoming_bookings((FIXTURES / "profile_bookings.html").read_text(encoding="utf-8"))
     assert len(bookings) == 1
     b = bookings[0]
     assert b["activity_name"] == "CrossFit"
