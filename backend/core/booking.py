@@ -15,6 +15,7 @@ from datetime import date, datetime, timedelta
 from typing import Optional
 
 import requests
+from backend.core.status import BookingStatus
 
 log = logging.getLogger(__name__)
 from bs4 import BeautifulSoup
@@ -161,9 +162,9 @@ def book_session(
 ) -> dict:
     """
     Full booking flow.
-    Returns {"status": "success", "order_id": str, "event_type": str}
-          | {"status": "already_booked", "order_id": None, "event_type": str}
-          | {"status": "waitlist", "order_id": None, "event_type": str}
+    Returns {"status": BookingStatus.SUCCESS, "order_id": str, "event_type": str}
+          | {"status": BookingStatus.ALREADY_BOOKED, "order_id": None, "event_type": str}
+          | {"status": BookingStatus.WAITLIST, "order_id": None, "event_type": str}
     Raises RuntimeError on login failure, class not found, or booking error.
 
     If event_type is given, only that type is queried (faster).
@@ -255,13 +256,13 @@ def book_session(
         for error in cart_result["errors"]:
             msg = error["message"].lower()
             if "already" in msg or "bereits" in msg:
-                return {"status": "already_booked", "order_id": None, "event_type": matched_event_type, "_session": session}
+                return {"status": BookingStatus.ALREADY_BOOKED, "order_id": None, "event_type": matched_event_type, "_session": session}
         full_keywords = ("fully booked", "fully_booked", "ausgebucht", "sold out", "no spots")
         for error in cart_result["errors"]:
             msg = error["message"].lower()
             if any(kw in msg for kw in full_keywords):
                 join_waitlist(session, bookable_item_id)
-                return {"status": "waitlist", "order_id": None, "event_type": matched_event_type, "_session": session}
+                return {"status": BookingStatus.WAITLIST, "order_id": None, "event_type": matched_event_type, "_session": session}
         msgs = "; ".join(e["message"] for e in cart_result["errors"])
         raise RuntimeError(f"Cart creation failed: {msgs}")
 
@@ -284,10 +285,10 @@ def book_session(
         msgs = "; ".join(e["message"] for e in order_result["errors"])
         # Free sessions have no product assigned — booking is completed at cart level
         if any("product" in e["message"].lower() for e in order_result["errors"]):
-            return {"status": "success", "order_id": cart_id, "event_type": matched_event_type, "_session": session}
+            return {"status": BookingStatus.SUCCESS, "order_id": cart_id, "event_type": matched_event_type, "_session": session}
         raise RuntimeError(f"Order creation failed: {msgs}")
 
-    return {"status": "success", "order_id": order_result["id"], "event_type": matched_event_type, "_session": session}
+    return {"status": BookingStatus.SUCCESS, "order_id": order_result["id"], "event_type": matched_event_type, "_session": session}
 
 
 def cancel_booking(

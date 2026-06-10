@@ -8,6 +8,35 @@
 * Der erste registrierte Benutzer wird automatisch Admin. Weitere Benutzer müssen von einem Admin freigeschaltet werden.
 * Das `debug`-Flag auf einer Buchung aktiviert den Testmodus: die Buchung wird direkt nach Ausführung wieder storniert. Nur für Admins sichtbar.
 
+## Architektur-Invarianten
+
+Diese Regeln müssen bei Änderungen erhalten bleiben:
+
+### Scheduling (`next_run_at`)
+
+* Fälligkeit ist **Datenmodell, kein Zeitvergleich**: Jeder Job trägt seinen nächsten Lauf in `booking_jobs.next_run_at` (UTC). Der Worker wählt Jobs per `next_run_at <= now` und claimt sie mit `FOR UPDATE SKIP LOCKED` (greift nur auf PostgreSQL; SQLite kennt kein `FOR UPDATE`).
+* `compute_next_run()` in `backend/core/schedule.py` ist die einzige Stelle, die Lauf-Zeitpunkte berechnet (Europe/Berlin, DST-fest). Semantik: Lauf um `target_time` an dem Tag, der `days_in_advance` Tage vor dem Kurstag (`weekday`) liegt.
+* **Jeder Code-Pfad, der einen Job anlegt oder Scheduling-Felder (`weekday`, `target_time`, `days_in_advance`) ändert oder einen Job reaktiviert, muss `next_run_at` neu berechnen** (siehe `backend/api/jobs.py`).
+* `next_run_at = NULL` heißt „noch nicht berechnet": Der Worker initialisiert solche Jobs beim nächsten Lauf, ohne rückwirkend zu buchen.
+* Verpasste Läufe werden nachgeholt, solange der Kurstermin in der Zukunft liegt; `target_date` leitet sich vom **geplanten** Lauf ab (`next_run_at`), nie von `now`.
+* Nach jedem Verarbeitungsversuch (Erfolg, Fehler, already_booked, verpasst) wird `next_run_at` weitergeschaltet — ein Slot wird genau einmal versucht.
+
+### Status & Verschlüsselung
+
+* Buchungsstatus immer über das Enum `BookingStatus` (`backend/core/status.py`) referenzieren, nie als freier String.
+* `encrypt()`/`decrypt()` (`backend/core/encryption.py`) verlangen `aad=eversports_user_id` — der Ciphertext ist an den Nutzer gebunden. Bestandsdaten ohne AAD werden per Fallback entschlüsselt und beim nächsten Login migriert.
+
+### Auth
+
+* Der Refresh-Token existiert **ausschließlich** als httpOnly-Cookie (Pfad `/api/auth/refresh`). Niemals im Response-Body zurückgeben oder im `localStorage` speichern; der Refresh-Endpoint akzeptiert nur das Cookie.
+* `/api/auth/login` ist rate-limitiert (`login_limiter` in `backend/api/auth.py`, 10 Versuche / 5 Min pro IP). Die Test-conftest resettet Limiter und Kalender-Feed-Cache pro Test.
+* Der Kalender-Feed cacht Buchungen 15 Min pro Nutzer (`bookings_cache` in `backend/api/calendar.py`); Fehler werden nicht gecacht.
+
+### Migrationen & CI
+
+* Alembic-Migrationen müssen auch auf SQLite laufen: für Constraints/ALTER-Operationen `op.batch_alter_table()` verwenden (siehe Migration `b2c3d4e5f6a7`).
+* Die CI (`.github/workflows/ci.yml`) läuft auf Push nach `main` **und** auf Pull Requests: Backend-Tests gegen SQLite und PostgreSQL (Service-Container, `TEST_DATABASE_URL`), Frontend-Tests (Node 24). Der Image-Build läuft nur auf `main`-Pushes.
+
 ## Projekt lokal starten
 
 ### Backend
@@ -79,6 +108,12 @@ In der Produktion führt das Backend-Dockerfile `alembic upgrade head` automatis
 
 ```bash
 pytest tests/ -x
+```
+
+Standardmäßig läuft die Suite gegen SQLite. Mit `TEST_DATABASE_URL` läuft sie gegen PostgreSQL (macht die CI zusätzlich, um Produktions-DB-Verhalten wie `FOR UPDATE SKIP LOCKED` abzudecken):
+
+```bash
+TEST_DATABASE_URL=postgresql://test:test@localhost:5432/eversports_test pytest tests/ -x
 ```
 
 ### Frontend
