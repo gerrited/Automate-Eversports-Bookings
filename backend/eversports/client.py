@@ -7,7 +7,6 @@ Schwester-Module parsing.py und classify.py.
 from __future__ import annotations
 
 import logging
-import re
 from datetime import date, datetime, timedelta
 from typing import Optional
 
@@ -23,7 +22,6 @@ log = logging.getLogger(__name__)
 GRAPHQL_URL = "https://www.eversports.de/api/checkout"
 CALENDAR_URL = "https://www.eversports.de/api/eventsession/calendar"
 BASE_URL = "https://www.eversports.de"
-_DATA_ID_RE = re.compile(r"data-id=[\"'](\d+)[\"']")
 TIMEOUT = 30
 _SESSION_HEADERS = {
     "User-Agent": (

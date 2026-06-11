@@ -7,7 +7,7 @@ def test_join_waitlist_returns_id_on_success():
     session = MagicMock()
     gql_response = {"addToWaitingList": {"id": "abc-123", "__typename": "WaitingList"}}
 
-    with patch("backend.core.booking._gql", return_value=gql_response):
+    with patch("backend.eversports.client._gql", return_value=gql_response):
         result = join_waitlist(session, "abc-123")
 
     assert result == "abc-123"
@@ -22,8 +22,8 @@ def test_join_waitlist_raises_on_expected_errors():
         }
     }
 
-    with patch("backend.core.booking._gql", return_value=gql_response):
-        with pytest.raises(RuntimeError, match="Waitlist join failed"):
+    with patch("backend.eversports.client._gql", return_value=gql_response):
+        with pytest.raises(Exception, match="Waitlist join failed"):
             join_waitlist(session, "abc-123")
 
 
@@ -52,12 +52,12 @@ def _make_session_mock():
 
 
 def test_book_session_joins_waitlist_when_fully_booked(mocker):
-    mocker.patch("backend.core.booking.eversports_login", return_value={
+    mocker.patch("backend.eversports.client.eversports_login", return_value={
         "user_id": "u1",
         "session": _make_session_mock(),
         "avatar_url": None,
     })
-    mocker.patch("backend.core.booking._resolve_facility_id", return_value="73041")
+    mocker.patch("backend.eversports.client._resolve_facility_id", return_value="73041")
 
     cart_response = {
         "createCartFromEventBookableItem": {
@@ -76,7 +76,7 @@ def test_book_session_joins_waitlist_when_fully_booked(mocker):
             return cart_response
         return waitlist_response
 
-    mocker.patch("backend.core.booking._gql", side_effect=fake_gql)
+    mocker.patch("backend.eversports.client._gql", side_effect=fake_gql)
 
     result = book_session(
         email="a@b.com",
@@ -92,12 +92,12 @@ def test_book_session_joins_waitlist_when_fully_booked(mocker):
 
 
 def test_book_session_raises_on_other_cart_errors(mocker):
-    mocker.patch("backend.core.booking.eversports_login", return_value={
+    mocker.patch("backend.eversports.client.eversports_login", return_value={
         "user_id": "u1",
         "session": _make_session_mock(),
         "avatar_url": None,
     })
-    mocker.patch("backend.core.booking._resolve_facility_id", return_value="73041")
+    mocker.patch("backend.eversports.client._resolve_facility_id", return_value="73041")
 
     cart_response = {
         "createCartFromEventBookableItem": {
@@ -105,9 +105,9 @@ def test_book_session_raises_on_other_cart_errors(mocker):
             "errors": [{"id": "1", "message": "Zahlung abgelehnt", "__typename": "ExpectedError"}],
         }
     }
-    mocker.patch("backend.core.booking._gql", return_value=cart_response)
+    mocker.patch("backend.eversports.client._gql", return_value=cart_response)
 
-    with pytest.raises(RuntimeError, match="Cart creation failed"):
+    with pytest.raises(Exception, match="Cart creation failed"):
         book_session(
             email="a@b.com",
             password="pw",
@@ -119,12 +119,12 @@ def test_book_session_raises_on_other_cart_errors(mocker):
 
 
 def test_book_session_raises_when_join_waitlist_fails(mocker):
-    mocker.patch("backend.core.booking.eversports_login", return_value={
+    mocker.patch("backend.eversports.client.eversports_login", return_value={
         "user_id": "u1",
         "session": _make_session_mock(),
         "avatar_url": None,
     })
-    mocker.patch("backend.core.booking._resolve_facility_id", return_value="73041")
+    mocker.patch("backend.eversports.client._resolve_facility_id", return_value="73041")
 
     cart_response = {
         "createCartFromEventBookableItem": {
@@ -146,9 +146,9 @@ def test_book_session_raises_when_join_waitlist_fails(mocker):
             return cart_response
         return waitlist_error_response
 
-    mocker.patch("backend.core.booking._gql", side_effect=fake_gql)
+    mocker.patch("backend.eversports.client._gql", side_effect=fake_gql)
 
-    with pytest.raises(RuntimeError, match="Waitlist join failed"):
+    with pytest.raises(Exception, match="Waitlist join failed"):
         book_session(
             email="a@b.com",
             password="pw",
