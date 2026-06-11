@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from backend.api.deps import get_current_active_user
-from backend.core.booking import fetch_upcoming_bookings
+from backend.eversports import fetch_upcoming_bookings
 from backend.core.cache import TTLCache
 from backend.core.encryption import decrypt
 from backend.db import get_db

@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from backend.api.deps import get_current_active_user
-from backend.core.booking import book_session, _cancel_with_session, eversports_login
+from backend.eversports import book_session, _cancel_with_session, eversports_login
 from backend.core.encryption import decrypt
 from backend.core.schedule import compute_next_run
 from backend.core.status import BookingStatus

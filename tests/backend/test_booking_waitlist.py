@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import MagicMock, patch
-from backend.core.booking import join_waitlist
+from backend.eversports import join_waitlist
 from backend.eversports.errors import PlatformError
 
 
@@ -28,7 +28,7 @@ def test_join_waitlist_raises_on_expected_errors():
             join_waitlist(session, "abc-123")
 
 
-from backend.core.booking import book_session
+from backend.eversports import book_session
 from unittest.mock import patch, MagicMock
 from datetime import date
 

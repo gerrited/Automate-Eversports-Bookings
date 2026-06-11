@@ -9,7 +9,7 @@ from backend.core.auth import (
     verify_refresh_token,
     JWTError,
 )
-from backend.core.booking import eversports_login
+from backend.eversports import eversports_login
 from backend.core.email import send_new_user_notification
 from backend.core.encryption import encrypt
 from backend.core.rate_limit import RateLimiter
