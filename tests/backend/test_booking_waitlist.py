@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import MagicMock, patch
 from backend.core.booking import join_waitlist
+from backend.eversports.errors import PlatformError
 
 
 def test_join_waitlist_returns_id_on_success():
@@ -23,7 +24,7 @@ def test_join_waitlist_raises_on_expected_errors():
     }
 
     with patch("backend.eversports.client._gql", return_value=gql_response):
-        with pytest.raises(Exception, match="Waitlist join failed"):
+        with pytest.raises(PlatformError, match="Waitlist join failed"):
             join_waitlist(session, "abc-123")
 
 
@@ -107,7 +108,7 @@ def test_book_session_raises_on_other_cart_errors(mocker):
     }
     mocker.patch("backend.eversports.client._gql", return_value=cart_response)
 
-    with pytest.raises(Exception, match="Cart creation failed"):
+    with pytest.raises(PlatformError, match="Cart creation failed"):
         book_session(
             email="a@b.com",
             password="pw",
@@ -148,7 +149,7 @@ def test_book_session_raises_when_join_waitlist_fails(mocker):
 
     mocker.patch("backend.eversports.client._gql", side_effect=fake_gql)
 
-    with pytest.raises(Exception, match="Waitlist join failed"):
+    with pytest.raises(PlatformError, match="Waitlist join failed"):
         book_session(
             email="a@b.com",
             password="pw",
