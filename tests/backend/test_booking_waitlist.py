@@ -1,7 +1,6 @@
 import pytest
 from unittest.mock import MagicMock, patch
-from backend.eversports import join_waitlist
-from backend.eversports.errors import PlatformError
+from backend.eversports import join_waitlist, PlatformError
 
 
 def test_join_waitlist_returns_id_on_success():

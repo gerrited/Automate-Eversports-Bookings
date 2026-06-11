@@ -5,7 +5,7 @@ Freitexte. Dieses Modul ist die EINZIGE Stelle, die darauf matcht. Wenn eine
 Buchung fälschlich als harter Fehler statt als Warteliste/Doppelbuchung endet,
 fehlt hier ein Keyword — Keyword ergänzen, Test ergänzen, fertig.
 
-Verhalten exakt übernommen aus backend/core/booking.py (Stand 2026-06-10):
+Verhalten exakt übernommen aus dem früheren backend/core/booking.py (Stand 2026-06-10):
 already-Prüfung läuft VOR der full-Prüfung über alle Messages.
 """
 from enum import Enum, auto
