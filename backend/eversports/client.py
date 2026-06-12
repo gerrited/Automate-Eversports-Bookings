@@ -14,7 +14,7 @@ import requests
 
 from backend.core.status import BookingStatus
 from backend.eversports.classify import CartOutcome, classify_cart_errors
-from backend.eversports.errors import AuthFailed, PlatformError, SlotNotFound
+from backend.eversports.errors import AuthFailed, EversportsError, PlatformError, SlotNotFound
 from backend.eversports.parsing import extract_facility_id, parse_calendar_slots, parse_upcoming_bookings
 
 log = logging.getLogger(__name__)
@@ -341,6 +341,29 @@ def _cancel_with_session(
     )
     if not resp.ok:
         raise _http_error(resp)
+
+
+def _with_login_retry(email: str, password: str, operation):
+    """Führt operation(login_result) aus; bei EversportsError einmal mit frischem Login wiederholen.
+
+    AuthFailed und SlotNotFound lösen keinen Retry aus — falsche Credentials bzw.
+    nicht gefundene Kurse sind keine Session-Probleme.
+    """
+    from backend.eversports import session_cache  # lazy: vermeidet Import-Zyklus
+
+    login = session_cache.get_or_login(email, password)
+    if login is None:
+        raise AuthFailed("Eversports login failed")
+    try:
+        return operation(login)
+    except (AuthFailed, SlotNotFound):
+        raise
+    except EversportsError:
+        session_cache.invalidate(email, password)
+        login = session_cache.get_or_login(email, password)
+        if login is None:
+            raise AuthFailed("Eversports login failed")
+        return operation(login)
 
 
 def fetch_upcoming_bookings(email: str, password: str) -> list[dict]:
