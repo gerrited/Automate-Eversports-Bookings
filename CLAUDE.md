@@ -31,7 +31,7 @@ Diese Regeln müssen bei Änderungen erhalten bleiben:
 * `backend/eversports/` ist der **einzige** Code, der die Eversports-Plattform berührt. Neue Plattform-Interaktionen gehören dorthin, nie in API-Handler oder den Worker.
 * Fehlertext-Klassifikation (lokalisierte Strings) ausschließlich in `backend/eversports/classify.py` — Keyword-Änderungen immer mit Test.
 * HTML-Parsing ausschließlich in `backend/eversports/parsing.py` (reine Funktionen, Contract-Fixtures in `tests/eversports/fixtures/`). `MarkupDrift` heißt: Eversports hat das Markup geändert.
-* Eversports-Logins laufen über den Session-Cache (`backend/eversports/session_cache.py`, TTL 20 Min, Key = SHA-256 der Credentials). Einzige Ausnahme: `POST /api/auth/login` validiert Credentials bewusst mit frischem Login. Die Test-conftest leert den Cache pro Test.
+* Eversports-Logins laufen über den Session-Cache (`backend/eversports/session_cache.py`, TTL 20 Min, Key = SHA-256 der Credentials). Ausnahmen mit bewusst frischem Login: `POST /api/auth/login` (Credential-Validierung); `_run_debug_cancel` und `get_facility_courses` nutzen den Cache noch nicht (Follow-up-Kandidaten). Die Test-conftest leert den Cache pro Test.
 
 ### Auth
 

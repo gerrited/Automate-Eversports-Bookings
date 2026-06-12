@@ -7,8 +7,10 @@ Es werden nie Klartext-Credentials im Cache abgelegt, nur der Hash als
 Schlüssel und das Login-Ergebnis als Wert.
 
 Hinweis: Der gecachte Wert enthält eine geteilte, nicht threadsichere
-requests.Session; im Worker arbeitet pro Nutzer höchstens ein Thread
-gleichzeitig an einer Buchung — Restrisiko bewusst akzeptiert.
+requests.Session. Der Worker parallelisiert pro Job — ein Nutzer mit mehreren
+gleichzeitig fälligen Jobs teilt sich eine gecachte, nicht threadsichere
+requests.Session über mehrere Threads. Risiko bewusst akzeptiert (seltene
+Kollision, Cookie-Jar-Races; der Retry-Wrapper fängt Folgefehler).
 """
 import hashlib
 

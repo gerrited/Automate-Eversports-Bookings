@@ -383,10 +383,13 @@ def _with_login_retry(email: str, password: str, operation):
 
 
 def _fetch_upcoming_with_session(session: requests.Session) -> list[dict]:
-    """Ruft bevorstehende Buchungen mit bereits vorhandener Session ab."""
+    """Ruft bevorstehende Buchungen mit bereits vorhandener Session ab.
+    Wirft PlatformError bei non-OK-Antwort, damit _with_login_retry bei einer
+    abgelaufenen gecachten Session invalidieren und neu einloggen kann.
+    """
     resp = session.get(BASE_URL + "/u", timeout=TIMEOUT)
     if not resp.ok:
-        return []
+        raise _http_error(resp)
     return parse_upcoming_bookings(resp.text)
 
 

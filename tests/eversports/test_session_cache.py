@@ -51,6 +51,25 @@ def test_invalidate_erzwingt_frischen_login():
     assert mock_login.call_count == 2
 
 
+def test_fetch_holt_frischen_login_wenn_session_abgelaufen():
+    # Abgelaufene gecachte Session: /u liefert 403 → Invalidate + Retry mit frischem Login
+    from backend.eversports.client import fetch_upcoming_bookings
+
+    stale = _login_result("ev-alt")
+    stale_resp = MagicMock(ok=False, status_code=403, text="Forbidden")
+    stale["session"].get.return_value = stale_resp
+
+    fresh = _login_result("ev-frisch")
+    fresh_resp = MagicMock(ok=True, text="<html></html>")
+    fresh["session"].get.return_value = fresh_resp
+
+    with patch("backend.eversports.client.eversports_login", side_effect=[stale, fresh]) as mock_login:
+        result = fetch_upcoming_bookings("a@b.com", "pw")
+
+    assert mock_login.call_count == 2  # alter Login verworfen, frischer geholt
+    assert result == []  # leeres HTML parst zu leerer Liste — aber mit frischer Session
+
+
 def test_book_und_fetch_teilen_sich_einen_login():
     from datetime import date
 
