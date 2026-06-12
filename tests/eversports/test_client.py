@@ -1,7 +1,6 @@
 from datetime import date
 from unittest.mock import MagicMock, patch
 
-import pytest
 
 from backend.core.status import BookingStatus
 from backend.eversports.client import book_session, eversports_login
