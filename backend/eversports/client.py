@@ -146,30 +146,16 @@ def eversports_login(email: str, password: str) -> Optional[dict]:
     }
 
 
-def book_session(
-    email: str,
-    password: str,
+def _book_with_session(
+    session: requests.Session,
+    *,
     target_date: date,
     target_time: str,
     facility_id: str,
     class_name: str,
     event_type: Optional[str] = None,
 ) -> dict:
-    """
-    Full booking flow.
-    Returns {"status": BookingStatus.SUCCESS, "order_id": str, "event_type": str}
-          | {"status": BookingStatus.ALREADY_BOOKED, "order_id": None, "event_type": str}
-          | {"status": BookingStatus.WAITLIST, "order_id": None, "event_type": str}
-    Raises AuthFailed on login failure, SlotNotFound when class not found, PlatformError on booking error.
-
-    If event_type is given, only that type is queried (faster).
-    Otherwise all types (class, training, course) are tried in order.
-    """
-    login_result = eversports_login(email, password)
-    if login_result is None:
-        raise AuthFailed("Eversports login failed")
-    session: requests.Session = login_result["session"]
-
+    """Buchungs-Flow mit bereits vorhandener (gecachter) Session."""
     # Slug → numerische ID (mit auth. Session, Cloudflare-kompatibel)
     numeric_facility_id = _resolve_facility_id(facility_id, session)
 
@@ -268,6 +254,37 @@ def book_session(
     return {"status": BookingStatus.SUCCESS, "order_id": order_result["id"], "event_type": matched_event_type, "_session": session}
 
 
+def book_session(
+    email: str,
+    password: str,
+    target_date: date,
+    target_time: str,
+    facility_id: str,
+    class_name: str,
+    event_type: Optional[str] = None,
+) -> dict:
+    """
+    Full booking flow.
+    Returns {"status": BookingStatus.SUCCESS, "order_id": str, "event_type": str}
+          | {"status": BookingStatus.ALREADY_BOOKED, "order_id": None, "event_type": str}
+          | {"status": BookingStatus.WAITLIST, "order_id": None, "event_type": str}
+    Raises AuthFailed on login failure, SlotNotFound when class not found, PlatformError on booking error.
+
+    If event_type is given, only that type is queried (faster).
+    Otherwise all types (class, training, course) are tried in order.
+    """
+    def _op(login):
+        return _book_with_session(
+            login["session"],
+            target_date=target_date,
+            target_time=target_time,
+            facility_id=facility_id,
+            class_name=class_name,
+            event_type=event_type,
+        )
+    return _with_login_retry(email, password, _op)
+
+
 def cancel_booking(
     email: str,
     password: str,
@@ -278,14 +295,13 @@ def cancel_booking(
     Cancel the most recent upcoming booking matching class_name + facility_id.
     Fetches /u to find the cancel link data attributes, then calls /api/event/cancel.
     """
-    login_result = eversports_login(email, password)
-    if login_result is None:
-        raise AuthFailed("Eversports login failed")
-    _cancel_with_session(
-        session=login_result["session"],
-        class_name=class_name,
-        facility_id=facility_id,
-    )
+    def _op(login):
+        return _cancel_with_session(
+            session=login["session"],
+            class_name=class_name,
+            facility_id=facility_id,
+        )
+    return _with_login_retry(email, password, _op)
 
 
 def _cancel_with_session(
@@ -366,22 +382,47 @@ def _with_login_retry(email: str, password: str, operation):
         return operation(login)
 
 
+def _fetch_upcoming_with_session(session: requests.Session) -> list[dict]:
+    """Ruft bevorstehende Buchungen mit bereits vorhandener Session ab."""
+    resp = session.get(BASE_URL + "/u", timeout=TIMEOUT)
+    if not resp.ok:
+        return []
+    return parse_upcoming_bookings(resp.text)
+
+
 def fetch_upcoming_bookings(email: str, password: str) -> list[dict]:
     """
     Ruft bevorstehende Buchungen von /u ab und gibt strukturierte Daten zurück.
     Gibt [] zurück wenn Login fehlschlägt.
     """
-    login_result = eversports_login(email, password)
-    if login_result is None:
+    try:
+        return _with_login_retry(email, password, lambda login: _fetch_upcoming_with_session(login["session"]))
+    except EversportsError:
         return []
-    session: requests.Session = login_result["session"]
 
-    resp = session.get(BASE_URL + "/u", timeout=TIMEOUT)
+
+def _cancel_by_ids_with_session(
+    session: requests.Session,
+    *,
+    event_id: str,
+    event_participant_id: str,
+    facility_id: str,
+    session_id: str,
+) -> None:
+    """Storniert eine Buchung über bekannte IDs mit bereits vorhandener Session."""
+    resp = session.post(
+        BASE_URL + "/api/event/cancel",
+        data={
+            "eventId": event_id,
+            "eventParticipantId": event_participant_id,
+            "facilityId": facility_id,
+            "sessionId": session_id,
+            "isLateCancellation": "false",
+        },
+        timeout=TIMEOUT,
+    )
     if not resp.ok:
-        return []
-
-    bookings = parse_upcoming_bookings(resp.text)
-    return bookings
+        raise _http_error(resp)
 
 
 def cancel_booking_by_ids(
@@ -396,21 +437,12 @@ def cancel_booking_by_ids(
     Storniert eine Buchung direkt über die bekannten IDs.
     Wirft AuthFailed bei Login-Fehler oder PlatformError bei HTTP-Fehler.
     """
-    login_result = eversports_login(email, password)
-    if login_result is None:
-        raise AuthFailed("Eversports login failed")
-    session: requests.Session = login_result["session"]
-
-    resp = session.post(
-        BASE_URL + "/api/event/cancel",
-        data={
-            "eventId": event_id,
-            "eventParticipantId": event_participant_id,
-            "facilityId": facility_id,
-            "sessionId": session_id,
-            "isLateCancellation": "false",
-        },
-        timeout=TIMEOUT,
-    )
-    if not resp.ok:
-        raise _http_error(resp)
+    def _op(login):
+        return _cancel_by_ids_with_session(
+            login["session"],
+            event_id=event_id,
+            event_participant_id=event_participant_id,
+            facility_id=facility_id,
+            session_id=session_id,
+        )
+    return _with_login_retry(email, password, _op)

@@ -51,8 +51,10 @@ def client(db_session):
 
     from backend.api.auth import login_limiter
     from backend.api.calendar import bookings_cache
+    from backend.eversports import session_cache
     login_limiter.reset()
     bookings_cache.clear()
+    session_cache._cache.clear()
 
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as c:

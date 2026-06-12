@@ -13,7 +13,7 @@ gleichzeitig an einer Buchung — Restrisiko bewusst akzeptiert.
 import hashlib
 
 from backend.core.cache import TTLCache
-from backend.eversports.client import eversports_login
+from backend.eversports import client as _client  # Modul-Referenz: Patches auf client.eversports_login greifen
 
 # 20 Min: deutlich länger als ein Worker-Lauf, kurz genug, dass server-
 # seitig ablaufende Sessions selten auftreten (Retry-Wrapper fängt den Rest)
@@ -31,7 +31,7 @@ def get_or_login(email: str, password: str) -> dict | None:
     cached = _cache.get(key)
     if cached is not None:
         return cached
-    result = eversports_login(email, password)
+    result = _client.eversports_login(email, password)
     if result is not None:
         _cache.set(key, result)
     return result

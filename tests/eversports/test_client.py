@@ -4,8 +4,16 @@ from unittest.mock import MagicMock, patch
 
 
 from backend.core.status import BookingStatus
+from backend.eversports import session_cache
 from backend.eversports.client import _with_login_retry, book_session, eversports_login
 from backend.eversports.errors import AuthFailed, PlatformError, SlotNotFound
+
+
+@pytest.fixture(autouse=True)
+def _clear_cache():
+    session_cache._cache.clear()
+    yield
+    session_cache._cache.clear()
 
 
 def _gql_response(payload: dict) -> MagicMock:
