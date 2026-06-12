@@ -19,7 +19,7 @@ Diese Regeln müssen bei Änderungen erhalten bleiben:
 * **Jeder Code-Pfad, der einen Job anlegt oder Scheduling-Felder (`weekday`, `target_time`, `days_in_advance`) ändert oder einen Job reaktiviert, muss `next_run_at` neu berechnen** (siehe `backend/api/jobs.py`).
 * `next_run_at = NULL` heißt „noch nicht berechnet": Der Worker initialisiert solche Jobs beim nächsten Lauf, ohne rückwirkend zu buchen.
 * Verpasste Läufe werden nachgeholt, solange der Kurstermin in der Zukunft liegt; `target_date` leitet sich vom **geplanten** Lauf ab (`next_run_at`), nie von `now`.
-* Nach jedem Verarbeitungsversuch (Erfolg, Fehler, already_booked, verpasst) wird `next_run_at` weitergeschaltet — ein Slot wird genau einmal versucht.
+* Nach jedem Verarbeitungsversuch (Erfolg, Fehler, already_booked, verpasst) wird `next_run_at` weitergeschaltet — ein Slot wird genau einmal versucht. „Einmal" meint einen Worker-Durchlauf: Innerhalb dessen darf der Eversports-Client bei Session-Fehlern transparent einmal neu einloggen und wiederholen (`_with_login_retry`).
 
 ### Status & Verschlüsselung
 
@@ -31,6 +31,7 @@ Diese Regeln müssen bei Änderungen erhalten bleiben:
 * `backend/eversports/` ist der **einzige** Code, der die Eversports-Plattform berührt. Neue Plattform-Interaktionen gehören dorthin, nie in API-Handler oder den Worker.
 * Fehlertext-Klassifikation (lokalisierte Strings) ausschließlich in `backend/eversports/classify.py` — Keyword-Änderungen immer mit Test.
 * HTML-Parsing ausschließlich in `backend/eversports/parsing.py` (reine Funktionen, Contract-Fixtures in `tests/eversports/fixtures/`). `MarkupDrift` heißt: Eversports hat das Markup geändert.
+* Eversports-Logins laufen über den Session-Cache (`backend/eversports/session_cache.py`, TTL 20 Min, Key = SHA-256 der Credentials). Einzige Ausnahme: `POST /api/auth/login` validiert Credentials bewusst mit frischem Login. Die Test-conftest leert den Cache pro Test.
 
 ### Auth
 
