@@ -1,29 +1,27 @@
-"""
-Eversports booking logic — adapted from book.py for multi-user use.
-Functions accept explicit parameters instead of reading from os.environ.
+"""Einziger HTTP-Berührungspunkt zur Eversports-Plattform.
 
-facility_id kann sein:
-  - numerische ID (z.B. "73041") — direkt verwendbar
-  - Venue-Slug (z.B. "crossfit-rabbit-hole") — wird beim Buchen mit der
-    eingeloggten Session aufgelöst (Cloudflare lässt auth. Sessions durch)
+Alle Netzwerk-Calls (Login, Kalender, GraphQL-Mutationen, Stornierung) sind
+hier zentralisiert. Parsing und Fehlerklassifikation delegieren an die
+Schwester-Module parsing.py und classify.py.
 """
 from __future__ import annotations
 
 import logging
-import re
 from datetime import date, datetime, timedelta
 from typing import Optional
 
 import requests
+
 from backend.core.status import BookingStatus
+from backend.eversports.classify import CartOutcome, classify_cart_errors
+from backend.eversports.errors import AuthFailed, PlatformError, SlotNotFound
+from backend.eversports.parsing import extract_facility_id, parse_calendar_slots, parse_upcoming_bookings
 
 log = logging.getLogger(__name__)
-from bs4 import BeautifulSoup
 
 GRAPHQL_URL = "https://www.eversports.de/api/checkout"
 CALENDAR_URL = "https://www.eversports.de/api/eventsession/calendar"
 BASE_URL = "https://www.eversports.de"
-_DATA_ID_RE = re.compile(r"data-id=[\"'](\d+)[\"']")
 TIMEOUT = 30
 _SESSION_HEADERS = {
     "User-Agent": (
@@ -41,9 +39,9 @@ _SESSION_HEADERS = {
 }
 
 
-def _http_error(resp: requests.Response) -> RuntimeError:
+def _http_error(resp: requests.Response) -> PlatformError:
     snippet = resp.text[:300].strip() if resp.text else ""
-    return RuntimeError(f"HTTP {resp.status_code} from Eversports: {snippet}")
+    return PlatformError(f"HTTP {resp.status_code} from Eversports: {snippet}")
 
 
 def _gql(session: requests.Session, operation: str, query: str, variables: dict) -> dict:
@@ -57,7 +55,7 @@ def _gql(session: requests.Session, operation: str, query: str, variables: dict)
         raise _http_error(resp)
     body = resp.json()
     if "errors" in body:
-        raise RuntimeError(f"GraphQL error: {body['errors']}")
+        raise PlatformError(f"GraphQL error: {body['errors']}")
     return body["data"]
 
 
@@ -72,10 +70,7 @@ def _resolve_facility_id(facility_id: str, session: requests.Session) -> str:
     resp = session.get(BASE_URL + "/scl/" + facility_id, timeout=TIMEOUT)
     if not resp.ok:
         raise _http_error(resp)
-    match = _DATA_ID_RE.search(resp.text)
-    if not match:
-        raise RuntimeError(f"Numeric facility ID not found for slug '{facility_id}'")
-    return match.group(1)
+    return extract_facility_id(resp.text, page="/scl/" + facility_id)
 
 
 _WAITLIST_MUTATION = """
@@ -92,13 +87,13 @@ mutation AddToWaitingList($eventBookableItemId: ID!) {
 def join_waitlist(session: requests.Session, event_bookable_item_id: str) -> str:
     """Trägt den eingeloggten Nutzer auf die Warteliste ein.
     Gibt die WaitingList-ID (= event_bookable_item_id) zurück.
-    Wirft RuntimeError bei ExpectedErrors.
+    Wirft PlatformError bei ExpectedErrors.
     """
     data = _gql(session, "AddToWaitingList", _WAITLIST_MUTATION, {"eventBookableItemId": event_bookable_item_id})
     result = data["addToWaitingList"]
     if result["__typename"] == "ExpectedErrors":
         msgs = "; ".join(e["message"] for e in result["errors"])
-        raise RuntimeError(f"Waitlist join failed: {msgs}")
+        raise PlatformError(f"Waitlist join failed: {msgs}")
     return result["id"]
 
 
@@ -165,14 +160,14 @@ def book_session(
     Returns {"status": BookingStatus.SUCCESS, "order_id": str, "event_type": str}
           | {"status": BookingStatus.ALREADY_BOOKED, "order_id": None, "event_type": str}
           | {"status": BookingStatus.WAITLIST, "order_id": None, "event_type": str}
-    Raises RuntimeError on login failure, class not found, or booking error.
+    Raises AuthFailed on login failure, SlotNotFound when class not found, PlatformError on booking error.
 
     If event_type is given, only that type is queried (faster).
     Otherwise all types (class, training, course) are tried in order.
     """
     login_result = eversports_login(email, password)
     if login_result is None:
-        raise RuntimeError("Eversports login failed")
+        raise AuthFailed("Eversports login failed")
     session: requests.Session = login_result["session"]
 
     # Slug → numerische ID (mit auth. Session, Cloudflare-kompatibel)
@@ -206,27 +201,13 @@ def book_session(
         except (KeyError, TypeError):
             continue  # facility doesn't offer this event type
 
-        soup = BeautifulSoup(calendar_html, "html.parser")
-        for ul in soup.find_all("ul"):
-            header = ul.find("h3", attrs={"data-day": target_date.isoformat()})
-            if not header:
-                continue
-            for li in ul.find_all("li", attrs={"data-uuid": True}):
-                time_div = li.find(class_="session-time")
-                name_div = li.find(class_="session-name")
-                if time_div and name_div:
-                    if (
-                        time_div.get_text(strip=True).startswith(target_time)
-                        and name_div.get_text(strip=True) == class_name
-                    ):
-                        matches.append(li["data-uuid"])
-
+        matches = parse_calendar_slots(calendar_html, target_date, target_time, class_name)
         if matches:
             matched_event_type = et
             break
 
     if not matches:
-        raise RuntimeError(f"{class_name} {target_time} not found for {target_date}")
+        raise SlotNotFound(f"{class_name} {target_time} not found for {target_date}")
 
     bookable_item_id = matches[0]
 
@@ -253,18 +234,14 @@ def book_session(
     cart_result = data["createCartFromEventBookableItem"]
 
     if cart_result["__typename"] == "ExpectedErrors":
-        for error in cart_result["errors"]:
-            msg = error["message"].lower()
-            if "already" in msg or "bereits" in msg:
-                return {"status": BookingStatus.ALREADY_BOOKED, "order_id": None, "event_type": matched_event_type, "_session": session}
-        full_keywords = ("fully booked", "fully_booked", "ausgebucht", "sold out", "no spots")
-        for error in cart_result["errors"]:
-            msg = error["message"].lower()
-            if any(kw in msg for kw in full_keywords):
-                join_waitlist(session, bookable_item_id)
-                return {"status": BookingStatus.WAITLIST, "order_id": None, "event_type": matched_event_type, "_session": session}
-        msgs = "; ".join(e["message"] for e in cart_result["errors"])
-        raise RuntimeError(f"Cart creation failed: {msgs}")
+        messages = [e["message"] for e in cart_result["errors"]]
+        outcome = classify_cart_errors(messages)
+        if outcome is CartOutcome.ALREADY_BOOKED:
+            return {"status": BookingStatus.ALREADY_BOOKED, "order_id": None, "event_type": matched_event_type, "_session": session}
+        if outcome is CartOutcome.SLOT_FULL:
+            join_waitlist(session, bookable_item_id)
+            return {"status": BookingStatus.WAITLIST, "order_id": None, "event_type": matched_event_type, "_session": session}
+        raise PlatformError(f"Cart creation failed: {'; '.join(messages)}")
 
     cart_id = cart_result["id"]
 
@@ -286,7 +263,7 @@ def book_session(
         # Free sessions have no product assigned — booking is completed at cart level
         if any("product" in e["message"].lower() for e in order_result["errors"]):
             return {"status": BookingStatus.SUCCESS, "order_id": cart_id, "event_type": matched_event_type, "_session": session}
-        raise RuntimeError(f"Order creation failed: {msgs}")
+        raise PlatformError(f"Order creation failed: {msgs}")
 
     return {"status": BookingStatus.SUCCESS, "order_id": order_result["id"], "event_type": matched_event_type, "_session": session}
 
@@ -303,7 +280,7 @@ def cancel_booking(
     """
     login_result = eversports_login(email, password)
     if login_result is None:
-        raise RuntimeError("Eversports login failed")
+        raise AuthFailed("Eversports login failed")
     _cancel_with_session(
         session=login_result["session"],
         class_name=class_name,
@@ -321,25 +298,21 @@ def _cancel_with_session(
     resp = session.get(BASE_URL + "/u", timeout=TIMEOUT)
     if not resp.ok:
         raise _http_error(resp)
-    soup = BeautifulSoup(resp.text, "html.parser")
 
     numeric_facility_id = _resolve_facility_id(facility_id, session)
 
-    cancel_link = None
-    for block in soup.find_all("div", class_="marketplace-booked-activity"):
-        link = block.find("a", class_="cancel-link-event")
-        if link is None:
+    bookings = parse_upcoming_bookings(resp.text)
+
+    cancel_booking_dict = None
+    for b in bookings:
+        if b["facility_id"] != numeric_facility_id:
             continue
-        if str(link.get("data-facilityid", "")) != numeric_facility_id:
-            continue
-        name_el = block.find("h4", class_="marketplace-booked-activity__name")
-        activity_name = name_el.get_text(strip=True) if name_el else ""
+        activity_name = b["activity_name"]
         if class_name and class_name not in activity_name:
             continue
         if target_date is not None or target_time is not None:
-            raw_start = (block.find("input", id="google-calendar-start") or {}).get("value", "")
             try:
-                booking_dt = datetime.strptime(raw_start, "%Y%m%dT%H%M%S")
+                booking_dt = datetime.fromisoformat(b["start_datetime"])
             except ValueError:
                 booking_dt = None
             if booking_dt is not None:
@@ -347,21 +320,21 @@ def _cancel_with_session(
                     continue
                 if target_time is not None and booking_dt.strftime("%H:%M") != target_time:
                     continue
-        cancel_link = link
+        cancel_booking_dict = b
         break
 
-    if cancel_link is None:
-        raise RuntimeError(
+    if cancel_booking_dict is None:
+        raise SlotNotFound(
             f"No upcoming booking found to cancel for {class_name} at facility {facility_id}"
         )
 
     resp = session.post(
         BASE_URL + "/api/event/cancel",
         data={
-            "eventId": cancel_link["data-event"],
-            "eventParticipantId": cancel_link["data-eventparticipant"],
-            "facilityId": cancel_link["data-facilityid"],
-            "sessionId": cancel_link["data-session"],
+            "eventId": cancel_booking_dict["event_id"],
+            "eventParticipantId": cancel_booking_dict["event_participant_id"],
+            "facilityId": cancel_booking_dict["facility_id"],
+            "sessionId": cancel_booking_dict["session_id"],
             "isLateCancellation": "false",
         },
         timeout=TIMEOUT,
@@ -384,52 +357,7 @@ def fetch_upcoming_bookings(email: str, password: str) -> list[dict]:
     if not resp.ok:
         return []
 
-    def _get_input(block, id_: str) -> str:
-        el = block.find("input", id=id_)
-        return el["value"] if el else ""
-
-    soup = BeautifulSoup(resp.text, "html.parser")
-    bookings = []
-
-    def _parse_dt(raw: str) -> str:
-        try:
-            return datetime.strptime(raw, "%Y%m%dT%H%M%S").isoformat()
-        except ValueError:
-            return raw
-
-    for block in soup.find_all("div", class_="marketplace-booked-activity"):
-        name_el = block.find("h4", class_="marketplace-booked-activity__name")
-        activity_name = name_el.get_text(strip=True) if name_el else ""
-
-        facility_el = block.find("div", class_="marketplace-booked-activity__facility")
-        facility_link = facility_el.find("a") if facility_el else None
-        facility_name = facility_link.get_text(strip=True) if facility_link else ""
-        facility_href = facility_link.get("href", "") if facility_link else ""
-        facility_slug = facility_href.removeprefix("/s/")
-
-        cancel_link = block.find("a", class_="cancel-link-event")
-        if cancel_link is None:
-            continue
-
-        street = _get_input(block, "facility-street")
-        zip_ = _get_input(block, "facility-zip")
-        city = _get_input(block, "facility-city")
-        parts = [p for p in [street, f"{zip_} {city}".strip()] if p]
-        address = ", ".join(parts)
-
-        bookings.append({
-            "activity_name": activity_name,
-            "facility_name": facility_name,
-            "facility_slug": facility_slug,
-            "start_datetime": _parse_dt(_get_input(block, "google-calendar-start")),
-            "end_datetime": _parse_dt(_get_input(block, "google-calendar-end")),
-            "address": address,
-            "event_id": cancel_link.get("data-event", ""),
-            "event_participant_id": cancel_link.get("data-eventparticipant", ""),
-            "session_id": cancel_link.get("data-session", ""),
-            "facility_id": cancel_link.get("data-facilityid", ""),
-        })
-
+    bookings = parse_upcoming_bookings(resp.text)
     return bookings
 
 
@@ -443,11 +371,11 @@ def cancel_booking_by_ids(
 ) -> None:
     """
     Storniert eine Buchung direkt über die bekannten IDs.
-    Wirft RuntimeError bei Login-Fehler oder HTTP-Fehler.
+    Wirft AuthFailed bei Login-Fehler oder PlatformError bei HTTP-Fehler.
     """
     login_result = eversports_login(email, password)
     if login_result is None:
-        raise RuntimeError("Eversports login failed")
+        raise AuthFailed("Eversports login failed")
     session: requests.Session = login_result["session"]
 
     resp = session.post(

@@ -22,7 +22,7 @@ from backend.models.booking_log import BookingLog
 from backend.models.user import User
 from backend.core.encryption import decrypt
 from backend.core.status import BookingStatus
-from backend.core.booking import book_session, cancel_booking, fetch_upcoming_bookings
+from backend.eversports import book_session, cancel_booking, fetch_upcoming_bookings
 from backend.core.schedule import compute_next_run
 from worker.email import send_booking_failure_email, send_admin_booking_failure_email, send_debug_cancel_failure_email, send_waitlist_notification
 from backend.models.push_subscription import PushSubscription

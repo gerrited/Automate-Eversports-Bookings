@@ -21,7 +21,7 @@ from bs4 import BeautifulSoup
 import requests
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from backend.core.booking import eversports_login, _resolve_facility_id as _booking_resolve_facility_id
+from backend.eversports import eversports_login, _resolve_facility_id as _booking_resolve_facility_id
 from backend.core.encryption import decrypt
 
 logger = logging.getLogger(__name__)

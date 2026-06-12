@@ -26,6 +26,12 @@ Diese Regeln müssen bei Änderungen erhalten bleiben:
 * Buchungsstatus immer über das Enum `BookingStatus` (`backend/core/status.py`) referenzieren, nie als freier String.
 * `encrypt()`/`decrypt()` (`backend/core/encryption.py`) verlangen `aad=eversports_user_id` — der Ciphertext ist an den Nutzer gebunden. Bestandsdaten ohne AAD werden per Fallback entschlüsselt und beim nächsten Login migriert.
 
+### Eversports-Zugriff
+
+* `backend/eversports/` ist der **einzige** Code, der die Eversports-Plattform berührt. Neue Plattform-Interaktionen gehören dorthin, nie in API-Handler oder den Worker.
+* Fehlertext-Klassifikation (lokalisierte Strings) ausschließlich in `backend/eversports/classify.py` — Keyword-Änderungen immer mit Test.
+* HTML-Parsing ausschließlich in `backend/eversports/parsing.py` (reine Funktionen, Contract-Fixtures in `tests/eversports/fixtures/`). `MarkupDrift` heißt: Eversports hat das Markup geändert.
+
 ### Auth
 
 * Der Refresh-Token existiert **ausschließlich** als httpOnly-Cookie (Pfad `/api/auth/refresh`). Niemals im Response-Body zurückgeben oder im `localStorage` speichern; der Refresh-Endpoint akzeptiert nur das Cookie.

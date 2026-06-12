@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from backend.api.deps import get_current_active_user
-from backend.core.booking import fetch_upcoming_bookings, cancel_booking_by_ids
+from backend.eversports import fetch_upcoming_bookings, cancel_booking_by_ids
 from backend.core.encryption import decrypt
 from backend.models.user import User
 

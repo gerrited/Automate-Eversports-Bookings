@@ -60,9 +60,9 @@ def _make_u_session():
 
 
 def test_fetch_upcoming_bookings_returns_structured_data():
-    from backend.core.booking import fetch_upcoming_bookings
+    from backend.eversports import fetch_upcoming_bookings
     session = _make_u_session()
-    with patch("backend.core.booking.eversports_login", return_value=_mock_login(session)):
+    with patch("backend.eversports.client.eversports_login", return_value=_mock_login(session)):
         result = fetch_upcoming_bookings("test@example.com", "password")
 
     assert len(result) == 1
@@ -80,20 +80,20 @@ def test_fetch_upcoming_bookings_returns_structured_data():
 
 
 def test_fetch_upcoming_bookings_returns_empty_on_login_failure():
-    from backend.core.booking import fetch_upcoming_bookings
-    with patch("backend.core.booking.eversports_login", return_value=None):
+    from backend.eversports import fetch_upcoming_bookings
+    with patch("backend.eversports.client.eversports_login", return_value=None):
         result = fetch_upcoming_bookings("test@example.com", "wrong")
     assert result == []
 
 
 def test_cancel_booking_by_ids_calls_eversports():
-    from backend.core.booking import cancel_booking_by_ids
+    from backend.eversports import cancel_booking_by_ids
     cancel_resp = MagicMock()
     cancel_resp.ok = True
     session = MagicMock()
     session.post.return_value = cancel_resp
 
-    with patch("backend.core.booking.eversports_login", return_value=_mock_login(session)):
+    with patch("backend.eversports.client.eversports_login", return_value=_mock_login(session)):
         cancel_booking_by_ids(
             email="test@example.com",
             password="pw",
@@ -114,8 +114,8 @@ def test_cancel_booking_by_ids_calls_eversports():
 
 
 def test_cancel_booking_by_ids_raises_on_login_failure():
-    from backend.core.booking import cancel_booking_by_ids
-    with patch("backend.core.booking.eversports_login", return_value=None):
+    from backend.eversports import cancel_booking_by_ids
+    with patch("backend.eversports.client.eversports_login", return_value=None):
         try:
             cancel_booking_by_ids("e", "p", "1", "2", "3", "4")
             assert False, "RuntimeError erwartet"
