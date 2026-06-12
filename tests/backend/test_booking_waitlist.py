@@ -1,6 +1,14 @@
 import pytest
 from unittest.mock import MagicMock, patch
 from backend.eversports import join_waitlist, PlatformError
+from backend.eversports import session_cache
+
+
+@pytest.fixture(autouse=True)
+def _clear_cache():
+    session_cache._cache.clear()
+    yield
+    session_cache._cache.clear()
 
 
 def test_join_waitlist_returns_id_on_success():
@@ -139,10 +147,13 @@ def test_book_session_raises_when_join_waitlist_fails(mocker):
         }
     }
 
+    # _with_login_retry wiederholt einmal bei PlatformError:
+    # 1. Versuch: cart → ausgebucht, waitlist → Fehler (PlatformError)
+    # 2. Versuch (Retry): cart → ausgebucht, waitlist → Fehler (PlatformError propagiert)
     call_count = {"n": 0}
     def fake_gql(session, op, query, variables):
         call_count["n"] += 1
-        if call_count["n"] == 1:
+        if call_count["n"] % 2 == 1:
             return cart_response
         return waitlist_error_response
 
