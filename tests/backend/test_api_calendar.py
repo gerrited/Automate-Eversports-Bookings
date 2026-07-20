@@ -81,7 +81,13 @@ def test_ics_feed_valid_token(client, db_session):
     assert "Yoga" in body
     assert "Sport XY" in body
     assert "evt-abc@eversports-bookings" in body
-    assert "20260609T090000" in body
+    # Eversports liefert naive Berliner Lokalzeit (09:00). Kalender-Clients
+    # interpretieren eine zeitzonenlose DATE-TIME als UTC -> Anzeige verschoben.
+    # Darum als UTC mit Z-Suffix ausgeben: 09:00 CEST = 07:00 UTC.
+    assert "DTSTART:20260609T070000Z" in body
+    assert "DTEND:20260609T080000Z" in body
+    # keine zeitzonenlose floating time mehr
+    assert "DTSTART:20260609T090000\r\n" not in body
 
 
 def test_ics_feed_invalid_token(client, db_session):

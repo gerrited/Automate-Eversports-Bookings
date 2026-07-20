@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
@@ -53,11 +54,19 @@ def _escape_ics_text(text: str) -> str:
     return text.replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", "\\n")
 
 
+_BERLIN = ZoneInfo("Europe/Berlin")
+
+
 def _format_ics_dt(iso_str: str) -> str:
+    """Eversports liefert naive Berliner Lokalzeit. Als UTC mit Z ausgeben,
+    damit Kalender-Clients eine zeitzonenlose DATE-TIME nicht als UTC fehldeuten."""
     try:
-        return datetime.fromisoformat(iso_str).strftime("%Y%m%dT%H%M%S")
+        dt = datetime.fromisoformat(iso_str)
     except (ValueError, TypeError):
         return ""
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=_BERLIN)
+    return dt.astimezone(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
 
 def _generate_ics(bookings: list[dict]) -> str:
