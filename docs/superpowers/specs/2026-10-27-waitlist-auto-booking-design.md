@@ -35,6 +35,7 @@ Diese Umgebung erreicht `eversports.de` nicht. Deshalb gibt es vor der Umsetzung
 | S3 | Welcher Fehlertext kommt, wenn die Buchung geschlossen ist (Buchungsschluss vor Kursbeginn)? | neues `CartOutcome.BOOKING_CLOSED` in `classify.py` |
 | S4 | Zeigt das Kalender-HTML (`/api/eventsession/calendar`) freie Plätze bzw. „ausgebucht“ an? | billige Verfügbarkeitsprüfung ohne Cart-Mutation (Optimierung, Phase 2) |
 | S5 | Erscheinen Wartelisten-Einträge auf `/u`, und mit welchem Markup? Wie heißt die Mutation zum Verlassen der Warteliste? | manuell (in der App) gesetzte Wartelisten-Einträge erkennen, Warteliste verlassen (Phase 2) |
+| S6 | Nutzt die Eversports-Website einen Echtzeit-Kanal (WebSocket, GraphQL-Subscription, Server-Sent Events) oder eine Benachrichtigungs-Liste, die „Platz frei“ meldet? Im HAR bzw. in den DevTools nach `ws://`/`wss://`-Verbindungen, `subscription`-Operationen und Notification-Queries suchen, während ein Platz frei wird. | Würde das Polling durch ein Event ersetzen. Öffentliche Webhooks gibt es laut Recherche nicht, der App-Push (an registrierte Geräte) ist für das Backend nicht abonnierbar. |
 
 Die Ergebnisse von S3 bis S5 werden als Contract-Fixtures in `tests/eversports/fixtures/` abgelegt.
 
@@ -147,7 +148,7 @@ Die Windhund-Vergabe macht das zur wichtigsten Stellschraube.
 5. k8s-CronJob `eversports-waitlist`.
 6. API-Felder und -Endpunkte, E-Mail und Push.
 7. Frontend.
-8. Phase 2: Verfügbarkeit aus dem Kalender-HTML (S4), manuelle Wartelisten-Einträge von `/u` erkennen (S5).
+8. Phase 2: Verfügbarkeit aus dem Kalender-HTML (S4), manuelle Wartelisten-Einträge von `/u` erkennen (S5), Polling durch einen Echtzeit-Kanal ersetzen, falls S6 einen findet.
 
 ## Risiken
 
