@@ -1,3 +1,4 @@
+import pytest
 from unittest.mock import MagicMock, patch
 
 from fastapi.testclient import TestClient
@@ -5,6 +6,14 @@ from fastapi.testclient import TestClient
 from backend.api.deps import get_current_active_user
 from backend.main import app
 from backend.models.user import User
+from backend.eversports import session_cache
+
+
+@pytest.fixture(autouse=True)
+def _clear_cache():
+    session_cache._cache.clear()
+    yield
+    session_cache._cache.clear()
 
 _fake_user = MagicMock(spec=User)
 _fake_user.id = "test-user-id"

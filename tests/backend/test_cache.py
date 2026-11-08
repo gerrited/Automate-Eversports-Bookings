@@ -25,6 +25,13 @@ def test_set_ueberschreibt_und_verlaengert():
     assert cache.get("k", now=205.0) == "neu"
 
 
+def test_delete_entfernt_einen_eintrag():
+    cache = TTLCache(ttl_seconds=60)
+    cache.set("k", "wert", now=100.0)
+    cache.delete("k")
+    assert cache.get("k", now=101.0) is None
+
+
 def test_clear_entfernt_alle_eintraege():
     cache = TTLCache(ttl_seconds=60)
     cache.set("k", "wert", now=100.0)

@@ -29,6 +29,11 @@ class TTLCache:
         with self._lock:
             self._entries[key] = (now + self.ttl_seconds, value)
 
+    def delete(self, key: str) -> None:
+        """Entfernt einen Eintrag aus dem Cache."""
+        with self._lock:
+            self._entries.pop(key, None)
+
     def clear(self) -> None:
         with self._lock:
             self._entries.clear()
