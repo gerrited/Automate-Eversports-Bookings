@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { clearToken } from '../api/client'
+import { clearToken, isActualAdmin } from '../api/client'
 import { deleteAccount, getMe, updateAccount } from '../api/account'
+import { createCheckoutSession } from '../api/stripe'
 import { Button, Input, ModalShell } from './ui'
 import CalendarSubscriptionBlock from './CalendarSubscriptionBlock'
 
@@ -27,6 +28,7 @@ function ChevronIcon({ open }: { open: boolean }) {
 
 export default function SettingsModal({ onClose }: Props) {
   const navigate = useNavigate()
+  const isAdmin = isActualAdmin()
   const [openGroup, setOpenGroup] = useState<Group>('termine')
 
   const [confirmText, setConfirmText] = useState('')
@@ -37,11 +39,19 @@ export default function SettingsModal({ onClose }: Props) {
   const [saveLoading, setSaveLoading] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saveSuccess, setSaveSuccess] = useState(false)
+  const [subscriptionActive, setSubscriptionActive] = useState<boolean | null>(null)
+  const [checkoutLoading, setCheckoutLoading] = useState(false)
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
   const notificationsSupported =
     typeof Notification !== 'undefined' && 'serviceWorker' in navigator
 
   useEffect(() => {
-    getMe().then((me) => setAdvanceMinutes(me.notification_advance_minutes)).catch(() => {})
+    getMe()
+      .then((me) => {
+        setAdvanceMinutes(me.notification_advance_minutes)
+        setSubscriptionActive(me.subscription_active)
+      })
+      .catch(() => setSubscriptionActive(false))
   }, [])
 
   async function handleSave() {
@@ -72,6 +82,18 @@ export default function SettingsModal({ onClose }: Props) {
     }
   }
 
+  async function handleCheckout() {
+    setCheckoutLoading(true)
+    setCheckoutError(null)
+    try {
+      const data = await createCheckoutSession()
+      window.location.href = data.url
+    } catch (err) {
+      setCheckoutError(err instanceof Error ? err.message : 'Fehler beim Starten des Checkouts.')
+      setCheckoutLoading(false)
+    }
+  }
+
   return (
     <ModalShell>
       <div className="flex justify-between items-center mb-5">
@@ -84,6 +106,26 @@ export default function SettingsModal({ onClose }: Props) {
           ✕
         </button>
       </div>
+
+        {isAdmin && (
+          <div className="border-t border-slate-700 py-5">
+            <h3 className="text-white font-semibold mb-3">Abonnement</h3>
+            <Button
+              variant="primary"
+              loading={checkoutLoading}
+              disabled={subscriptionActive !== false}
+              fullWidth
+              onClick={handleCheckout}
+            >
+              {checkoutLoading
+                ? 'Wird vorbereitet…'
+                : subscriptionActive
+                ? 'Abo bereits aktiv'
+                : 'Abo kaufen'}
+            </Button>
+            {checkoutError && <p className="text-red-400 text-sm mt-2">{checkoutError}</p>}
+          </div>
+        )}
 
         {/* Gruppe: Termine */}
         <div className="border-t border-slate-700">

@@ -7,6 +7,10 @@ vi.mock('../api/account', () => ({
   deleteAccount: vi.fn(),
 }))
 
+vi.mock('../api/stripe', () => ({
+  createCheckoutSession: vi.fn(),
+}))
+
 vi.mock('../api/jobs', () => ({
   listJobs: vi.fn(),
   createJob: vi.fn(),

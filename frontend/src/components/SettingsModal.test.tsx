@@ -5,11 +5,17 @@ import { MemoryRouter } from 'react-router-dom'
 vi.mock('../api/account', () => ({
   deleteAccount: vi.fn(),
   getMe: vi.fn().mockResolvedValue({
+    email: 'user@example.com',
+    role: 'user',
+    subscription_active: false,
     total_bookings_executed: 0,
     max_active_jobs: null,
     notification_advance_minutes: 60,
   }),
   updateAccount: vi.fn().mockResolvedValue({
+    email: 'user@example.com',
+    role: 'user',
+    subscription_active: false,
     total_bookings_executed: 0,
     max_active_jobs: null,
     notification_advance_minutes: 30,
@@ -17,6 +23,10 @@ vi.mock('../api/account', () => ({
 }))
 vi.mock('../api/client', () => ({
   clearToken: vi.fn(),
+  isActualAdmin: vi.fn(),
+}))
+vi.mock('../api/stripe', () => ({
+  createCheckoutSession: vi.fn(),
 }))
 vi.mock('../api/calendar', () => ({
   getCalendarToken: vi.fn().mockResolvedValue({ token: 'test-token' }),
@@ -24,8 +34,9 @@ vi.mock('../api/calendar', () => ({
 }))
 
 import SettingsModal from './SettingsModal'
-import { deleteAccount } from '../api/account'
-import { clearToken } from '../api/client'
+import { deleteAccount, getMe } from '../api/account'
+import { clearToken, isActualAdmin } from '../api/client'
+import { createCheckoutSession } from '../api/stripe'
 
 const mockNavigate = vi.fn()
 vi.mock('react-router-dom', async () => {
@@ -84,6 +95,11 @@ beforeAll(() => {
 
 afterEach(() => {
   vi.clearAllMocks()
+})
+
+const originalLocation = window.location
+afterAll(() => {
+  Object.defineProperty(window, 'location', { value: originalLocation, writable: true })
 })
 
 describe('SettingsModal', () => {
@@ -149,12 +165,14 @@ describe('SettingsModal', () => {
   })
 
   it('delete button is disabled when input is empty', () => {
+    vi.mocked(isActualAdmin).mockReturnValue(false)
     renderModal()
     openKontoGroup()
     expect(deleteButton()).toBeDisabled()
   })
 
   it('delete button is disabled when input is wrong', () => {
+    vi.mocked(isActualAdmin).mockReturnValue(false)
     renderModal()
     openKontoGroup()
     fireEvent.change(screen.getByPlaceholderText('DELETE'), { target: { value: 'delete' } })
@@ -162,6 +180,7 @@ describe('SettingsModal', () => {
   })
 
   it('delete button is enabled when DELETE is typed exactly', () => {
+    vi.mocked(isActualAdmin).mockReturnValue(false)
     renderModal()
     openKontoGroup()
     fireEvent.change(screen.getByPlaceholderText('DELETE'), { target: { value: 'DELETE' } })
@@ -169,6 +188,7 @@ describe('SettingsModal', () => {
   })
 
   it('calls deleteAccount, clearToken, and navigates to / on success', async () => {
+    vi.mocked(isActualAdmin).mockReturnValue(false)
     vi.mocked(deleteAccount).mockResolvedValue(undefined)
     renderModal()
     openKontoGroup()
@@ -182,6 +202,7 @@ describe('SettingsModal', () => {
   })
 
   it('shows error message when deleteAccount fails', async () => {
+    vi.mocked(isActualAdmin).mockReturnValue(false)
     vi.mocked(deleteAccount).mockRejectedValue(new Error('Serverfehler'))
     renderModal()
     openKontoGroup()
@@ -193,6 +214,7 @@ describe('SettingsModal', () => {
   })
 
   it('calls onClose when the X button is clicked', () => {
+    vi.mocked(isActualAdmin).mockReturnValue(false)
     const onClose = vi.fn()
     renderModal(onClose)
     fireEvent.click(screen.getByLabelText('Schließen'))
@@ -216,5 +238,81 @@ describe('SettingsModal', () => {
     await waitFor(() => {
       expect(updateAccount).toHaveBeenCalledWith({ notification_advance_minutes: 30 })
     })
+  })
+})
+
+describe('SettingsModal — Abo-Sektion', () => {
+  it('zeigt keine Abo-Sektion für Nicht-Admins', () => {
+    vi.mocked(isActualAdmin).mockReturnValue(false)
+    renderModal()
+    expect(screen.queryByRole('heading', { name: 'Abonnement' })).not.toBeInTheDocument()
+  })
+
+  it('zeigt Abo-Sektion für Admins', async () => {
+    vi.mocked(isActualAdmin).mockReturnValue(true)
+    vi.mocked(getMe).mockResolvedValue({ email: 'admin@example.com', role: 'admin', subscription_active: false, total_bookings_executed: 0, max_active_jobs: null, notification_advance_minutes: 60 })
+    renderModal()
+    expect(await screen.findByRole('heading', { name: 'Abonnement' })).toBeInTheDocument()
+  })
+
+  it('Button deaktiviert wenn Abo aktiv', async () => {
+    vi.mocked(isActualAdmin).mockReturnValue(true)
+    vi.mocked(getMe).mockResolvedValue({ email: 'admin@example.com', role: 'admin', subscription_active: true, total_bookings_executed: 5, max_active_jobs: null, notification_advance_minutes: 60 })
+    renderModal()
+    const btn = await screen.findByRole('button', { name: /abo bereits aktiv/i })
+    expect(btn).toBeDisabled()
+  })
+
+  it('Button aktiv wenn kein Abo', async () => {
+    vi.mocked(isActualAdmin).mockReturnValue(true)
+    vi.mocked(getMe).mockResolvedValue({ email: 'admin@example.com', role: 'admin', subscription_active: false, total_bookings_executed: 0, max_active_jobs: null, notification_advance_minutes: 60 })
+    renderModal()
+    const btn = await screen.findByRole('button', { name: /abo kaufen/i })
+    expect(btn).not.toBeDisabled()
+  })
+
+  it('Button aktiv wenn getMe fehlschlägt (Fallback)', async () => {
+    vi.mocked(isActualAdmin).mockReturnValue(true)
+    vi.mocked(getMe).mockRejectedValue(new Error('Netzwerkfehler'))
+    renderModal()
+    const btn = await screen.findByRole('button', { name: /abo kaufen/i })
+    expect(btn).not.toBeDisabled()
+  })
+
+  it('leitet nach Checkout-URL weiter', async () => {
+    vi.mocked(isActualAdmin).mockReturnValue(true)
+    vi.mocked(getMe).mockResolvedValue({ email: 'admin@example.com', role: 'admin', subscription_active: false, total_bookings_executed: 0, max_active_jobs: null, notification_advance_minutes: 60 })
+    vi.mocked(createCheckoutSession).mockResolvedValue({ url: 'https://checkout.stripe.com/pay/test' })
+    delete (window as any).location
+    ;(window as any).location = { href: '' }
+    renderModal()
+    const btn = await screen.findByRole('button', { name: /abo kaufen/i })
+    fireEvent.click(btn)
+    await waitFor(() => {
+      expect(window.location.href).toBe('https://checkout.stripe.com/pay/test')
+    })
+  })
+
+  it('zeigt Ladetext während Checkout vorbereitet wird', async () => {
+    vi.mocked(isActualAdmin).mockReturnValue(true)
+    vi.mocked(getMe).mockResolvedValue({ email: 'admin@example.com', role: 'admin', subscription_active: false, total_bookings_executed: 0, max_active_jobs: null, notification_advance_minutes: 60 })
+    let resolveCheckout!: (value: { url: string }) => void
+    vi.mocked(createCheckoutSession).mockReturnValue(new Promise(res => { resolveCheckout = res }))
+    renderModal()
+    const btn = await screen.findByRole('button', { name: /abo kaufen/i })
+    fireEvent.click(btn)
+    expect(await screen.findByRole('button', { name: /wird vorbereitet/i })).toBeDisabled()
+    resolveCheckout({ url: 'https://checkout.stripe.com/pay/test' })
+  })
+
+  it('zeigt Fehlermeldung bei Checkout-Fehler', async () => {
+    vi.mocked(isActualAdmin).mockReturnValue(true)
+    vi.mocked(getMe).mockResolvedValue({ email: 'admin@example.com', role: 'admin', subscription_active: false, total_bookings_executed: 0, max_active_jobs: null, notification_advance_minutes: 60 })
+    vi.mocked(createCheckoutSession).mockRejectedValue(new Error('Stripe nicht erreichbar'))
+    renderModal()
+    const btn = await screen.findByRole('button', { name: /abo kaufen/i })
+    fireEvent.click(btn)
+    expect(await screen.findByText('Stripe nicht erreichbar')).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /abo kaufen/i })).not.toBeDisabled()
   })
 })

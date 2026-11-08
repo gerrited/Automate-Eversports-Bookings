@@ -16,6 +16,7 @@ class User(Base):
     role = Column(String, default="user", nullable=False)
     max_active_jobs = Column(Integer, nullable=True)
     total_bookings_executed = Column(Integer, default=0, nullable=False)
+    stripe_customer_id = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     notification_advance_minutes = Column(Integer, nullable=False, server_default="60", default=60)
     calendar_token = Column(String, unique=True, nullable=True)
