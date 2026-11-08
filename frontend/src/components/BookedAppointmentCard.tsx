@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { BookedAppointment } from '../types'
+import { Button } from './ui'
 
 interface Props {
   booking: BookedAppointment
@@ -41,13 +42,16 @@ export default function BookedAppointmentCard({ booking, onCancel }: Props) {
       </div>
 
       <div className="flex items-center gap-2 px-4 pb-3 pt-3">
-        <button
-          onClick={handleCancel}
-          disabled={cancelling}
-          className="px-3 py-1 rounded-md bg-red-900 hover:bg-red-700 text-red-300 text-sm transition-colors ml-auto disabled:opacity-50"
-        >
-          {cancelling ? 'Wird storniert…' : 'Stornieren'}
-        </button>
+        <div className="ml-auto">
+          <Button
+            variant="danger"
+            size="sm"
+            loading={cancelling}
+            onClick={handleCancel}
+          >
+            Stornieren
+          </Button>
+        </div>
       </div>
 
       {error && (

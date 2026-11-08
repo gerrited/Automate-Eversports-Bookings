@@ -1,21 +1,27 @@
 from __future__ import annotations
 
-from datetime import date, timedelta
+import logging
+import time
+from datetime import date, datetime, timedelta, timezone
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from backend.api.deps import get_current_active_user
-from backend.core.booking import book_session, cancel_booking
+from backend.eversports import book_session, _cancel_with_session, eversports_login
 from backend.core.encryption import decrypt
+from backend.core.schedule import compute_next_run
+from backend.core.status import BookingStatus
 from backend.db import get_db
 from backend.models.booking_job import BookingJob
 from backend.models.booking_log import BookingLog
 from backend.models.user import User
 from backend.schemas.job import JobCreate, JobUpdate, JobResponse
 from backend.schemas.log import LogResponse
+
+log = logging.getLogger(__name__)
 
 
 def _find_duplicate(
@@ -75,6 +81,30 @@ class ExecuteJobResponse(BaseModel):
     message: str
 
 
+_DEBUG_CANCEL_DELAY = 15  # seconds — Eversports needs time to reflect booking on /u
+
+
+def _run_debug_cancel(
+    job_id: str, email: str, password: str, class_name: str, facility_id: str,
+    target_date: date, target_time: str,
+) -> None:
+    time.sleep(_DEBUG_CANCEL_DELAY)
+    try:
+        login_result = eversports_login(email, password)
+        if login_result is None:
+            raise RuntimeError("Eversports login failed")
+        _cancel_with_session(
+            session=login_result["session"],
+            class_name=class_name,
+            facility_id=facility_id,
+            target_date=target_date,
+            target_time=target_time,
+        )
+        log.info("Job %s: debug booking cancelled", job_id)
+    except Exception as cancel_exc:
+        log.error("Job %s: debug cancel failed — %s", job_id, cancel_exc)
+
+
 router = APIRouter()
 
 
@@ -96,6 +126,9 @@ def create_job(
         raise HTTPException(status_code=409, detail="Ein identischer Job existiert bereits.")
     _check_job_limit(current_user, db)
     job = BookingJob(**body.model_dump(), user_id=current_user.id)
+    job.next_run_at = compute_next_run(
+        job.weekday, job.target_time, job.days_in_advance, after=datetime.now(timezone.utc)
+    )
     db.add(job)
     db.commit()
     db.refresh(job)
@@ -113,8 +146,13 @@ def update_job(
     updated = {**{f: getattr(job, f) for f in ("weekday", "target_time", "facility_id", "class_name")}, **body.model_dump(exclude_unset=True)}
     if _find_duplicate(current_user.id, updated["weekday"], updated["target_time"], updated["facility_id"], updated["class_name"], db, exclude_id=job_id):
         raise HTTPException(status_code=409, detail="Ein identischer Job existiert bereits.")
-    for field, value in body.model_dump(exclude_unset=True).items():
+    changes = body.model_dump(exclude_unset=True)
+    for field, value in changes.items():
         setattr(job, field, value)
+    if {"weekday", "target_time", "days_in_advance"} & changes.keys():
+        job.next_run_at = compute_next_run(
+            job.weekday, job.target_time, job.days_in_advance, after=datetime.now(timezone.utc)
+        )
     db.commit()
     db.refresh(job)
     return job
@@ -129,6 +167,10 @@ def toggle_job(
     job = _get_owned_job(job_id, current_user, db)
     if not job.enabled:
         _check_job_limit(current_user, db)
+        # Beim Reaktivieren neu planen — kein Nachhol-Lauf aus der Deaktivierungs-Zeit
+        job.next_run_at = compute_next_run(
+            job.weekday, job.target_time, job.days_in_advance, after=datetime.now(timezone.utc)
+        )
     job.enabled = not job.enabled
     db.commit()
     db.refresh(job)
@@ -165,13 +207,14 @@ def get_job_logs(
 @router.post("/jobs/{job_id}/execute", response_model=ExecuteJobResponse)
 def execute_job(
     job_id: str,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
     job = _get_owned_job(job_id, current_user, db)
     target_date = _next_weekday(job.weekday)
 
-    password = decrypt(current_user.encrypted_password)
+    password = decrypt(current_user.encrypted_password, aad=current_user.eversports_user_id)
 
     try:
         result = book_session(
@@ -186,23 +229,25 @@ def execute_job(
         status = result["status"]
         message = str(target_date)
 
-        if status == "success" and result.get("event_type") and job.event_type != result["event_type"]:
+        if status == BookingStatus.SUCCESS and result.get("event_type") and job.event_type != result["event_type"]:
             job.event_type = result["event_type"]
 
-        if status == "success" and job.debug:
-            try:
-                cancel_booking(
-                    email=current_user.email,
-                    password=password,
-                    class_name=job.class_name,
-                    facility_id=job.facility_id,
-                )
-                message = f"[DEBUG] gebucht und storniert für {target_date}"
-            except Exception as cancel_exc:
-                message = f"[DEBUG] gebucht, Stornierung fehlgeschlagen: {cancel_exc}"
+        if status == BookingStatus.SUCCESS and job.debug:
+            background_tasks.add_task(
+                _run_debug_cancel,
+                job_id=job.id,
+                email=current_user.email,
+                password=password,
+                class_name=job.class_name,
+                facility_id=job.facility_id,
+                target_date=target_date,
+                target_time=job.target_time.strftime("%H:%M"),
+            )
+            message = f"[DEBUG] gebucht für {target_date}, Stornierung läuft..."
+            log.info("Job %s: debug cancel scheduled", job.id)
 
     except Exception as exc:
-        status = "failed"
+        status = BookingStatus.FAILED
         message = str(exc)
 
     db.add(BookingLog(job_id=job.id, target_date=target_date, status=status, message=message))

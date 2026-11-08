@@ -19,6 +19,11 @@ spec:
           image: ghcr.io/gerrited/automate-eversports-bookings-frontend:latest
           ports:
             - containerPort: 80
+          env:
+            - name: NOTICE_PUBLIC_GIST_URL
+              value: ""
+            - name: NOTICE_USERS_GIST_URL
+              value: ""
           resources:
             requests:
               cpu: 100m

@@ -1,6 +1,6 @@
 const BASE = import.meta.env.VITE_API_BASE_URL ?? ''
 
-function getToken(): string | null {
+export function getToken(): string | null {
   return localStorage.getItem('token')
 }
 
@@ -34,6 +34,8 @@ export function isActualAdmin(): boolean {
 
 export function clearToken(): void {
   localStorage.removeItem('token')
+  // Aufräumen: Refresh-Tokens älterer Versionen, die noch im localStorage liegen
+  localStorage.removeItem('refresh_token')
   localStorage.removeItem('email')
   localStorage.removeItem('role')
   localStorage.removeItem('avatarUrl')
@@ -58,6 +60,28 @@ export function getAvatarUrl(): string | null {
   return localStorage.getItem('avatarUrl')
 }
 
+async function _throwResponseError(resp: Response, fallback: string): Promise<never> {
+  const body = await resp.json().catch(() => ({}))
+  throw new Error((body as { detail?: string }).detail ?? fallback)
+}
+
+async function _refreshAccessToken(): Promise<string | null> {
+  // Der Refresh-Token liegt ausschließlich im httpOnly-Cookie
+  const resp = await fetch(`${BASE}/api/auth/refresh`, {
+    method: 'POST',
+    credentials: 'include',
+  })
+  if (!resp.ok) return null
+  const data = await resp.json()
+  setToken(data.access_token)
+  return data.access_token
+}
+
+export async function refreshAccessToken(): Promise<boolean> {
+  const token = await _refreshAccessToken()
+  return token !== null
+}
+
 export async function apiFetch<T>(
   path: string,
   options: RequestInit = {}
@@ -69,17 +93,30 @@ export async function apiFetch<T>(
   }
   if (token) headers['Authorization'] = `Bearer ${token}`
 
-  const resp = await fetch(`${BASE}${path}`, { ...options, headers })
+  const resp = await fetch(`${BASE}${path}`, { ...options, headers, credentials: 'include' })
 
-  if (resp.status === 401) {
+  if (resp.status === 401 && getToken()) {
+    const newToken = await _refreshAccessToken()
+    if (newToken) {
+      const retryHeaders = { ...headers, 'Authorization': `Bearer ${newToken}` }
+      const retryResp = await fetch(`${BASE}${path}`, { ...options, headers: retryHeaders, credentials: 'include' })
+      if (retryResp.status === 204) return undefined as T
+      if (!retryResp.ok) {
+        return _throwResponseError(retryResp, `HTTP ${retryResp.status}`)
+      }
+      return retryResp.json()
+    }
     clearToken()
     window.location.href = '/'
-    throw new Error('Unauthorized')
+    throw new Error('Session expired')
+  }
+
+  if (resp.status === 401) {
+    return _throwResponseError(resp, 'Unauthorized')
   }
 
   if (!resp.ok) {
-    const body = await resp.json().catch(() => ({}))
-    throw new Error(body.detail ?? `HTTP ${resp.status}`)
+    return _throwResponseError(resp, `HTTP ${resp.status}`)
   }
 
   if (resp.status === 204) return undefined as T

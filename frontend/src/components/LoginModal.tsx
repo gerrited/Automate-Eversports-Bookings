@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { login } from '../api/auth'
+import { Button, Input, ModalShell } from './ui'
 
 interface Props {
   onClose: () => void
@@ -35,63 +36,46 @@ export default function LoginModal({ onClose }: Props) {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60"
-      data-testid="login-modal-backdrop"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-sm"
-        onClick={e => e.stopPropagation()}
+    <ModalShell onBackdropClick={onClose} maxWidth="sm" testId="login-modal-backdrop">
+      <button
+        type="button"
+        aria-label="Schließen"
+        onClick={onClose}
+        className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
       >
-        <div className="relative bg-surface-card rounded-xl p-8 flex flex-col gap-4">
-          <button
-            type="button"
-            aria-label="Schließen"
-            onClick={onClose}
-            className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
-          >
-            ✕
-          </button>
+        ✕
+      </button>
 
-          <div className="flex justify-center mb-2">
-            <img src="/logo.png" alt="Logo" className="h-12 w-auto" />
-          </div>
-
-          <p className="text-slate-400 text-sm text-center">
-            Nutze deine Eversports Anmeldedaten, um fortzufahren.
-          </p>
-
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <input
-              type="email"
-              placeholder="E-Mail"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              className="bg-surface-input text-white rounded-lg px-4 py-3 outline-hidden focus:ring-2 focus:ring-brand [&:-webkit-autofill]:[-webkit-box-shadow:0_0_0_1000px_var(--color-surface-input)_inset] [&:-webkit-autofill]:[-webkit-text-fill-color:white]"
-            />
-            <input
-              type="password"
-              placeholder="Passwort"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              className="bg-surface-input text-white rounded-lg px-4 py-3 outline-hidden focus:ring-2 focus:ring-brand [&:-webkit-autofill]:[-webkit-box-shadow:0_0_0_1000px_var(--color-surface-input)_inset] [&:-webkit-autofill]:[-webkit-text-fill-color:white]"
-            />
-            {error && (
-              <p role="alert" className="text-red-400 text-sm">{error}</p>
-            )}
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-brand hover:bg-brand-hover disabled:opacity-50 text-white font-semibold rounded-lg py-3 transition-colors"
-            >
-              {loading ? 'Anmelden…' : 'Anmelden'}
-            </button>
-          </form>
-        </div>
+      <div className="flex justify-center mb-4 mt-2">
+        <img src="/logo.png" alt="Logo" className="h-12 w-auto" />
       </div>
-    </div>
+
+      <p className="text-slate-400 text-sm text-center mb-4">
+        Nutze deine Eversports Anmeldedaten, um fortzufahren.
+      </p>
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <Input
+          type="email"
+          placeholder="E-Mail"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          required
+        />
+        <Input
+          type="password"
+          placeholder="Passwort"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          required
+        />
+        {error && (
+          <p role="alert" className="text-red-400 text-sm">{error}</p>
+        )}
+        <Button variant="primary" type="submit" loading={loading} fullWidth>
+          Anmelden
+        </Button>
+      </form>
+    </ModalShell>
   )
 }

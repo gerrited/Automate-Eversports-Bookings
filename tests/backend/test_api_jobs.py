@@ -200,7 +200,6 @@ def test_execute_job_booking_error(client, db_session):
 
 def test_execute_job_debug_mode_cancels_booking(client, db_session):
     user = _create_user(db_session)
-    # Job mit debug=True erstellen
     resp = client.post(
         "/api/jobs",
         json={
@@ -212,15 +211,51 @@ def test_execute_job_debug_mode_cancels_booking(client, db_session):
     )
     job_id = resp.json()["id"]
 
-    with patch("backend.api.jobs.book_session", return_value={"status": "success", "order_id": "ord-1", "event_type": "class"}), \
+    from unittest.mock import MagicMock
+    mock_session = MagicMock()
+    with patch("backend.api.jobs.book_session", return_value={"status": "success", "order_id": "ord-1", "event_type": "class", "_session": None}), \
          patch("backend.api.jobs.decrypt", return_value="password123"), \
-         patch("backend.api.jobs.cancel_booking") as mock_cancel:
+         patch("backend.api.jobs.time.sleep"), \
+         patch("backend.api.jobs.eversports_login", return_value={"session": mock_session, "user_id": "u1", "avatar_url": None}), \
+         patch("backend.api.jobs._cancel_with_session") as mock_cancel:
         resp = client.post(f"/api/jobs/{job_id}/execute", headers=_auth_header(user.id))
 
     assert resp.status_code == 200
     assert resp.json()["status"] == "success"
     assert "[DEBUG]" in resp.json()["message"]
-    mock_cancel.assert_called_once()
+    assert mock_cancel.call_count == 1
+    call_kwargs = mock_cancel.call_args.kwargs
+    assert call_kwargs["session"] is mock_session
+    assert call_kwargs["class_name"] == "CrossFit"
+    assert call_kwargs["facility_id"] == "73041"
+    assert call_kwargs["target_date"] is not None
+    assert call_kwargs["target_time"] == "18:00"
+
+
+def test_execute_job_debug_cancel_failure(client, db_session):
+    user = _create_user(db_session)
+    resp = client.post(
+        "/api/jobs",
+        json={
+            "weekday": 1, "target_time": "18:00:00", "facility_id": "73041",
+            "facility_name": "CrossFit Rabbit Hole", "class_name": "CrossFit",
+            "days_in_advance": 4, "debug": True,
+        },
+        headers=_auth_header(user.id),
+    )
+    job_id = resp.json()["id"]
+
+    from unittest.mock import MagicMock
+    with patch("backend.api.jobs.book_session", return_value={"status": "success", "order_id": "ord-1", "event_type": "class", "_session": None}), \
+         patch("backend.api.jobs.decrypt", return_value="password123"), \
+         patch("backend.api.jobs.time.sleep"), \
+         patch("backend.api.jobs.eversports_login", return_value={"session": MagicMock(), "user_id": "u1", "avatar_url": None}), \
+         patch("backend.api.jobs._cancel_with_session", side_effect=RuntimeError("No upcoming booking found")):
+        resp = client.post(f"/api/jobs/{job_id}/execute", headers=_auth_header(user.id))
+
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "success"
+    assert "[DEBUG]" in resp.json()["message"]
 
 
 def test_execute_job_forbidden_for_other_user(client, db_session):
@@ -351,3 +386,66 @@ def test_toggle_job_disable_ignores_limit(client, db_session):
     resp = client.patch(f"/api/jobs/{job_id}/toggle", headers=_auth_header(user.id))
     assert resp.status_code == 200
     assert resp.json()["enabled"] is False
+
+
+# --- next_run_at ---
+
+def _parse_next_run(body: dict):
+    from datetime import datetime, timezone
+    raw = body["next_run_at"]
+    assert raw is not None
+    dt = datetime.fromisoformat(raw)
+    return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt
+
+
+def test_create_job_setzt_next_run_at(client, db_session):
+    from datetime import datetime, timedelta, timezone
+    from zoneinfo import ZoneInfo
+
+    user = _create_user(db_session)
+    resp = client.post(
+        "/api/jobs",
+        json={"weekday": 1, "target_time": "18:00:00", "facility_id": "73041",
+              "facility_name": "X", "class_name": "CrossFit", "days_in_advance": 4},
+        headers=_auth_header(user.id),
+    )
+    assert resp.status_code == 201
+    next_run = _parse_next_run(resp.json())
+    assert next_run > datetime.now(timezone.utc)
+    # Lauftag + Vorlauf ergibt den gewünschten Kurstag, Lauf um 18:00 Berlin
+    run_berlin = next_run.astimezone(ZoneInfo("Europe/Berlin"))
+    assert (run_berlin.date() + timedelta(days=4)).weekday() == 1
+    assert run_berlin.strftime("%H:%M") == "18:00"
+
+
+def test_update_job_berechnet_next_run_at_neu(client, db_session):
+    from zoneinfo import ZoneInfo
+
+    user = _create_user(db_session)
+    job_id = _create_job(client, user.id)
+
+    resp = client.put(f"/api/jobs/{job_id}", json={"target_time": "07:00:00"}, headers=_auth_header(user.id))
+    assert resp.status_code == 200
+    next_run = _parse_next_run(resp.json())
+    assert next_run.astimezone(ZoneInfo("Europe/Berlin")).strftime("%H:%M") == "07:00"
+
+
+def test_toggle_on_berechnet_next_run_at_neu(client, db_session):
+    from datetime import datetime, timezone
+
+    from backend.models.booking_job import BookingJob
+
+    user = _create_user(db_session)
+    job_id = _create_job(client, user.id)
+
+    # Während der Job deaktiviert war, ist sein Termin verstrichen
+    client.patch(f"/api/jobs/{job_id}/toggle", headers=_auth_header(user.id))  # off
+    job = db_session.query(BookingJob).filter(BookingJob.id == job_id).first()
+    job.next_run_at = datetime(2020, 1, 3, 17, 0, tzinfo=timezone.utc)
+    db_session.commit()
+
+    resp = client.patch(f"/api/jobs/{job_id}/toggle", headers=_auth_header(user.id))  # on
+    assert resp.status_code == 200
+    next_run = _parse_next_run(resp.json())
+    # kein Nachhol-Lauf aus der Deaktivierungs-Zeit: Termin liegt in der Zukunft
+    assert next_run > datetime.now(timezone.utc)

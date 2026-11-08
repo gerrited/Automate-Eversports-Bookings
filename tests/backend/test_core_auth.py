@@ -1,5 +1,15 @@
-from backend.core.auth import create_access_token, verify_token, JWTError
+import jwt
+import os
+
 import pytest
+
+from backend.core.auth import (
+    create_access_token,
+    create_refresh_token,
+    verify_token,
+    verify_refresh_token,
+    JWTError,
+)
 
 
 def test_create_and_verify_token():
@@ -18,3 +28,32 @@ def test_verify_tampered_token_raises():
     tampered = token[:-5] + "XXXXX"
     with pytest.raises(JWTError):
         verify_token(tampered)
+
+
+def test_access_token_has_type_claim():
+    token = create_access_token("user-1")
+    payload = jwt.decode(token, os.environ["JWT_SECRET"], algorithms=["HS256"])
+    assert payload["type"] == "access"
+
+
+def test_refresh_token_has_type_claim():
+    token = create_refresh_token("user-1")
+    payload = jwt.decode(token, os.environ["JWT_SECRET"], algorithms=["HS256"])
+    assert payload["type"] == "refresh"
+
+
+def test_verify_token_rejects_refresh_token():
+    token = create_refresh_token("user-1")
+    with pytest.raises(JWTError):
+        verify_token(token)
+
+
+def test_verify_refresh_token_rejects_access_token():
+    token = create_access_token("user-1")
+    with pytest.raises(JWTError):
+        verify_refresh_token(token)
+
+
+def test_create_and_verify_refresh_token():
+    token = create_refresh_token("user-42")
+    assert verify_refresh_token(token) == "user-42"

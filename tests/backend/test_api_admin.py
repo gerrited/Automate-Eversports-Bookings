@@ -5,6 +5,8 @@ os.environ.setdefault("ENCRYPTION_KEY", os.urandom(32).hex())
 os.environ.setdefault("JWT_SECRET", "test-jwt-secret-do-not-use-in-prod")
 os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 os.environ.setdefault("FRONTEND_URL", "http://localhost:5173")
+os.environ.setdefault("VAPID_PRIVATE_KEY", "test-private-key")
+os.environ.setdefault("VAPID_SUBJECT", "mailto:test@example.com")
 
 from backend.core.auth import create_access_token
 from backend.models.booking_job import BookingJob
@@ -193,11 +195,13 @@ def _make_job(db_session, user_id: str, weekday: int = 0, target_time=time(18, 0
     return job
 
 
-def _make_log(db_session, job_id: str, status: str = "success") -> BookingLog:
+def _make_log(db_session, job_id: str, status: str = "success", executed_at=None) -> BookingLog:
+    from datetime import datetime, timezone
     log = BookingLog(
         job_id=job_id,
         target_date=date(2026, 1, 1),
         status=status,
+        executed_at=executed_at or datetime.now(timezone.utc),
     )
     db_session.add(log)
     db_session.commit()
@@ -465,3 +469,237 @@ def test_set_limit_rejects_zero_or_negative(client, db_session):
             headers=_auth_header(admin.id),
         )
         assert resp.status_code == 422
+
+
+# ── Tests GET /api/admin/logs ──────────────────────────────────────────────────
+
+def test_list_all_logs_requires_auth(client):
+    resp = client.get("/api/admin/logs")
+    assert resp.status_code == 401
+
+
+def test_list_all_logs_requires_admin_role(client, db_session):
+    user = _make_user(db_session)
+    resp = client.get("/api/admin/logs", headers=_auth_header(user.id))
+    assert resp.status_code == 403
+
+
+def test_list_all_logs_returns_all_logs(client, db_session):
+    admin = _make_admin(db_session)
+    user = _make_user(db_session)
+    job = _make_job(db_session, user.id)
+    _make_log(db_session, job.id, status="success")
+    _make_log(db_session, job.id, status="failed")
+    resp = client.get("/api/admin/logs", headers=_auth_header(admin.id))
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["total"] == 2
+    assert len(data["items"]) == 2
+
+
+def test_list_all_logs_sorted_newest_first(client, db_session):
+    from datetime import datetime, timezone
+    admin = _make_admin(db_session)
+    user = _make_user(db_session)
+    job = _make_job(db_session, user.id)
+    t1 = datetime(2026, 1, 1, 10, tzinfo=timezone.utc)
+    t2 = datetime(2026, 1, 2, 10, tzinfo=timezone.utc)
+    _make_log(db_session, job.id, executed_at=t1)
+    _make_log(db_session, job.id, executed_at=t2)
+    resp = client.get("/api/admin/logs", headers=_auth_header(admin.id))
+    data = resp.json()
+    times = [item["executed_at"] for item in data["items"]]
+    assert times[0] > times[1]
+
+
+def test_list_all_logs_filter_by_user_email(client, db_session):
+    admin = _make_admin(db_session)
+    user1 = _make_user(db_session, ev_id="ev-u1", email="anna@example.com")
+    user2 = _make_user(db_session, ev_id="ev-u2", email="bernd@example.com")
+    job1 = _make_job(db_session, user1.id)
+    job2 = _make_job(db_session, user2.id)
+    _make_log(db_session, job1.id)
+    _make_log(db_session, job2.id)
+    resp = client.get("/api/admin/logs?user_email=anna", headers=_auth_header(admin.id))
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["total"] == 1
+    assert data["items"][0]["user_email"] == "anna@example.com"
+
+
+def test_list_all_logs_includes_job_fields(client, db_session):
+    admin = _make_admin(db_session)
+    user = _make_user(db_session)
+    job = _make_job(db_session, user.id)
+    job.facility_name = "Studio B"
+    job.class_name = "Pilates"
+    db_session.commit()
+    _make_log(db_session, job.id)
+    resp = client.get("/api/admin/logs", headers=_auth_header(admin.id))
+    assert resp.status_code == 200
+    item = resp.json()["items"][0]
+    assert item["class_name"] == "Pilates"
+    assert item["facility_name"] == "Studio B"
+    assert item["user_email"] == "user@x.com"
+    assert "weekday" in item
+    assert "target_time" in item
+    assert "debug" in item
+
+
+def test_list_all_logs_pagination(client, db_session):
+    admin = _make_admin(db_session)
+    user = _make_user(db_session)
+    job = _make_job(db_session, user.id)
+    for _ in range(55):
+        _make_log(db_session, job.id)
+    resp = client.get("/api/admin/logs?page=1", headers=_auth_header(admin.id))
+    data = resp.json()
+    assert data["total"] == 55
+    assert len(data["items"]) == 50
+    assert data["page"] == 1
+    assert data["page_size"] == 50
+    resp2 = client.get("/api/admin/logs?page=2", headers=_auth_header(admin.id))
+    data2 = resp2.json()
+    assert len(data2["items"]) == 5
+
+
+def test_list_all_logs_page_zero_rejected(client, db_session):
+    admin = _make_admin(db_session)
+    resp = client.get("/api/admin/logs?page=0", headers=_auth_header(admin.id))
+    assert resp.status_code == 422
+
+
+# --- /admin/users/{id}/message ---
+
+def test_send_message_requires_admin(client, db_session):
+    user = _make_user(db_session, ev_id="ev-msg0", email="msg0@x.com")
+    resp = client.post(
+        f"/api/admin/users/{user.id}/message",
+        json={"subject": "Test", "content": "Hallo"},
+        headers=_auth_header(user.id),
+    )
+    assert resp.status_code == 403
+
+
+def test_send_message_user_not_found(client, db_session):
+    admin = _make_admin(db_session, ev_id="ev-msg1", email="msg1@x.com")
+    resp = client.post(
+        "/api/admin/users/nonexistent-id/message",
+        json={"subject": "Test", "content": "Hallo"},
+        headers=_auth_header(admin.id),
+    )
+    assert resp.status_code == 404
+
+
+def test_send_message_calls_send_admin_message(client, db_session, mocker):
+    admin = _make_admin(db_session, ev_id="ev-msg2", email="msg2@x.com")
+    user = _make_user(db_session, ev_id="ev-msg2u", email="msg2u@x.com")
+    mock_email = mocker.patch("backend.api.admin.send_admin_message")
+
+    resp = client.post(
+        f"/api/admin/users/{user.id}/message",
+        json={"subject": "Wichtige Info", "content": "Hallo,\nDies ist eine Nachricht."},
+        headers=_auth_header(admin.id),
+    )
+
+    assert resp.status_code == 200
+    assert resp.json()["detail"] == "Nachricht gesendet"
+    mock_email.assert_called_once_with(
+        "msg2u@x.com",
+        "Wichtige Info",
+        "Hallo,\nDies ist eine Nachricht.",
+    )
+
+
+def test_send_message_requires_auth(client):
+    resp = client.post(
+        "/api/admin/users/some-id/message",
+        json={"subject": "Test", "content": "Hallo"},
+    )
+    assert resp.status_code == 401
+
+
+# --- push_subscription_count ---
+
+def _make_push_subscription(db_session, user_id: str, endpoint: str = "https://push.example.com/1"):
+    from backend.models.push_subscription import PushSubscription
+    sub = PushSubscription(user_id=user_id, endpoint=endpoint, p256dh="k", auth="a")
+    db_session.add(sub)
+    db_session.commit()
+    return sub
+
+
+def test_list_users_includes_push_subscription_count(client, db_session):
+    admin = _make_admin(db_session)
+    user = _make_user(db_session, ev_id="ev-push", email="push@x.com")
+    _make_push_subscription(db_session, user.id)
+    resp = client.get("/api/admin/users", headers=_auth_header(admin.id))
+    assert resp.status_code == 200
+    users_data = resp.json()
+    push_user = next(u for u in users_data if u["email"] == "push@x.com")
+    assert push_user["push_subscription_count"] == 1
+
+
+def test_list_users_push_subscription_count_zero_when_none(client, db_session):
+    admin = _make_admin(db_session)
+    _make_user(db_session, ev_id="ev-nopush", email="nopush@x.com")
+    resp = client.get("/api/admin/users", headers=_auth_header(admin.id))
+    assert resp.status_code == 200
+    users_data = resp.json()
+    no_push_user = next(u for u in users_data if u["email"] == "nopush@x.com")
+    assert no_push_user["push_subscription_count"] == 0
+
+
+# --- push-test endpoint ---
+
+def test_send_push_test_requires_auth(client, db_session):
+    user = _make_user(db_session)
+    resp = client.post(f"/api/admin/users/{user.id}/push-test")
+    assert resp.status_code == 401
+
+
+def test_send_push_test_requires_admin(client, db_session):
+    user = _make_user(db_session)
+    resp = client.post(
+        f"/api/admin/users/{user.id}/push-test",
+        headers=_auth_header(user.id),
+    )
+    assert resp.status_code == 403
+
+
+def test_send_push_test_returns_404_for_unknown_user(client, db_session):
+    from unittest.mock import patch
+    admin = _make_admin(db_session)
+    with patch("backend.api.admin.send_test_push_to_user"):
+        resp = client.post(
+            "/api/admin/users/nonexistent-id/push-test",
+            headers=_auth_header(admin.id),
+        )
+    assert resp.status_code == 404
+
+
+def test_send_push_test_returns_204(client, db_session):
+    from unittest.mock import patch, ANY
+    admin = _make_admin(db_session)
+    user = _make_user(db_session, ev_id="ev-pt", email="pt@x.com")
+    with patch("backend.api.admin.send_test_push_to_user") as mock_send:
+        resp = client.post(
+            f"/api/admin/users/{user.id}/push-test",
+            headers=_auth_header(admin.id),
+        )
+    assert resp.status_code == 204
+    mock_send.assert_called_once_with(ANY, user.id)
+
+
+def test_send_push_test_returns_503_when_push_not_configured(client, db_session):
+    from unittest.mock import patch
+    admin = _make_admin(db_session)
+    user = _make_user(db_session, ev_id="ev-503", email="c503@x.com")
+    env_without_vapid = {k: v for k, v in os.environ.items()
+                         if k not in ("VAPID_PRIVATE_KEY", "VAPID_SUBJECT")}
+    with patch.dict(os.environ, env_without_vapid, clear=True):
+        resp = client.post(
+            f"/api/admin/users/{user.id}/push-test",
+            headers=_auth_header(admin.id),
+        )
+    assert resp.status_code == 503

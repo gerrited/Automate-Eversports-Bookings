@@ -3,11 +3,11 @@ import { vi } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 
 vi.mock('../api/account', () => ({
+  getMe: vi.fn(),
   deleteAccount: vi.fn(),
 }))
 
 vi.mock('../api/stripe', () => ({
-  getMe: vi.fn(),
   createCheckoutSession: vi.fn(),
 }))
 
@@ -41,7 +41,12 @@ vi.mock('../api/client', () => ({
   apiFetch: vi.fn(),
 }))
 
-import { getMe } from '../api/stripe'
+vi.mock('../api/auth', () => ({
+  login: vi.fn(),
+  logout: vi.fn(),
+}))
+
+import { getMe } from '../api/account'
 import { listJobs } from '../api/jobs'
 import DashboardPage from './DashboardPage'
 

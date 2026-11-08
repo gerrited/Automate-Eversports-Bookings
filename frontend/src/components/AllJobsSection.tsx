@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { listAllJobs } from '../api/adminJobs'
 import { WEEKDAY_NAMES } from '../types'
 import type { AdminJob } from '../types'
+import { Button, Input } from './ui'
 
 const PAGE_SIZE = 25
 
@@ -49,12 +50,12 @@ export default function AllJobsSection({ initialEmailFilter, onUserClick }: { in
       {loading && <p className="text-slate-400 text-sm">Lädt…</p>}
       {!loading && (
         <div className="flex flex-col gap-2">
-          <input
+          <Input
+            variant="filter"
             type="text"
             value={emailFilter}
             onChange={e => handleFilterChange(e.target.value)}
             placeholder="Nach E-Mail filtern…"
-            className="flex-1 bg-surface-card border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-slate-500"
           />
           <p className="text-slate-500 text-xs">
             {filteredJobs.length} von {jobs.length} Jobs · Seite {safePage} von {totalPages}
@@ -130,20 +131,12 @@ export default function AllJobsSection({ initialEmailFilter, onUserClick }: { in
             )
           })}
           <div className="flex items-center justify-center gap-3 mt-2">
-            <button
-              disabled={safePage === 1}
-              onClick={() => setCurrentPage(p => p - 1)}
-              className="px-3 py-1 rounded-md text-sm bg-surface-card text-slate-400 border border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:bg-slate-700 transition-colors"
-            >
+            <Button variant="secondary" size="sm" disabled={safePage === 1} onClick={() => setCurrentPage(p => p - 1)}>
               ← Zurück
-            </button>
-            <button
-              disabled={safePage === totalPages}
-              onClick={() => setCurrentPage(p => p + 1)}
-              className="px-3 py-1 rounded-md text-sm bg-surface-card text-slate-400 border border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed hover:enabled:bg-slate-700 transition-colors"
-            >
+            </Button>
+            <Button variant="secondary" size="sm" disabled={safePage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>
               Weiter →
-            </button>
+            </Button>
           </div>
         </div>
       )}

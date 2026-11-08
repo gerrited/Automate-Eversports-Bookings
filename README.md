@@ -1,15 +1,20 @@
 ![logo](frontend/public/logo.png)
 
-# Automate Eversports Bookings
+# FOReversports - Automate Eversports Bookings
 
-Automatically books Eversports classes for multiple users. Managed via a web-based UI called FOReversports. FOR stands for "Fastest On-time Reservation".
+[![CI](https://github.com/gerrited/Automate-Eversports-Bookings/actions/workflows/ci.yml/badge.svg)](https://github.com/gerrited/Automate-Eversports-Bookings/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/gerrited/Automate-Eversports-Bookings/graph/badge.svg)](https://codecov.io/gh/gerrited/Automate-Eversports-Bookings)
+
+FOReversports handles the heavy lifting by automatically booking spots in Eversports classes.
+
+The name is a recursive acronym. It stands for: Fast On-time Reservation for Eversports.
 
 ## Demo
 [![Watch the video](https://img.youtube.com/vi/spngnOZDBQo/0.jpg)](https://www.youtube.com/watch?v=spngnOZDBQo)
 
 ## Process
 
-Booking jobs are configured through a React frontend, stored in a PostgreSQL database, and executed by a Kubernetes cronjobs that use the Eversports GraphQL API directly (no browser required).
+Booking jobs are configured through a React frontend, stored in a PostgreSQL database, and executed by Kubernetes cronjobs that use the Eversports GraphQL API directly (no browser required).
 
 ## Architecture
 

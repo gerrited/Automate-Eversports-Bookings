@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import type { FormEvent } from 'react'
 import type { Job, JobFormData, Facility } from '../types'
-import { WEEKDAY_NAMES } from '../types'
 import FacilityCombobox from './FacilityCombobox'
 import CourseCombobox from './CourseCombobox'
 import HelpIcon from './HelpIcon'
 import { getCourses } from '../api/facilities'
 import { isAdmin } from '../api/client'
+import { AlertMessage, Button, ModalShell, Stepper } from './ui'
 
 interface Props {
   job?: Job
@@ -26,18 +26,22 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
   const [oneTime, setOneTime] = useState(job?.one_time ?? false)
   const [debug, setDebug] = useState(job?.debug ?? false)
   const [courses, setCourses] = useState<string[]>([])
+  const [isLoadingCourses, setIsLoadingCourses] = useState(false)
 
   const isInitialMount = useRef(true)
 
   useEffect(() => {
     if (!facility) {
       setCourses([])
+      setIsLoadingCourses(false)
       return
     }
     let cancelled = false
+    setCourses([])
+    setIsLoadingCourses(true)
     getCourses(facility.id, weekday, targetTime)
-      .then(data => { if (!cancelled) setCourses(data) })
-      .catch(() => { if (!cancelled) setCourses([]) })
+      .then(data => { if (!cancelled) { setCourses(data); setIsLoadingCourses(false) } })
+      .catch(() => { if (!cancelled) { setCourses([]); setIsLoadingCourses(false) } })
     if (!isInitialMount.current) setClassName('')
     isInitialMount.current = false
     return () => { cancelled = true }
@@ -58,134 +62,143 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
     })
   }
 
+  const rowClass = 'flex items-center gap-3 bg-surface-input border border-slate-700 rounded-lg px-3 min-h-[44px]'
+  const labelClass = 'flex items-center gap-2 text-white w-32 shrink-0'
+
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4">
-      <div className="bg-surface-card rounded-xl w-full max-w-md p-6">
-        <h2 className="text-white font-bold text-lg mb-5">
-          {job ? 'Geplante Buchung bearbeiten' : 'Neue Buchung planen'}
-        </h2>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
-            <span className="flex items-center gap-1.5 text-slate-400 text-sm">
-              Anbieter
-              <HelpIcon text="Der Sportanbieter, bei dem du den Kurs buchen möchtest." />
-            </span>
+    <ModalShell>
+      <h2 className="text-white font-bold text-lg mb-4">
+        {job ? 'Geplante Buchung bearbeiten' : 'Neue Buchung planen'}
+      </h2>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+
+        <div className={rowClass}>
+          <span className={labelClass}>
+            Anbieter
+          </span>
+          <div className="flex-1 min-w-0">
             <FacilityCombobox value={facility} onChange={setFacility} />
           </div>
+        </div>
 
-          <label className="flex flex-col gap-1">
-            <span className="flex items-center gap-1.5 text-slate-400 text-sm">
-              Wochentag
-              <HelpIcon text="Der Wochentag, an dem der Kurs regelmäßig stattfindet." />
-            </span>
-            <select
-              aria-label="Wochentag"
-              value={weekday}
-              onChange={e => setWeekday(Number(e.target.value))}
-              className="bg-surface-input text-white rounded-lg px-3 py-2 outline-hidden focus:ring-2 focus:ring-brand"
-            >
-              {WEEKDAY_NAMES.map((name, i) => (
-                <option key={i} value={i}>{name}</option>
-              ))}
-            </select>
-          </label>
+        <div className={rowClass}>
+          <span className={labelClass}>
+            Wochentag
+          </span>
+          <select
+            aria-label="Wochentag"
+            value={weekday}
+            onChange={e => setWeekday(Number(e.target.value))}
+            className="bg-transparent text-white flex-1 outline-hidden focus:ring-2 focus:ring-brand rounded [color-scheme:dark]"
+          >
+            <option value={0}>Montag</option>
+            <option value={1}>Dienstag</option>
+            <option value={2}>Mittwoch</option>
+            <option value={3}>Donnerstag</option>
+            <option value={4}>Freitag</option>
+            <option value={5}>Samstag</option>
+            <option value={6}>Sonntag</option>
+          </select>
+        </div>
 
-          <label className="flex flex-col gap-1">
-            <span className="flex items-center gap-1.5 text-slate-400 text-sm">
-              Uhrzeit
-              <HelpIcon text="Die Startzeit des Kurses. Wird auch genutzt, um passende Kurse in der Auswahl zu filtern." />
-            </span>
-            <input
-              aria-label="Uhrzeit"
-              type="time"
-              value={targetTime}
-              onChange={e => setTargetTime(e.target.value)}
-              required
-              className="bg-surface-input text-white rounded-lg px-3 py-2 outline-hidden focus:ring-2 focus:ring-brand [color-scheme:dark]"
-            />
-          </label>
+        <div className={rowClass}>
+          <span className={labelClass}>
+            Uhrzeit
+          </span>
+          <input
+            aria-label="Uhrzeit"
+            type="time"
+            value={targetTime}
+            onChange={e => setTargetTime(e.target.value)}
+            required
+            className="bg-transparent text-white outline-hidden [color-scheme:dark]"
+          />
+        </div>
 
-          <div className="flex flex-col gap-1">
-            <span className="flex items-center gap-1.5 text-slate-400 text-sm">
-              Kursname
-              <HelpIcon text="Der Name des Kurses, der gebucht werden soll. Leer lassen, um den ersten verfügbaren Kurs zu diesem Zeitpunkt zu buchen." />
-            </span>
+        <div className={rowClass}>
+          <span className={labelClass}>
+            Kursname
+          </span>
+          <div className="flex-1 min-w-0">
             <CourseCombobox
               value={className}
               onChange={setClassName}
               facilityCourses={courses}
+              isLoading={isLoadingCourses}
+              canSearch={!!facility}
             />
           </div>
+        </div>
 
-          <label className="flex flex-col gap-1">
-            <span className="flex items-center gap-1.5 text-slate-400 text-sm">
-              Tage im Voraus
-              <HelpIcon text="Wie viele Tage vor dem Kurs soll die Buchung ausgelöst werden? Eversports öffnet Buchungsslots typischerweise einige Tage im Voraus — stelle den Wert passend zum Anbieter ein." />
-            </span>
-            <input
+        <div className={rowClass}>
+          <span className={labelClass}>
+            Durchführung
+            <HelpIcon text="Wie viele Tage vor dem Kurs soll die Buchung ausgelöst werden? Eversports öffnet Buchungsslots typischerweise einige Tage im Voraus — stelle den Wert passend zum Anbieter ein." />
+          </span>
+          <div className="flex items-center gap-2">
+            <Stepper
               aria-label="Tage im Voraus"
-              type="number"
+              value={daysInAdvance}
+              onChange={setDaysInAdvance}
               min={1}
               max={30}
-              value={daysInAdvance}
-              onChange={e => setDaysInAdvance(Number(e.target.value))}
-              required
-              className="bg-surface-input text-white rounded-lg px-3 py-2 outline-hidden focus:ring-2 focus:ring-brand"
             />
-          </label>
+            <span className="text-slate-500 text-xs">Tage vorher</span>
+          </div>
+        </div>
 
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              aria-label="Einmalig"
-              type="checkbox"
-              checked={oneTime}
-              onChange={e => setOneTime(e.target.checked)}
-              className="w-4 h-4 rounded accent-brand"
-            />
-            <span className="flex items-center gap-1.5 text-slate-300 text-sm">
-              Einmalig
-              <HelpIcon text="Aktiviert: nur einmal ausführen, dann automatisch löschen. Deaktiviert: jede Woche wiederholen." />
-            </span>
-          </label>
-
-          {isAdmin() && (
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                aria-label="Test"
-                type="checkbox"
-                checked={debug}
-                onChange={e => setDebug(e.target.checked)}
-                className="w-4 h-4 rounded accent-brand"
-              />
-              <span className="flex items-center gap-1.5 text-slate-300 text-sm">
-                Test
-                <HelpIcon text="Testmodus — die Buchung wird sofort nach Abschluss wieder storniert." />
-              </span>
-            </label>
-          )}
-
-          {error && (
-            <p className="text-red-400 text-sm">{error}</p>
-          )}
-
-          <div className="flex gap-3 justify-end mt-2">
+        <div className={rowClass}>
+          <span className={labelClass}>
+            Häufigkeit
+            <HelpIcon text="Einmalig: nur einmal ausführen, dann automatisch löschen. Wöchentlich: jede Woche wiederholen." />
+          </span>
+          <div role="group" aria-label="Häufigkeit" className="flex overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <button
-              type="submit"
-              disabled={!facility}
-              className="px-4 py-2 bg-brand hover:bg-brand-hover text-white rounded-lg font-semibold transition-colors disabled:opacity-50"
+              type="button"
+              aria-pressed={oneTime}
+              onClick={() => setOneTime(true)}
+              className={`px-3 h-[30px] text-xs font-semibold rounded-l-md border border-r-0 transition-colors ${oneTime ? 'bg-brand text-white border-brand' : 'bg-surface-card text-slate-500 border-slate-700'}`}
             >
-              Speichern
+              Einmalig
             </button>
             <button
               type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-slate-400 hover:text-white transition-colors"
+              aria-pressed={!oneTime}
+              onClick={() => setOneTime(false)}
+              className={`px-3 h-[30px] text-xs font-semibold rounded-r-md border transition-colors ${!oneTime ? 'bg-brand text-white border-brand' : 'bg-surface-card text-slate-500 border-slate-700'}`}
             >
-              Abbrechen
+              Wöchentlich
             </button>
           </div>
-        </form>
-      </div>
-    </div>
+        </div>
+
+        {isAdmin() && (
+          <div className={rowClass}>
+            <span className={labelClass}>
+              Test
+              <HelpIcon text="Testmodus — die Buchung wird sofort nach Abschluss wieder storniert." />
+            </span>
+            <input
+              aria-label="Test"
+              type="checkbox"
+              checked={debug}
+              onChange={e => setDebug(e.target.checked)}
+              className="w-4 h-4 rounded accent-brand"
+            />
+          </div>
+        )}
+
+        {error && <AlertMessage type="error">{error}</AlertMessage>}
+
+        <div className="flex gap-3 justify-end mt-2">
+          <Button variant="primary" type="submit" disabled={!facility}>
+            Speichern
+          </Button>
+          <Button variant="ghost" onClick={onClose}>
+            Abbrechen
+          </Button>
+        </div>
+      </form>
+    </ModalShell>
   )
 }

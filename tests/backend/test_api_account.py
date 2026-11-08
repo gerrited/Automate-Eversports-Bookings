@@ -137,3 +137,46 @@ def test_get_me_with_subscription(client, db_session):
 def test_get_me_without_token_returns_401(client):
     resp = client.get("/api/me")
     assert resp.status_code == 401
+
+
+def test_get_me_includes_notification_advance_minutes(client, db_session):
+    user = _create_active_user(db_session)
+    resp = client.get("/api/me", headers=_auth_header(user.id))
+    assert resp.status_code == 200
+    assert resp.json()["notification_advance_minutes"] == 60
+
+
+def test_put_account_updates_notification_advance_minutes(client, db_session):
+    user = _create_active_user(db_session)
+    resp = client.put(
+        "/api/account",
+        json={"notification_advance_minutes": 30},
+        headers=_auth_header(user.id),
+    )
+    assert resp.status_code == 200
+    assert resp.json()["notification_advance_minutes"] == 30
+
+
+def test_put_account_rejects_value_below_15(client, db_session):
+    user = _create_active_user(db_session)
+    resp = client.put(
+        "/api/account",
+        json={"notification_advance_minutes": 10},
+        headers=_auth_header(user.id),
+    )
+    assert resp.status_code == 422
+
+
+def test_put_account_rejects_value_above_1440(client, db_session):
+    user = _create_active_user(db_session)
+    resp = client.put(
+        "/api/account",
+        json={"notification_advance_minutes": 1500},
+        headers=_auth_header(user.id),
+    )
+    assert resp.status_code == 422
+
+
+def test_put_account_requires_auth(client):
+    resp = client.put("/api/account", json={"notification_advance_minutes": 30})
+    assert resp.status_code == 401

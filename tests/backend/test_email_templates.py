@@ -11,6 +11,14 @@ def _env(path: Path) -> Environment:
     return Environment(loader=FileSystemLoader(path), autoescape=select_autoescape(["html"]))
 
 
+def _worker_env() -> Environment:
+    """Mirrors the worker's template loader: worker-specific first, backend as fallback."""
+    return Environment(
+        loader=FileSystemLoader([WORKER_DIR, BACKEND_DIR]),
+        autoescape=select_autoescape(["html"]),
+    )
+
+
 def test_booking_failure_renders():
     html = _env(BACKEND_DIR).get_template("booking_failure.html").render(
         class_name="Yoga Basics",
@@ -78,7 +86,7 @@ def test_new_user_notification_renders():
 
 
 def test_worker_booking_failure_renders():
-    html = _env(WORKER_DIR).get_template("booking_failure.html").render(
+    html = _worker_env().get_template("booking_failure.html").render(
         class_name="Yoga Basics",
         time_str="18:00",
         weekday_str="Montag",
@@ -92,7 +100,7 @@ def test_worker_booking_failure_renders():
 
 
 def test_worker_debug_cancel_failure_renders():
-    html = _env(WORKER_DIR).get_template("debug_cancel_failure.html").render(
+    html = _worker_env().get_template("debug_cancel_failure.html").render(
         class_name="Yoga Basics",
         time_str="18:00",
         weekday_str="Montag",
@@ -106,7 +114,7 @@ def test_worker_debug_cancel_failure_renders():
 
 
 def test_worker_admin_booking_failure_renders():
-    html = _env(WORKER_DIR).get_template("admin_booking_failure.html").render(
+    html = _worker_env().get_template("admin_booking_failure.html").render(
         class_name="Yoga Basics",
         time_str="18:00",
         weekday_str="Montag",
@@ -125,7 +133,7 @@ def test_worker_admin_booking_failure_renders():
 
 
 def test_worker_booking_waitlist_renders():
-    html = _env(WORKER_DIR).get_template("booking_waitlist.html").render(
+    html = _worker_env().get_template("booking_waitlist.html").render(
         class_name="CrossFit",
         time_str="18:00",
         weekday_str="Freitag",
@@ -169,3 +177,16 @@ def test_subscription_cancelled_renders():
     assert FRONTEND_URL in html
     assert "#004349" in html
     assert "abgelaufen" in html
+
+
+def test_admin_message_renders():
+    html = _env(BACKEND_DIR).get_template("admin_message.html").render(
+        subject="Wichtige Information",
+        content="Hallo,\ndies ist eine Nachricht vom Admin.",
+        frontend_url=FRONTEND_URL,
+    )
+    assert "Wichtige Information" in html
+    assert "Hallo," in html
+    assert "dies ist eine Nachricht vom Admin." in html
+    assert FRONTEND_URL in html
+    assert "#004349" in html

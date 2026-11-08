@@ -1,9 +1,7 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { vi } from 'vitest'
 import JobModal from './JobModal'
 
-// apiFetch is mocked here because FacilityCombobox (rendered inside JobModal)
-// imports from '../api/facilities', which imports apiFetch from '../api/client'.
 vi.mock('../api/client', () => ({
   isAdmin: vi.fn(() => false),
   apiFetch: vi.fn(),
@@ -23,26 +21,27 @@ describe('JobModal', () => {
   const onSave = vi.fn()
   const onClose = vi.fn()
 
-  it('renders all form fields', () => {
+  it('rendert alle Formularfelder', async () => {
     render(<JobModal onSave={onSave} onClose={onClose} />)
-    // Check that all form controls are rendered
     const facilityCombos = screen.getAllByRole('textbox')
-    const anbieterInput = facilityCombos.find(el => (el as HTMLInputElement).placeholder?.includes('Anbieter'))
-    expect(anbieterInput).toBeInTheDocument()
-    expect(screen.getByRole('combobox', { name: 'Wochentag' })).toBeInTheDocument()
-    expect(screen.getByLabelText('Uhrzeit', { selector: 'input' })).toBeInTheDocument()
-    expect(screen.getByLabelText('Kursname', { selector: 'input' })).toBeInTheDocument()
-    expect(screen.getByRole('spinbutton', { name: 'Tage im Voraus' })).toBeInTheDocument()
-    expect(screen.getByRole('checkbox', { name: 'Einmalig' })).toBeInTheDocument()
+    expect(facilityCombos.find(el => (el as HTMLInputElement).placeholder?.includes('Anbieter'))).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByRole('combobox', { name: 'Wochentag' })).toBeInTheDocument()
+      expect(screen.getByLabelText('Uhrzeit', { selector: 'input' })).toBeInTheDocument()
+      expect(screen.getByLabelText('Kursname', { selector: 'input' })).toBeInTheDocument()
+      expect(screen.getByRole('group', { name: 'Tage im Voraus' })).toBeInTheDocument()
+      expect(screen.getByRole('group', { name: 'Häufigkeit' })).toBeInTheDocument()
+    })
   })
 
-  it('renders einmalig checkbox unchecked by default', () => {
+  it('rendert Wöchentlich als Standard-Häufigkeit', () => {
     render(<JobModal onSave={onSave} onClose={onClose} />)
-    const checkbox = screen.getByRole('checkbox', { name: /einmalig/i }) as HTMLInputElement
-    expect(checkbox.checked).toBe(false)
+    const group = screen.getByRole('group', { name: 'Häufigkeit' })
+    expect(within(group).getByRole('button', { name: 'Wöchentlich' })).toHaveAttribute('aria-pressed', 'true')
+    expect(within(group).getByRole('button', { name: 'Einmalig' })).toHaveAttribute('aria-pressed', 'false')
   })
 
-  it('calls onSave with one_time false by default', async () => {
+  it('ruft onSave mit one_time false per default auf', async () => {
     render(<JobModal job={jobWithFacility} onSave={onSave} onClose={onClose} />)
     fireEvent.click(screen.getByRole('button', { name: /speichern/i }))
     await waitFor(() => expect(onSave).toHaveBeenCalledWith(
@@ -50,30 +49,39 @@ describe('JobModal', () => {
     ))
   })
 
-  it('calls onSave with one_time true when checkbox is checked', async () => {
+  it('ruft onSave mit one_time true auf wenn Einmalig gewählt', async () => {
     render(<JobModal job={jobWithFacility} onSave={onSave} onClose={onClose} />)
-    fireEvent.click(screen.getByRole('checkbox', { name: /einmalig/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'Einmalig' }))
     fireEvent.click(screen.getByRole('button', { name: /speichern/i }))
     await waitFor(() => expect(onSave).toHaveBeenCalledWith(
       expect.objectContaining({ one_time: true })
     ))
   })
 
-  it('prefills fields when editing an existing job', () => {
+  it('befüllt Felder beim Bearbeiten einer vorhandenen Buchung', async () => {
     const job = {
       id: 'j1', weekday: 2, target_time: '09:00:00', facility_id: '73041',
       facility_name: 'CrossFit Rabbit Hole', class_name: 'Yoga', days_in_advance: 3,
       enabled: true, one_time: true, created_at: '', debug: false,
     }
     render(<JobModal job={job} onSave={onSave} onClose={onClose} />)
-    const kursInput = screen.getByLabelText('Kursname', { selector: 'input' }) as HTMLInputElement
-    expect(kursInput.value).toBe('Yoga')
-    const daysInput = screen.getByRole('spinbutton', { name: 'Tage im Voraus' }) as HTMLInputElement
-    expect(daysInput.value).toBe('3')
-    expect((screen.getByRole('checkbox', { name: 'Einmalig' }) as HTMLInputElement).checked).toBe(true)
+
+    await waitFor(() => {
+      const kursInput = screen.getByLabelText('Kursname', { selector: 'input' }) as HTMLInputElement
+      expect(kursInput.value).toBe('Yoga')
+
+      const stepperGroup = screen.getByRole('group', { name: 'Tage im Voraus' })
+      expect(within(stepperGroup).getByText('3')).toBeInTheDocument()
+
+      const weekdaySelect = screen.getByRole('combobox', { name: 'Wochentag' }) as HTMLSelectElement
+      expect(weekdaySelect.value).toBe('2')
+
+      const haeufigkeitGroup = screen.getByRole('group', { name: 'Häufigkeit' })
+      expect(within(haeufigkeitGroup).getByRole('button', { name: 'Einmalig' })).toHaveAttribute('aria-pressed', 'true')
+    })
   })
 
-  it('calls onClose when cancel is clicked', () => {
+  it('ruft onClose auf wenn Abbrechen geklickt', () => {
     render(<JobModal onSave={onSave} onClose={onClose} />)
     fireEvent.click(screen.getByRole('button', { name: /abbrechen/i }))
     expect(onClose).toHaveBeenCalled()

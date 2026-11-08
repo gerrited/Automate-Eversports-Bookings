@@ -13,7 +13,6 @@
 # Legacy numeric IDs (e.g. "73041") continue to work unchanged.
 
 import logging
-import re
 from datetime import date, timedelta
 from typing import List
 
@@ -22,13 +21,11 @@ from bs4 import BeautifulSoup
 import requests
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from backend.core.booking import eversports_login, _resolve_facility_id as _booking_resolve_facility_id
+from backend.eversports import eversports_login, _resolve_facility_id as _booking_resolve_facility_id
 from backend.core.encryption import decrypt
 
 logger = logging.getLogger(__name__)
 
-_CLASSES_URL = "https://www.eversports.de/scl/"
-_DATA_ID_RE = re.compile(r"data-id=[\"'](\d+)[\"']")
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -55,6 +52,7 @@ _EVERSPORTS_QUERY      = (
 _DEFAULT_COORDINATE = {"latitude": 50.1109, "longitude": 8.6821}
 _SEARCH_LIMIT = 20
 _CALENDAR_URL = "https://www.eversports.de/api/eventsession/calendar"
+_TIMEOUT = 8
 
 _HEADERS = {
     "Content-Type": "application/json",
@@ -65,31 +63,6 @@ _HEADERS = {
     "Origin": "https://www.eversports.de",
     "Referer": "https://www.eversports.de/",
 }
-
-
-def resolve_facility_id(slug_or_id: str) -> str:
-    """
-    Return the numeric facility ID required by the Eversports calendar API.
-    If slug_or_id is already numeric, it is returned unchanged.
-    Otherwise it is treated as a venue slug and the numeric ID is extracted
-    from the /scl/<slug> page HTML (data-id attribute).
-    Raises RuntimeError if the slug cannot be resolved.
-    """
-    if slug_or_id.isdigit():
-        return slug_or_id
-    try:
-        resp = requests.get(
-            _CLASSES_URL + slug_or_id,
-            headers={"User-Agent": "Mozilla/5.0"},
-            timeout=8,
-        )
-        resp.raise_for_status()
-    except requests.RequestException as exc:
-        raise RuntimeError(f"Could not fetch facility page for slug '{slug_or_id}': {exc}") from exc
-    match = _DATA_ID_RE.search(resp.text)
-    if not match:
-        raise RuntimeError(f"Could not find numeric facility ID for slug '{slug_or_id}'")
-    return match.group(1)
 
 
 @router.get("/facilities/recent")
@@ -144,7 +117,7 @@ def _eversports_search(term: str) -> List[dict]:
         },
     }
     try:
-        resp = requests.post(_EVERSPORTS_SEARCH_URL, json=payload, headers=_HEADERS, timeout=8)
+        resp = requests.post(_EVERSPORTS_SEARCH_URL, json=payload, headers=_HEADERS, timeout=_TIMEOUT)
         resp.raise_for_status()
     except requests.RequestException as exc:
         raise RuntimeError(str(exc)) from exc
@@ -180,7 +153,7 @@ def get_facility_courses(
     current_user: User = Depends(get_current_active_user),
 ) -> List[str]:
     try:
-        password = decrypt(current_user.encrypted_password)
+        password = decrypt(current_user.encrypted_password, aad=current_user.eversports_user_id)
         login_result = eversports_login(current_user.email, password)
         if login_result is None:
             return []
@@ -215,7 +188,7 @@ def get_facility_courses(
                         "startDate": week_start.isoformat(),
                         "activeEventType": event_type,
                     },
-                    timeout=8,
+                    timeout=_TIMEOUT,
                 )
                 resp.raise_for_status()
                 html = resp.json()["data"]["html"]

@@ -48,6 +48,7 @@ export interface UserRecord {
   active_job_count: number
   max_active_jobs: number | null
   created_at: string
+  push_subscription_count: number
 }
 
 export interface AdminJob extends Job {
@@ -70,3 +71,33 @@ export interface BookedAppointment {
   facility_id: string
 }
 
+export interface CurrentUser {
+  email: string
+  role: string
+  subscription_active: boolean
+  total_bookings_executed: number
+  max_active_jobs: number | null
+  notification_advance_minutes: number
+}
+
+export interface AdminLog {
+  id: string
+  job_id: string
+  executed_at: string
+  target_date: string
+  status: 'success' | 'failed' | 'already_booked' | 'waitlist'
+  message: string | null
+  class_name: string
+  facility_name: string
+  target_time: string
+  weekday: number
+  debug: boolean
+  user_email: string
+}
+
+export interface AdminLogsPage {
+  items: AdminLog[]
+  total: number
+  page: number
+  page_size: number
+}

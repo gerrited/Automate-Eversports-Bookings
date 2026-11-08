@@ -235,3 +235,128 @@ def test_login_succeeds_even_if_notification_fails(client, mocker, db_session):
     resp = client.post("/api/auth/login", json={"email": "failmail@x.com", "password": "pw"})
     assert resp.status_code == 403
     assert resp.json()["detail"] == "Account nicht freigegeben"
+
+
+def test_login_sets_refresh_cookie(client, mocker):
+    mocker.patch(
+        "backend.api.auth.eversports_login",
+        return_value={"user_id": "ev-cookie-1", "session": None},
+    )
+    resp = client.post("/api/auth/login", json={"email": "cookie@x.com", "password": "pw"})
+    assert resp.status_code == 200
+    assert "refresh_token" in resp.cookies
+
+
+def test_refresh_returns_new_access_token(client, db_session):
+    from backend.models.user import User
+    from backend.core.auth import create_refresh_token
+
+    user = User(
+        eversports_user_id="ev-refresh-ok",
+        email="refresh-ok@x.com",
+        encrypted_password="x",
+        active=True,
+        role="user",
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+
+    token = create_refresh_token(user.id)
+    client.cookies.set("refresh_token", token)
+    resp = client.post("/api/auth/refresh")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "access_token" in body
+    assert body["token_type"] == "bearer"
+
+
+def test_refresh_without_cookie_returns_401(client):
+    resp = client.post("/api/auth/refresh")
+    assert resp.status_code == 401
+
+
+def test_refresh_with_invalid_token_returns_401(client):
+    client.cookies.set("refresh_token", "not.a.valid.token")
+    resp = client.post("/api/auth/refresh")
+    assert resp.status_code == 401
+
+
+def test_refresh_inactive_user_returns_403(client, db_session):
+    from backend.models.user import User
+    from backend.core.auth import create_refresh_token
+
+    user = User(
+        eversports_user_id="ev-refresh-inactive",
+        email="refresh-inactive@x.com",
+        encrypted_password="x",
+        active=False,
+        role="user",
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+
+    token = create_refresh_token(user.id)
+    client.cookies.set("refresh_token", token)
+    resp = client.post("/api/auth/refresh")
+    assert resp.status_code == 403
+
+
+def test_logout_clears_refresh_cookie(client):
+    resp = client.post("/api/auth/logout")
+    assert resp.status_code == 204
+    set_cookie = resp.headers.get("set-cookie", "")
+    assert "refresh_token" in set_cookie
+    assert "max-age=0" in set_cookie.lower()
+
+
+# --- Rate-Limiting auf Login ---
+
+def test_login_wird_nach_zu_vielen_versuchen_geblockt(client, mocker):
+    mocker.patch("backend.api.auth.eversports_login", return_value=None)
+    for _ in range(10):
+        resp = client.post("/api/auth/login", json={"email": "brute@x.com", "password": "wrong"})
+        assert resp.status_code == 401
+    resp = client.post("/api/auth/login", json={"email": "brute@x.com", "password": "wrong"})
+    assert resp.status_code == 429
+
+
+def test_geblocktes_login_erreicht_eversports_nicht(client, mocker):
+    mock_login = mocker.patch("backend.api.auth.eversports_login", return_value=None)
+    for _ in range(11):
+        client.post("/api/auth/login", json={"email": "brute2@x.com", "password": "wrong"})
+    assert mock_login.call_count == 10
+
+
+# --- Refresh-Token nur als httpOnly-Cookie (nicht im Body, nicht aus dem Body) ---
+
+def test_login_body_enthaelt_keinen_refresh_token(client, mocker):
+    mocker.patch(
+        "backend.api.auth.eversports_login",
+        return_value={"user_id": "ev-rt-body", "session": None},
+    )
+    resp = client.post("/api/auth/login", json={"email": "rt@x.com", "password": "pw"})
+    assert resp.status_code == 200
+    assert "refresh_token" not in resp.json()
+
+
+def test_refresh_mit_body_token_wird_ignoriert(client, db_session):
+    from backend.models.user import User
+    from backend.core.auth import create_refresh_token
+
+    user = User(
+        eversports_user_id="ev-body-refresh",
+        email="body-refresh@x.com",
+        encrypted_password="x",
+        active=True,
+        role="user",
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+
+    # Gültiger Token im Body, kein Cookie → muss abgelehnt werden
+    token = create_refresh_token(user.id)
+    resp = client.post("/api/auth/refresh", json={"refresh_token": token})
+    assert resp.status_code == 401

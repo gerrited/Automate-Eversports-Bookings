@@ -42,7 +42,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-surface-page">
 
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-20 bg-surface-page border-b border-slate-700/60">
+      <nav className="fixed left-0 right-0 z-20 bg-surface-page border-b border-slate-700/60" style={{ top: 'var(--notice-height, 0px)' }}>
         <div className="px-4 max-w-5xl mx-auto flex justify-between items-center py-4">
           <a href="/"><img src="/logo.png" alt="Logo" className="h-10 w-auto sm:h-14" /></a>
           <button
@@ -55,6 +55,7 @@ export default function LandingPage() {
       </nav>
 
       <div className="pt-20 sm:pt-24">
+        <div aria-hidden style={{ height: 'var(--notice-height, 0px)' }} />
 
         {/* Hero */}
         <section className="max-w-5xl mx-auto px-4 py-16 flex flex-col sm:flex-row items-center gap-10">

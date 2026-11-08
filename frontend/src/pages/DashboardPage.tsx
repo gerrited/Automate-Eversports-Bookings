@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { clearToken, isAdmin, isActualAdmin, getEmail, getAvatarUrl } from '../api/client'
+import { isAdmin, isActualAdmin, getEmail, getAvatarUrl } from '../api/client'
+import { logout } from '../api/auth'
 import { listJobs, createJob, updateJob, toggleJob, deleteJob, getJobLogs, executeJob } from '../api/jobs'
 import type { Job, BookingLog, JobFormData } from '../types'
 import JobCard from '../components/JobCard'
@@ -8,31 +9,35 @@ import JobModal from '../components/JobModal'
 import LogDrawer from '../components/LogDrawer'
 import UserManagementSection from '../components/UserManagementSection'
 import AllJobsSection from '../components/AllJobsSection'
+import AllLogsSection from '../components/AllLogsSection'
 import HamburgerMenu from '../components/HamburgerMenu'
 import SettingsModal from '../components/SettingsModal'
 import TestEmailModal from '../components/TestEmailModal'
 import { getUpcomingBookings, cancelBooking } from '../api/bookedAppointments'
-import { getMe } from '../api/stripe'
+import { getMe } from '../api/account'
 import BookedAppointmentCard from '../components/BookedAppointmentCard'
 import type { BookedAppointment } from '../types'
+import { usePushNotifications } from '../hooks/usePushNotifications'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
   const { hash } = useLocation()
-  const activeTab: 'geplant' | 'gebucht' | 'benutzer' | 'jobs' =
-    hash === '#users' ? 'benutzer'
+  const activeTab: 'geplant' | 'gebucht' | 'users' | 'jobs' | 'logs' =
+    hash === '#users' ? 'users'
     : hash === '#all-jobs' ? 'jobs'
+    : hash === '#logs' ? 'logs'
     : hash === '#booked' ? 'gebucht'
     : 'geplant'
 
-  function setActiveTab(tab: 'geplant' | 'gebucht' | 'benutzer' | 'jobs', clearFilters = false) {
+  function setActiveTab(tab: 'geplant' | 'gebucht' | 'users' | 'jobs' | 'logs', clearFilters = false) {
     if (clearFilters) {
       setJobsEmailFilter('')
       setUsersEmailFilter('')
     }
     navigate(
-      tab === 'benutzer' ? '#users'
+      tab === 'users' ? '#users'
       : tab === 'jobs' ? '#all-jobs'
+      : tab === 'logs' ? '#logs'
       : tab === 'gebucht' ? '#booked'
       : '#bookings',
       { replace: true }
@@ -44,6 +49,7 @@ export default function DashboardPage() {
   const [bookedLoaded, setBookedLoaded] = useState(false)
   const [bookedLoading, setBookedLoading] = useState(false)
   const [bookedError, setBookedError] = useState<string | null>(null)
+  const bookedPrefetch = useRef<Promise<BookedAppointment[]> | null>(null)
   const [loading, setLoading] = useState(true)
   const [editingJob, setEditingJob] = useState<Job | 'new' | null>(null)
   const [showModal, setShowModal] = useState(false)
@@ -62,6 +68,8 @@ export default function DashboardPage() {
   const [totalBookingsExecuted, setTotalBookingsExecuted] = useState<number>(0)
   const [maxActiveJobs, setMaxActiveJobs] = useState<number | null | undefined>(undefined)
 
+  usePushNotifications()
+
   useEffect(() => {
     getMe().then(data => {
       setTotalBookingsExecuted(data.total_bookings_executed)
@@ -70,10 +78,20 @@ export default function DashboardPage() {
   }, [])
 
   useEffect(() => {
-    function onAuthChanged() { forceUpdate(n => n + 1) }
+    bookedPrefetch.current = getUpcomingBookings()
+  }, [])
+
+  useEffect(() => {
+    function onAuthChanged() {
+      forceUpdate(n => n + 1)
+      const h = window.location.hash
+      if (!isAdmin() && (h === '#users' || h === '#all-jobs' || h === '#logs')) {
+        navigate('#bookings', { replace: true })
+      }
+    }
     window.addEventListener('auth-changed', onAuthChanged)
     return () => window.removeEventListener('auth-changed', onAuthChanged)
-  }, [])
+  }, [navigate])
 
   function handleUserJobsClick(email: string) {
     setJobsEmailFilter(email)
@@ -82,7 +100,7 @@ export default function DashboardPage() {
 
   function handleJobUserClick(email: string) {
     setUsersEmailFilter(email)
-    setActiveTab('benutzer')
+    setActiveTab('users')
   }
 
   const touchStartX = useRef<number | null>(null)
@@ -100,7 +118,7 @@ useEffect(() => {
       touchStartX.current = null
       touchStartY.current = null
       if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return
-      const tabs = isAdmin() ? ['#bookings', '#booked', '#users', '#all-jobs'] : ['#bookings', '#booked']
+      const tabs = isAdmin() ? ['#bookings', '#booked', '#users', '#all-jobs', '#logs'] : ['#bookings', '#booked']
       const currentIndex = tabs.indexOf(window.location.hash || '#bookings')
       const nextIndex = dx < 0
         ? Math.min(currentIndex + 1, tabs.length - 1)
@@ -132,7 +150,7 @@ useEffect(() => {
     setBookedLoaded(true)
     setBookedLoading(true)
     setBookedError(null)
-    getUpcomingBookings()
+    ;(bookedPrefetch.current ?? getUpcomingBookings())
       .then(setBookedAppointments)
       .catch((e) => setBookedError(e instanceof Error ? e.message : 'Fehler beim Laden'))
       .finally(() => setBookedLoading(false))
@@ -149,8 +167,8 @@ useEffect(() => {
     )
   }
 
-  function handleLogout() {
-    clearToken()
+  async function handleLogout() {
+    await logout()
     navigate('/')
   }
 
@@ -198,8 +216,10 @@ useEffect(() => {
 
   return (
     <div className="min-h-screen bg-surface-page">
-      {/* Fixed Header */}
-      <div className="fixed top-0 left-0 right-0 z-20 bg-surface-page border-b border-slate-700/60">
+      <div
+        className="fixed left-0 right-0 z-20 bg-surface-page border-b border-slate-700/60"
+        style={{ top: 'var(--notice-height, 0px)' }}
+      >
         <div className="px-4 max-w-2xl mx-auto">
           <div className="flex justify-between items-center py-4">
             <img src="/logo.png" alt="Logo" className="h-10 w-auto sm:h-16 cursor-pointer" onClick={() => navigate('/dashboard')} />
@@ -216,12 +236,12 @@ useEffect(() => {
           </div>
 
           {/* Tab-Navigation – Geplant/Gebucht für alle, Benutzer/Jobs nur für Admins */}
-          <div className="flex gap-1 border-b border-slate-700">
-            {(['geplant', 'gebucht', ...(isAdmin() ? ['benutzer', 'jobs'] : [])] as ('geplant' | 'gebucht' | 'benutzer' | 'jobs')[]).map((tab) => (
+          <div className="flex gap-1 border-b border-slate-700 overflow-x-auto overflow-y-hidden scrollbar-none">
+            {(['geplant', 'gebucht', ...(isAdmin() ? ['users', 'jobs', 'logs'] : [])] as ('geplant' | 'gebucht' | 'users' | 'jobs' | 'logs')[]).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab, true)}
-                className={`px-4 py-2 text-sm font-medium rounded-t-md transition-colors focus:outline-none
+                className={`px-4 py-2 text-sm font-medium rounded-t-md transition-colors focus:outline-none shrink-0
                   ${activeTab === tab
                     ? 'bg-brand text-white border-b-2 border-brand -mb-px'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-surface-card'
@@ -229,8 +249,9 @@ useEffect(() => {
               >
                 {tab === 'geplant' ? 'Geplant'
                   : tab === 'gebucht' ? 'Gebucht'
-                  : tab === 'benutzer' ? 'Benutzer'
-                  : 'Jobs'}
+                  : tab === 'users' ? 'Users'
+                  : tab === 'jobs' ? 'Jobs'
+                  : 'Logs'}
               </button>
             ))}
           </div>
@@ -238,6 +259,7 @@ useEffect(() => {
       </div>
 
     <div className="px-4 pb-8 max-w-2xl mx-auto pt-32 sm:pt-44">
+      <div aria-hidden style={{ height: 'var(--notice-height, 0px)' }} />
 
       {/* Add button – nur auf Geplant-Tab */}
       {activeTab === 'geplant' && (
@@ -289,7 +311,7 @@ useEffect(() => {
                 onEdit={j => { setEditingJob(j); setShowModal(true) }}
                 onDelete={handleDelete}
                 onSelect={handleSelect}
-                onExecute={isAdmin() ? handleExecute : undefined}
+                onExecute={handleExecute}
               />
             ))}
           </div>
@@ -329,10 +351,13 @@ useEffect(() => {
       )}
 
       {/* Admin: Benutzer-Tab */}
-      {isAdmin() && activeTab === 'benutzer' && <UserManagementSection onJobsClick={handleUserJobsClick} initialEmailFilter={usersEmailFilter} />}
+      {isAdmin() && activeTab === 'users' && <UserManagementSection onJobsClick={handleUserJobsClick} initialEmailFilter={usersEmailFilter} />}
 
       {/* Admin: Jobs-Tab */}
       {isAdmin() && activeTab === 'jobs' && <AllJobsSection initialEmailFilter={jobsEmailFilter} onUserClick={handleJobUserClick} />}
+
+      {/* Admin: Logs-Tab */}
+      {isAdmin() && activeTab === 'logs' && <AllLogsSection />}
 
       {/* Modal */}
       {showModal && (

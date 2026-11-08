@@ -1,19 +1,23 @@
 import logging
 import os
-from typing import List, Literal
+from typing import List, Literal, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-from sqlalchemy import case, func
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from pydantic import BaseModel, Field
+from sqlalchemy import case, func, select as sa_select
 from sqlalchemy.orm import Session
 
 from backend.api.deps import require_admin
-from backend.core.email import send_account_status_email, send_limit_enforced_email, send_test_email
+from backend.core.email import send_account_status_email, send_admin_message, send_limit_enforced_email, send_test_email
+from backend.core.push import send_test_push_to_user
 from backend.db import get_db
+from backend.core.status import BookingStatus
 from backend.models.booking_job import BookingJob
 from backend.models.booking_log import BookingLog
+from backend.models.push_subscription import PushSubscription
 from backend.models.user import User
 from backend.schemas.job import AdminJobResponse
+from backend.schemas.log import AdminLogsPage, AdminLogResponse
 from backend.schemas.user import UserResponse, SetActiveRequest, SetLimitRequest
 
 log = logging.getLogger(__name__)
@@ -26,11 +30,18 @@ def list_users(
     current_user: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
+    push_count_sq = (
+        sa_select(func.count(PushSubscription.id))
+        .where(PushSubscription.user_id == User.id)
+        .correlate(User)
+        .scalar_subquery()
+    )
     rows = (
         db.query(
             User,
             func.count(BookingJob.id).label("job_count"),
             func.sum(case((BookingJob.enabled == True, 1), else_=0)).label("active_job_count"),
+            push_count_sq.label("push_subscription_count"),
         )
         .outerjoin(BookingJob, BookingJob.user_id == User.id)
         .group_by(User.id)
@@ -47,8 +58,9 @@ def list_users(
             active_job_count=active_job_count or 0,
             max_active_jobs=user.max_active_jobs,
             created_at=user.created_at,
+            push_subscription_count=push_subscription_count or 0,
         )
-        for user, job_count, active_job_count in rows
+        for user, job_count, active_job_count, push_subscription_count in rows
     ]
 
 
@@ -75,6 +87,9 @@ def set_user_active(
     active_job_count = db.query(func.count(BookingJob.id)).filter(
         BookingJob.user_id == user.id, BookingJob.enabled == True
     ).scalar()
+    push_subscription_count = db.query(func.count(PushSubscription.id)).filter(
+        PushSubscription.user_id == user.id
+    ).scalar()
     return UserResponse(
         id=user.id,
         email=user.email,
@@ -84,6 +99,7 @@ def set_user_active(
         active_job_count=active_job_count or 0,
         max_active_jobs=user.max_active_jobs,
         created_at=user.created_at,
+        push_subscription_count=push_subscription_count or 0,
     )
 
 
@@ -125,6 +141,9 @@ def set_user_limit(
     active_job_count = db.query(func.count(BookingJob.id)).filter(
         BookingJob.user_id == user.id, BookingJob.enabled == True
     ).scalar()
+    push_subscription_count = db.query(func.count(PushSubscription.id)).filter(
+        PushSubscription.user_id == user.id
+    ).scalar()
     return UserResponse(
         id=user.id,
         email=user.email,
@@ -134,6 +153,7 @@ def set_user_limit(
         active_job_count=active_job_count or 0,
         max_active_jobs=user.max_active_jobs,
         created_at=user.created_at,
+        push_subscription_count=push_subscription_count or 0,
     )
 
 
@@ -146,9 +166,9 @@ def list_all_jobs(
         db.query(
             BookingJob,
             User.email.label("user_email"),
-            func.sum(case((BookingLog.status == "success", 1), else_=0)).label("success_count"),
-            func.sum(case((BookingLog.status == "failed", 1), else_=0)).label("failed_count"),
-            func.sum(case((BookingLog.status == "already_booked", 1), else_=0)).label("already_booked_count"),
+            func.sum(case((BookingLog.status == BookingStatus.SUCCESS, 1), else_=0)).label("success_count"),
+            func.sum(case((BookingLog.status == BookingStatus.FAILED, 1), else_=0)).label("failed_count"),
+            func.sum(case((BookingLog.status == BookingStatus.ALREADY_BOOKED, 1), else_=0)).label("already_booked_count"),
         )
         .join(User, User.id == BookingJob.user_id)
         .outerjoin(BookingLog, BookingLog.job_id == BookingJob.id)
@@ -176,6 +196,83 @@ def list_all_jobs(
         )
         for job, user_email, success_count, failed_count, already_booked_count in rows
     ]
+
+
+@router.get("/admin/logs", response_model=AdminLogsPage)
+def list_all_logs(
+    page: int = Query(default=1, ge=1),
+    user_email: Optional[str] = None,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    PAGE_SIZE = 50
+    query = (
+        db.query(BookingLog, BookingJob, User.email.label("user_email"))
+        .join(BookingJob, BookingJob.id == BookingLog.job_id)
+        .join(User, User.id == BookingJob.user_id)
+    )
+    if user_email:
+        query = query.filter(User.email.ilike(f"%{user_email}%"))
+    total = query.count()
+    rows = (
+        query
+        .order_by(BookingLog.executed_at.desc())
+        .offset((page - 1) * PAGE_SIZE)
+        .limit(PAGE_SIZE)
+        .all()
+    )
+    items = [
+        AdminLogResponse(
+            id=log.id,
+            job_id=log.job_id,
+            executed_at=log.executed_at,
+            target_date=log.target_date,
+            status=log.status,
+            message=log.message,
+            class_name=job.class_name,
+            facility_name=job.facility_name,
+            target_time=job.target_time,
+            weekday=job.weekday,
+            debug=job.debug,
+            user_email=email,
+        )
+        for log, job, email in rows
+    ]
+    return AdminLogsPage(items=items, total=total, page=page, page_size=PAGE_SIZE)
+
+
+class SendMessageRequest(BaseModel):
+    subject: str = Field(..., min_length=1)
+    content: str = Field(..., min_length=1)
+
+
+@router.post("/admin/users/{user_id}/message")
+def send_message_to_user(
+    user_id: str,
+    body: SendMessageRequest,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    send_admin_message(user.email, body.subject, body.content)
+    return {"detail": "Nachricht gesendet"}
+
+
+@router.post("/admin/users/{user_id}/push-test", status_code=204)
+def send_push_test(
+    user_id: str,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    if not os.environ.get("VAPID_PRIVATE_KEY") or not os.environ.get("VAPID_SUBJECT"):
+        raise HTTPException(status_code=503, detail="Push not configured")
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    send_test_push_to_user(db, user_id)
+    return Response(status_code=204)
 
 
 class TestEmailRequest(BaseModel):

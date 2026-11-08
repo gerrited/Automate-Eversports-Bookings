@@ -1,6 +1,9 @@
 k8s/secret.yaml
 node_modules/
 __pycache__/
+.coverage
+coverage.xml
+frontend/coverage/
 *.py[cod]
 *.pyo
 *.db
@@ -8,3 +11,5 @@ __pycache__/
 .playwright-mcp/
 .superpowers/
 .worktrees/
+private_key.pem
+public_key.pem

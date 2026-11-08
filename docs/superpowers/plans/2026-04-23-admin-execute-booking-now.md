@@ -482,7 +482,7 @@ export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect, onE
             {executing ? (
               <>
                 <span className="inline-block h-3 w-3 rounded-full border-2 border-blue-300 border-t-transparent animate-spin" />
-                Bucht…
+                Wird gebucht…
               </>
             ) : 'Jetzt buchen'}
           </button>

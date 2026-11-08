@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import type { Job, BookingLog } from '../types'
 import { WEEKDAY_NAMES } from '../types'
+import { Button, ModalShell } from './ui'
+import { STATUS_STYLES } from '../utils/statusLabels'
 
 interface Props {
   job: Job
@@ -9,14 +11,7 @@ interface Props {
   onClose: () => void
 }
 
-const statusColor: Record<string, string> = {
-  success: 'text-green-400',
-  failed: 'text-red-400',
-  already_booked: 'text-slate-400',
-  waitlist: 'text-yellow-400',
-}
-
-const statusLabel: Record<string, string> = {
+const STATUS_DRAWER_LABELS: Record<string, string> = {
   success: '✓ Gebucht',
   failed: '✗ Fehler',
   already_booked: '→ Bereits gebucht',
@@ -60,8 +55,8 @@ export default function LogDrawer({ job, logs, loading, onClose }: Props) {
           {!loading && logs.map(log => (
             <div key={log.id} className="mb-4 border-b border-slate-800 pb-4">
               <div className="flex justify-between items-center">
-                <span className={`text-sm font-medium ${statusColor[log.status] ?? 'text-slate-300'}`}>
-                  {statusLabel[log.status] ?? log.status}
+                <span className={`text-sm font-medium ${STATUS_STYLES[log.status] ?? 'text-slate-300'}`}>
+                  {STATUS_DRAWER_LABELS[log.status] ?? log.status}
                 </span>
                 <span className="text-slate-500 text-xs">
                   {log.target_date}
@@ -83,16 +78,12 @@ export default function LogDrawer({ job, logs, loading, onClose }: Props) {
         </div>
       </div>
 
-      {/* Error detail dialog */}
       {activeMessage && (
-        <div
-          className="fixed inset-0 bg-black/60 z-60 flex items-center justify-center p-4"
-          onClick={() => setActiveMessage(null)}
+        <ModalShell
+          onBackdropClick={() => setActiveMessage(null)}
+          zIndex="z-60"
         >
-          <div
-            className="bg-surface-card rounded-xl shadow-2xl w-full max-w-md p-5 flex flex-col gap-4"
-            onClick={e => e.stopPropagation()}
-          >
+          <div className="flex flex-col gap-4">
             <div className="flex justify-between items-center">
               <p className="text-white font-semibold">Fehlermeldung</p>
               <button
@@ -105,14 +96,13 @@ export default function LogDrawer({ job, logs, loading, onClose }: Props) {
             <pre className="text-slate-300 text-xs font-mono whitespace-pre-wrap break-all bg-slate-900 rounded-lg p-3 max-h-64 overflow-y-auto">
               {activeMessage}
             </pre>
-            <button
-              onClick={() => setActiveMessage(null)}
-              className="self-end text-sm text-slate-400 hover:text-white"
-            >
-              Schließen
-            </button>
+            <div className="flex justify-end">
+              <Button variant="ghost" onClick={() => setActiveMessage(null)}>
+                Schließen
+              </Button>
+            </div>
           </div>
-        </div>
+        </ModalShell>
       )}
     </>
   )

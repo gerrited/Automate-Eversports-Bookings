@@ -38,6 +38,7 @@ class JobResponse(BaseModel):
     enabled: bool
     one_time: bool
     debug: bool
+    next_run_at: Optional[datetime] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

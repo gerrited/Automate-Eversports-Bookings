@@ -1,4 +1,8 @@
-const FAQ_ITEMS = [
+import { useState } from 'react'
+import type { ReactNode } from 'react'
+import { ModalShell } from './ui'
+
+const FAQ_ITEMS: { question: string; answer: ReactNode }[] = [
   {
     question: 'Wie funktioniert die Anmeldung?',
     answer:
@@ -34,9 +38,26 @@ const FAQ_ITEMS = [
     answer:
       'Du kannst dein Konto jederzeit selbst löschen. Öffne dazu das Menü oben rechts und wähle Einstellungen. Dort findest du die Option zum Löschen deines Kontos. Dabei werden deine gespeicherten Eversports-Zugangsdaten, alle geplanten Buchungen sowie dein Benutzerkonto vollständig und unwiderruflich entfernt.',
   },
+  {
+    question: 'Ist das Projekt Open Source?',
+    answer: (
+      <>
+        Ja – der vollständige Quellcode ist auf{' '}
+        <a
+          href="https://github.com/gerrited/Automate-Eversports-Bookings"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-2 hover:text-white transition-colors"
+        >
+          GitHub
+        </a>{' '}
+        öffentlich einsehbar. Du kannst den Code selbst auf Bugs oder Sicherheitslücken prüfen
+        und nachvollziehen, wie deine Daten verarbeitet werden. Gefundene Probleme kannst du
+        gerne als Issue oder Pull Request einreichen.
+      </>
+    ),
+  },
 ]
-
-import { useState } from 'react'
 
 interface Props {
   onClose: () => void
@@ -46,16 +67,14 @@ export default function FaqModal({ onClose }: Props) {
   const [openIndex, setOpenIndex] = useState<number | null>(null)
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60"
-      data-testid="faq-modal-backdrop"
-      onClick={onClose}
+    <ModalShell
+      onBackdropClick={onClose}
+      maxWidth="lg"
+      scrollable
+      testId="faq-modal-backdrop"
+      cardTestId="faq-modal-card"
     >
-      <div
-        className="w-full max-w-lg max-h-[80vh] overflow-y-auto bg-surface-card border border-slate-700/60 rounded-xl p-6 flex flex-col gap-4"
-        data-testid="faq-modal-card"
-        onClick={e => e.stopPropagation()}
-      >
+      <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-white">Häufig gestellte Fragen</h2>
           <button
@@ -82,15 +101,15 @@ export default function FaqModal({ onClose }: Props) {
                   <span className={`text-slate-400 transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`}>▾</span>
                 </button>
                 {isOpen && (
-                  <p className="px-4 pb-4 pt-1 text-sm text-slate-400 leading-relaxed">
+                  <div className="px-4 pb-4 pt-1 text-sm text-slate-400 leading-relaxed">
                     {answer}
-                  </p>
+                  </div>
                 )}
               </div>
             )
           })}
         </div>
       </div>
-    </div>
+    </ModalShell>
   )
 }

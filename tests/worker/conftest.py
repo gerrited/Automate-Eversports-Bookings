@@ -11,13 +11,21 @@ from sqlalchemy.orm import sessionmaker
 from backend.db import Base
 
 
+# Standard: SQLite-Datei (Worker-Threads brauchen mehrere Connections).
+# In der CI läuft die Suite zusätzlich gegen PostgreSQL (TEST_DATABASE_URL).
+TEST_DATABASE_URL = os.environ.get("TEST_DATABASE_URL")
+
+
 @pytest.fixture(scope="function")
 def engine(tmp_path):
-    db_file = tmp_path / "test.db"
-    eng = create_engine(
-        f"sqlite:///{db_file}",
-        connect_args={"check_same_thread": False},
-    )
+    if TEST_DATABASE_URL:
+        eng = create_engine(TEST_DATABASE_URL)
+    else:
+        db_file = tmp_path / "test.db"
+        eng = create_engine(
+            f"sqlite:///{db_file}",
+            connect_args={"check_same_thread": False},
+        )
     Base.metadata.create_all(bind=eng)
     yield eng
     Base.metadata.drop_all(bind=eng)
