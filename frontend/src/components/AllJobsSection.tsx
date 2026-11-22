@@ -57,7 +57,7 @@ export default function AllJobsSection({ initialEmailFilter, onUserClick }: { in
             onChange={e => handleFilterChange(e.target.value)}
             placeholder="Nach E-Mail filtern…"
           />
-          <p className="text-slate-500 text-xs">
+          <p className="text-faint text-xs">
             {filteredJobs.length} von {jobs.length} Jobs · Seite {safePage} von {totalPages}
           </p>
           {filteredJobs.length === 0 && (
@@ -92,7 +92,7 @@ export default function AllJobsSection({ initialEmailFilter, onUserClick }: { in
                 {(() => {
                   const total = job.success_count + job.failed_count + job.already_booked_count
                   if (total === 0) return (
-                    <span className="ml-3 shrink-0 text-slate-500 text-xs whitespace-nowrap">
+                    <span className="ml-3 shrink-0 text-faint text-xs whitespace-nowrap">
                       Noch nicht ausgeführt
                     </span>
                   )
@@ -123,7 +123,7 @@ export default function AllJobsSection({ initialEmailFilter, onUserClick }: { in
                           <div className="bg-slate-500" style={{ width: `${bookedPct}%` }} />
                         )}
                       </div>
-                      <div className="text-slate-500 text-xs mt-1 text-right">{total}× gesamt</div>
+                      <div className="text-faint text-xs mt-1 text-right">{total}× gesamt</div>
                     </div>
                   )
                 })()}

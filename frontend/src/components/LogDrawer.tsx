@@ -58,19 +58,19 @@ export default function LogDrawer({ job, logs, loading, onClose }: Props) {
                 <span className={`text-sm font-medium ${STATUS_STYLES[log.status] ?? 'text-slate-300'}`}>
                   {STATUS_DRAWER_LABELS[log.status] ?? log.status}
                 </span>
-                <span className="text-slate-500 text-xs">
+                <span className="text-faint text-xs">
                   {log.target_date}
                 </span>
               </div>
               {log.message && (
                 <button
                   onClick={() => setActiveMessage(log.message)}
-                  className="text-slate-500 text-xs mt-1 hover:text-slate-300 underline underline-offset-2 text-left"
+                  className="text-faint text-xs mt-1 hover:text-slate-300 underline underline-offset-2 text-left"
                 >
                   Details anzeigen
                 </button>
               )}
-              <p className="text-slate-600 text-xs mt-1">
+              <p className="text-faint text-xs mt-1">
                 {new Date(log.executed_at).toLocaleString('de-DE')}
               </p>
             </div>

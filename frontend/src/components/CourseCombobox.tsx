@@ -59,7 +59,7 @@ export default function CourseCombobox({ value, onChange, facilityCourses, isLoa
       {isOpen && (
         <div className="absolute z-10 mt-3 -mx-3.5 w-[calc(100%+1.75rem)] bg-surface-input border border-line rounded-xl shadow-[0_20px_50px_rgba(0,0,0,.45)] overflow-hidden max-h-60 overflow-y-auto">
           {displayedResults.length === 0 && (
-            <div className="px-3 py-2 text-slate-500 text-sm">
+            <div className="px-3 py-2 text-faint text-sm">
               {!canSearch
                 ? 'Anbieter, Wochentag oder Uhrzeit fehlt.'
                 : isLoading
