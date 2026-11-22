@@ -2,8 +2,9 @@
 from backend.eversports.client import (
     book_session, cancel_booking, cancel_booking_by_ids,
     eversports_login, fetch_upcoming_bookings, join_waitlist,
+    PreparedBooking, prepare_booking,
     _cancel_with_session, _resolve_facility_id,
 )
 from backend.eversports.errors import (
-    AuthFailed, EversportsError, MarkupDrift, PlatformError, SlotNotFound,
+    AuthFailed, CartRejected, EversportsError, MarkupDrift, PlatformError, SlotNotFound,
 )

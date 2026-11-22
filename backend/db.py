@@ -15,7 +15,13 @@ def _get_engine():
     global _engine
     if _engine is None:
         url = os.environ["DATABASE_URL"]
-        kwargs = {"connect_args": {"check_same_thread": False}} if url.startswith("sqlite") else {}
+        if url.startswith("sqlite"):
+            kwargs = {"connect_args": {"check_same_thread": False}}
+        else:
+            kwargs = {
+                "pool_size": int(os.environ.get("DB_POOL_SIZE", "5")),
+                "max_overflow": int(os.environ.get("DB_MAX_OVERFLOW", "10")),
+            }
         _engine = create_engine(url, pool_pre_ping=True, **kwargs)
     return _engine
 

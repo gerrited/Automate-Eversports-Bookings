@@ -1,12 +1,19 @@
 """
 Booking worker — runs as a Kubernetes CronJob every 15 minutes.
 Checks all enabled jobs and executes due bookings via Eversports API.
+
+Sekundengenaues Buchen: Ein Lauf übernimmt auch Jobs, deren next_run_at in den
+nächsten LOOKAHEAD Minuten liegt. Für diese loggt er sich vorab ein, wartet bis
+exakt zum geplanten Zeitpunkt und bucht dann (mit kurzen Wiederholungen, falls
+Eversports den Slot ein paar Sekunden später freischaltet). Der Job bleibt
+währenddessen per Row-Lock geclaimt; der nächste CronJob-Lauf überspringt ihn.
 """
 from __future__ import annotations
 
 import logging
 import sys
 import os
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
@@ -22,7 +29,7 @@ from backend.models.booking_log import BookingLog
 from backend.models.user import User
 from backend.core.encryption import decrypt
 from backend.core.status import BookingStatus
-from backend.eversports import book_session, cancel_booking, fetch_upcoming_bookings
+from backend.eversports import book_session, cancel_booking, fetch_upcoming_bookings, prepare_booking
 from backend.core.schedule import compute_next_run
 from worker.email import send_booking_failure_email, send_admin_booking_failure_email, send_debug_cancel_failure_email, send_waitlist_notification
 from backend.models.push_subscription import PushSubscription
@@ -37,6 +44,14 @@ log = logging.getLogger(__name__)
 
 BERLIN = ZoneInfo("Europe/Berlin")
 MAX_WORKERS = 10
+# Jobs, die innerhalb dieses Fensters fällig werden, wartet der Lauf ab.
+# Entspricht dem CronJob-Intervall, damit jeder Zeitpunkt abgedeckt ist.
+LOOKAHEAD = timedelta(minutes=int(os.environ.get("WORKER_LOOKAHEAD_MINUTES", "15")))
+# Wiederholungen zur Öffnung des Buchungsfensters (Slot evtl. noch nicht buchbar)
+BOOKING_ATTEMPTS = 4
+BOOKING_RETRY_DELAY_SECONDS = 2.0
+# Obergrenze paralleler Threads (wartende Jobs belegen je einen Thread + DB-Connection)
+MAX_THREADS = 30
 
 
 def _normalize_now(now: datetime) -> datetime:
@@ -47,6 +62,16 @@ def _normalize_now(now: datetime) -> datetime:
 def _as_utc(dt: datetime) -> datetime:
     """DB-Werte normalisieren: SQLite liefert naive Datetimes (gespeichert als UTC)."""
     return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt.astimezone(timezone.utc)
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def wait_until(target: datetime) -> None:
+    """Blockiert bis zum Zeitpunkt `target` (UTC-aware)."""
+    while (remaining := (target - _utcnow()).total_seconds()) > 0:
+        time.sleep(min(remaining, 30.0))
 
 
 def already_booked(db: Session, job: BookingJob, target_date: date) -> bool:
@@ -63,8 +88,18 @@ def already_booked(db: Session, job: BookingJob, target_date: date) -> bool:
     )
 
 
-def process_job(job_id: str, now: datetime, session_factory, admin_emails: list[str]) -> None:
-    """Processes a single booking job in its own DB session. Designed to run in a thread."""
+def process_job(
+    job_id: str,
+    now: datetime,
+    session_factory,
+    admin_emails: list[str],
+    lookahead: timedelta = LOOKAHEAD,
+) -> None:
+    """Processes a single booking job in its own DB session. Designed to run in a thread.
+
+    Liegt next_run_at innerhalb von `lookahead` nach `now`, wird vorab eingeloggt
+    und bis zum geplanten Zeitpunkt gewartet.
+    """
     now = _normalize_now(now)
     db = session_factory()
     try:
@@ -81,7 +116,10 @@ def process_job(job_id: str, now: datetime, session_factory, admin_emails: list[
             return
 
         def advance() -> None:
-            job.next_run_at = compute_next_run(job.weekday, job.target_time, job.days_in_advance, after=now)
+            # Bei vorzeitig geclaimten Jobs ist now < geplanter Lauf: ab dem
+            # geplanten Lauf weiterschalten, sonst würde derselbe Slot erneut geplant
+            after = now if job.next_run_at is None else max(now, _as_utc(job.next_run_at))
+            job.next_run_at = compute_next_run(job.weekday, job.target_time, job.days_in_advance, after=after)
 
         if job.next_run_at is None:
             # Bestandsdaten: einplanen, aber nicht rückwirkend ausführen
@@ -91,7 +129,7 @@ def process_job(job_id: str, now: datetime, session_factory, admin_emails: list[
             return
 
         scheduled_at = _as_utc(job.next_run_at)
-        if scheduled_at > now:
+        if scheduled_at > now + lookahead:
             return  # bereits von einem anderen Lauf weitergeschaltet
 
         # target_date leitet sich vom geplanten Lauf ab — bei Nachholläufen
@@ -125,6 +163,16 @@ def process_job(job_id: str, now: datetime, session_factory, admin_emails: list[
 
         try:
             password = decrypt(user.encrypted_password, aad=user.eversports_user_id)
+            prepared = None
+            if scheduled_at > now:
+                # Login vorab, damit zum Öffnungszeitpunkt nur noch gebucht wird.
+                # Scheitert die Vorbereitung, loggt book_session zum Zeitpunkt selbst ein.
+                try:
+                    prepared = prepare_booking(user.email, password, job.facility_id)
+                except Exception as prep_exc:
+                    log.warning("Job %s: Vorbereitung fehlgeschlagen (%s), Login erfolgt beim Buchen", job.id, prep_exc)
+                log.info("Job %s: warte bis %s", job.id, scheduled_at)
+                wait_until(scheduled_at)
             result = book_session(
                 email=user.email,
                 password=password,
@@ -133,6 +181,9 @@ def process_job(job_id: str, now: datetime, session_factory, admin_emails: list[
                 facility_id=job.facility_id,
                 class_name=job.class_name,
                 event_type=job.event_type,
+                prepared=prepared,
+                attempts=BOOKING_ATTEMPTS,
+                retry_delay=BOOKING_RETRY_DELAY_SECONDS,
             )
             log_entry = BookingLog(
                 job_id=job.id,
@@ -214,8 +265,9 @@ def run(now: datetime, session_factory=None) -> None:
             .filter(
                 BookingJob.enabled.is_(True),
                 User.active.is_(True),
-                or_(BookingJob.next_run_at.is_(None), BookingJob.next_run_at <= now_utc),
+                or_(BookingJob.next_run_at.is_(None), BookingJob.next_run_at <= now_utc + LOOKAHEAD),
             )
+            .order_by(BookingJob.next_run_at)
             .all()
         ]
         admin_emails = [
@@ -225,15 +277,22 @@ def run(now: datetime, session_factory=None) -> None:
     finally:
         db.close()
 
-    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+    # Push-Benachrichtigungen parallel, damit sie nicht hinter wartenden Jobs hängen.
+    # Wartende Jobs belegen einen Thread; daher so viele Threads wie Jobs (gedeckelt),
+    # mindestens MAX_WORKERS. Sortierung nach next_run_at: frühe Jobs starten zuerst.
+    threads = min(max(MAX_WORKERS, len(due_job_ids)), MAX_THREADS)
+    with ThreadPoolExecutor(max_workers=threads + 1) as executor:
+        push_future = executor.submit(_run_push_notifications, now, session_factory)
         futures = {executor.submit(process_job, jid, now, session_factory, admin_emails): jid for jid in due_job_ids}
         for future in as_completed(futures):
             try:
                 future.result()
             except Exception as exc:
                 log.error("Job %s: unhandled thread error — %s", futures[future], exc)
-
-    _run_push_notifications(now, session_factory)
+        try:
+            push_future.result()
+        except Exception as exc:
+            log.error("Push notifications: unhandled error — %s", exc)
 
 
 def _run_push_notifications(now: datetime, session_factory) -> None:
@@ -259,6 +318,8 @@ def _run_push_notifications(now: datetime, session_factory) -> None:
 
 
 def main() -> None:
+    # Wartende Jobs halten je eine DB-Connection: Pool passend zu MAX_THREADS
+    os.environ.setdefault("DB_MAX_OVERFLOW", str(MAX_THREADS + 5))
     run(datetime.now(BERLIN))
 
 

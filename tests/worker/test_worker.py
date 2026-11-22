@@ -671,3 +671,92 @@ def test_run_calls_push_notifications_for_subscribed_users(db_session, session_f
         run(now, session_factory)
         mock_fetch.assert_called_once_with("push@example.com", "secret")
         mock_notify.assert_called_once()
+
+
+# --- sekundengenaues Buchen (Lookahead) ---
+
+def test_job_im_lookahead_wird_vorbereitet_und_zum_zeitpunkt_gebucht(db_session, session_factory, mocker):
+    # Lauf startet 17:50, Buchungsfenster öffnet 18:00 → vorab einloggen, warten, buchen
+    _user(db_session, uid="la1", ev="ev_la1", email="la1@b.com")
+    _job(db_session, jid="jla1", uid="la1", next_run=datetime(2026, 4, 10, 18, 0))
+
+    calls = []
+    mocker.patch("worker.worker.decrypt", return_value="pass")
+    prepared = object()
+    mocker.patch("worker.worker.prepare_booking", side_effect=lambda *a: calls.append("prepare") or prepared)
+    mocker.patch("worker.worker.wait_until", side_effect=lambda t: calls.append(("wait", t)))
+    mock_book = mocker.patch(
+        "worker.worker.book_session",
+        side_effect=lambda **kw: calls.append("book") or {"status": "success", "order_id": "ord"},
+    )
+
+    run(datetime(2026, 4, 10, 17, 50), session_factory)
+
+    assert calls == ["prepare", ("wait", _utc(datetime(2026, 4, 10, 18, 0))), "book"]
+    assert mock_book.call_args.kwargs["prepared"] is prepared
+    assert mock_book.call_args.kwargs["attempts"] > 1
+    log = db_session.query(BookingLog).filter(BookingLog.job_id == "jla1").first()
+    assert log.status == "success"
+    assert log.target_date == date(2026, 4, 14)
+    db_session.expire_all()
+    job = db_session.query(BookingJob).filter(BookingJob.id == "jla1").first()
+    # Weitergeschaltet auf die Folgewoche — nicht erneut auf denselben Slot
+    assert job.next_run_at.replace(tzinfo=timezone.utc) == _utc(datetime(2026, 4, 17, 18, 0))
+
+
+def test_job_ausserhalb_lookahead_wird_nicht_angefasst(db_session, session_factory, mocker):
+    _user(db_session, uid="la2", ev="ev_la2", email="la2@b.com")
+    _job(db_session, jid="jla2", uid="la2", next_run=datetime(2026, 4, 10, 18, 0))
+    mock_prep = mocker.patch("worker.worker.prepare_booking")
+    mock_book = mocker.patch("worker.worker.book_session")
+
+    run(datetime(2026, 4, 10, 17, 40), session_factory)  # 20 Min vorher
+
+    mock_prep.assert_not_called()
+    mock_book.assert_not_called()
+
+
+def test_faelliger_job_wird_ohne_warten_gebucht(db_session, session_factory, mocker):
+    _user(db_session, uid="la3", ev="ev_la3", email="la3@b.com")
+    _job(db_session, jid="jla3", uid="la3", next_run=datetime(2026, 4, 10, 18, 0))
+    mocker.patch("worker.worker.decrypt", return_value="pass")
+    mock_prep = mocker.patch("worker.worker.prepare_booking")
+    mock_wait = mocker.patch("worker.worker.wait_until")
+    mock_book = mocker.patch("worker.worker.book_session", return_value={"status": "success", "order_id": "o"})
+
+    run(datetime(2026, 4, 10, 18, 5), session_factory)
+
+    mock_prep.assert_not_called()
+    mock_wait.assert_not_called()
+    assert mock_book.call_args.kwargs["prepared"] is None
+
+
+def test_fehlgeschlagene_vorbereitung_bucht_trotzdem(db_session, session_factory, mocker):
+    _user(db_session, uid="la4", ev="ev_la4", email="la4@b.com")
+    _job(db_session, jid="jla4", uid="la4", next_run=datetime(2026, 4, 10, 18, 0))
+    mocker.patch("worker.worker.decrypt", return_value="pass")
+    mocker.patch("worker.worker.prepare_booking", side_effect=RuntimeError("timeout"))
+    mocker.patch("worker.worker.wait_until")
+    mock_book = mocker.patch("worker.worker.book_session", return_value={"status": "success", "order_id": "o"})
+
+    process_job("jla4", datetime(2026, 4, 10, 17, 55), session_factory, [])
+
+    assert mock_book.call_args.kwargs["prepared"] is None
+    log = db_session.query(BookingLog).filter(BookingLog.job_id == "jla4").first()
+    assert log.status == "success"
+
+
+def test_wait_until_schlaeft_bis_zum_zeitpunkt(mocker):
+    from worker import worker as w
+    start = datetime(2026, 4, 10, 16, 0, tzinfo=timezone.utc)
+    clock = {"now": start}
+    mocker.patch.object(w, "_utcnow", side_effect=lambda: clock["now"])
+
+    def fake_sleep(sec):
+        from datetime import timedelta
+        clock["now"] += timedelta(seconds=sec)
+
+    mocker.patch.object(w.time, "sleep", side_effect=fake_sleep)
+    from datetime import timedelta
+    w.wait_until(start + timedelta(seconds=75))
+    assert clock["now"] == start + timedelta(seconds=75)
