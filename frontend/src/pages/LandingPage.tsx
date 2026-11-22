@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 import LoginModal from '../components/LoginModal'
 import FaqModal from '../components/FaqModal'
-import Logo, { LogoMark } from '../components/Logo'
+import Logo from '../components/Logo'
 
 const ROTATING_TEXTS = ['eine Klasse verpassen.', 'einen Kurs verpassen.', 'ein Training verpassen.']
 const VIDEO_URL = 'https://www.youtube.com/watch?v=spngnOZDBQo'
@@ -282,7 +282,7 @@ export default function LandingPage() {
       <section className="relative overflow-hidden border-t border-line-subtle px-4 sm:px-6 py-24 lg:py-[120px]">
         <div aria-hidden className="pointer-events-none absolute left-1/2 top-1/2 w-[900px] h-[420px] -ml-[450px] -mt-[210px] rounded-full bg-brand opacity-30 blur-[120px]" />
         <div className="relative max-w-[720px] mx-auto flex flex-col items-center gap-[22px] text-center">
-          <LogoMark className="h-9 w-auto" strokeWidth={2.2} />
+          <Logo size="lg" />
           <h2 className="text-[38px] sm:text-[50px] lg:text-[62px] leading-[1.05] font-extrabold tracking-[-0.035em] text-white">Bereit loszulegen?</h2>
           <p className="text-lg sm:text-xl leading-relaxed text-muted">Melde dich mit deinen Eversports-Daten an und plane deine erste Buchung in wenigen Minuten.</p>
           <button type="button" onClick={openModal} className={`${PRIMARY_BTN} mt-2 min-h-[60px] px-9 text-[19px]`}>

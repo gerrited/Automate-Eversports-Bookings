@@ -48,7 +48,7 @@ export default function LoginModal({ onClose }: Props) {
       </button>
 
       <div className="flex flex-col items-center gap-7 pt-4">
-        <Logo size="lg" stacked />
+        <Logo size="lg" />
 
         <div className="flex flex-col items-center gap-2 text-center">
           <h2 className="text-[26px] font-extrabold tracking-[-0.02em] text-white">Willkommen zurück</h2>
