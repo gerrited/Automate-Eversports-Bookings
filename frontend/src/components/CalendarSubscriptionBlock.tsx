@@ -47,19 +47,19 @@ export default function CalendarSubscriptionBlock() {
               {copied ? 'Kopiert!' : 'Kopieren'}
             </Button>
           </div>
-          <p className="text-xs text-slate-500 mt-3 mb-1">
+          <p className="text-xs text-faint mt-3 mb-1">
             Der Kalender aktualisiert sich automatisch.
           </p>
           <button
             onClick={handleReset}
             disabled={resetting}
-            className="text-xs text-slate-500 hover:text-slate-400 underline disabled:opacity-50"
+            className="text-xs text-faint hover:text-slate-400 underline disabled:opacity-50"
           >
             Token zurücksetzen
           </button>
         </>
       ) : (
-        <p className="text-xs text-slate-500">Lädt…</p>
+        <p className="text-xs text-faint">Lädt…</p>
       )}
     </>
   )

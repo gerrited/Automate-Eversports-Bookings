@@ -28,7 +28,7 @@ export default function ImprintModal({ onClose }: Props) {
 
         <section className="flex flex-col gap-3">
           <h3 className="text-base font-semibold text-white border-b border-line-subtle pb-2">Impressum</h3>
-          <p className="text-xs text-slate-500">Anbieterkennzeichnung gemäß § 5 DDG</p>
+          <p className="text-xs text-faint">Anbieterkennzeichnung gemäß § 5 DDG</p>
           <div className="text-sm text-slate-300 leading-relaxed">
             <p>Gerrit Edzards</p>
             <p>Bussardweg 86</p>
@@ -162,7 +162,7 @@ export default function ImprintModal({ onClose }: Props) {
           </div>
         </section>
 
-        <p className="text-xs text-slate-600 text-center">
+        <p className="text-xs text-faint text-center">
           Erstellt für das private Projekt foreversports.cc | Stand: Mai 2026
         </p>
       </div>

@@ -55,7 +55,7 @@ export default function AllLogsSection() {
           placeholder="Nach E-Mail filtern…"
         />
         {!loading && !error && result && (
-          <p className="text-slate-500 text-xs">
+          <p className="text-faint text-xs">
             {total} Einträge · Seite {currentPage} von {totalPages}
           </p>
         )}
@@ -84,7 +84,7 @@ export default function AllLogsSection() {
                     )}
                   </p>
                   {truncated && (
-                    <p className="text-slate-500 text-xs mt-0.5">
+                    <p className="text-faint text-xs mt-0.5">
                       {truncated}
                       {log.message && log.message.length > 60 && (
                         <button
@@ -101,10 +101,10 @@ export default function AllLogsSection() {
                   <p className={`text-xs font-medium ${STATUS_STYLES[log.status] ?? 'text-slate-400'}`}>
                     {STATUS_LABELS[log.status] ?? log.status}
                   </p>
-                  <p className="text-slate-500 text-xs mt-0.5">
+                  <p className="text-faint text-xs mt-0.5">
                     {new Date(log.executed_at).toLocaleString('de-DE')}
                   </p>
-                  <p className="text-slate-600 text-xs">
+                  <p className="text-faint text-xs">
                     Ziel: {log.target_date}
                   </p>
                 </div>

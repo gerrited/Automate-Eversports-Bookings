@@ -184,7 +184,7 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
               <button onClick={() => setToggleError(null)} className="text-red-400 hover:text-red-200 ml-3 text-xs">✕</button>
             </div>
           )}
-          <p className="text-slate-500 text-xs">
+          <p className="text-faint text-xs">
             {filteredUsers.length} von {users.length} Benutzern · Seite {safePage} von {totalPages}
           </p>
           {pagedUsers.map(user => {
@@ -233,7 +233,7 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
                         >✓</button>
                         <button
                           onClick={cancelEditLimit}
-                          className="text-xs text-slate-500 hover:text-slate-400 px-1"
+                          className="text-xs text-faint hover:text-slate-400 px-1"
                         >✕</button>
                       </span>
                     ) : (
@@ -242,7 +242,7 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
                         className={`text-xs px-2 py-0.5 rounded-full border cursor-pointer hover:opacity-80 transition-opacity ${
                           user.max_active_jobs !== null
                             ? 'bg-violet-900/50 border-violet-700 text-violet-300'
-                            : 'bg-slate-800 border-line text-slate-500'
+                            : 'bg-slate-800 border-line text-muted'
                         }`}
                       >
                         {user.max_active_jobs !== null ? `Limit: ${user.max_active_jobs} ✎` : 'Kein Limit ✎'}
@@ -371,7 +371,7 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
                     onChange={e => setMessageContent(e.target.value)}
                     placeholder="Nachricht"
                     rows={5}
-                    className="w-full bg-slate-800 border border-line rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-slate-500 resize-none"
+                    className="w-full bg-slate-800 border border-line rounded-lg px-3 py-2 text-sm text-white placeholder:text-muted focus:outline-none focus:border-slate-500 resize-none"
                   />
                 </div>
                 {messageError && (

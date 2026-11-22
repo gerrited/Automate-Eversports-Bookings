@@ -97,12 +97,12 @@ export default function FacilityCombobox({ value, onChange }: Props) {
             <div className="px-3 py-2 text-red-400 text-sm">{error}</div>
           )}
           {!loading && !error && query.length > 0 && query.length < 5 && (
-            <div className="px-3 py-2 text-slate-500 text-sm">
+            <div className="px-3 py-2 text-faint text-sm">
               Mindestens 5 Zeichen für Suche
             </div>
           )}
           {!loading && !error && displayedResults.length === 0 && (query.length === 0 || query.length >= 5) && (
-            <div className="px-3 py-2 text-slate-500 text-sm">Keine Ergebnisse</div>
+            <div className="px-3 py-2 text-faint text-sm">Keine Ergebnisse</div>
           )}
           {!loading && !error && displayedResults.map(facility => (
             <button

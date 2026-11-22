@@ -26,7 +26,7 @@ export default function HelpIcon({ text }: Props) {
         aria-label="Hilfe anzeigen"
         aria-expanded={open}
         onClick={() => setOpen(v => !v)}
-        className="inline-flex items-center justify-center w-4 h-4 rounded-full border border-slate-600 text-slate-500 hover:text-slate-300 hover:border-slate-400 text-[10px] font-bold leading-none transition-colors"
+        className="inline-flex items-center justify-center w-4 h-4 rounded-full border border-slate-600 text-faint hover:text-slate-300 hover:border-slate-400 text-[10px] font-bold leading-none transition-colors"
       >
         ?
       </button>
