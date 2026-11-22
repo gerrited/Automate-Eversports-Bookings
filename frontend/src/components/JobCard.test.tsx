@@ -23,9 +23,7 @@ describe('JobCard', () => {
     render(
       <JobCard job={job} onToggle={vi.fn()} onEdit={vi.fn()} onDelete={vi.fn()} onSelect={vi.fn()} />
     )
-    expect(screen.getByText(/Dienstag/)).toBeInTheDocument()
-    expect(screen.getByText(/18:00/)).toBeInTheDocument()
-    expect(screen.getAllByText(/CrossFit/)[0]).toBeInTheDocument()
+    expect(screen.getByText('Dienstag · 18:00 Uhr · CrossFit')).toBeInTheDocument()
   })
 
   it('does not show Einmalig for regular jobs', () => {

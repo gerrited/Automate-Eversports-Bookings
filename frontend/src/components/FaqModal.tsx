@@ -91,7 +91,7 @@ export default function FaqModal({ onClose }: Props) {
           {FAQ_ITEMS.map(({ question, answer }, index) => {
             const isOpen = openIndex === index
             return (
-              <div key={question} className="border border-slate-700/60 rounded-lg">
+              <div key={question} className="border border-line-subtle rounded-lg">
                 <button
                   type="button"
                   onClick={() => setOpenIndex(isOpen ? null : index)}

@@ -1,3 +1,4 @@
+import { StrictMode } from 'react'
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { vi } from 'vitest'
 import JobModal from './JobModal'
@@ -85,5 +86,18 @@ describe('JobModal', () => {
     render(<JobModal onSave={onSave} onClose={onClose} />)
     fireEvent.click(screen.getByRole('button', { name: /abbrechen/i }))
     expect(onClose).toHaveBeenCalled()
+  })
+
+  it('behält den Kursnamen beim Öffnen zum Bearbeiten (auch unter StrictMode)', async () => {
+    render(<StrictMode><JobModal job={jobWithFacility} onSave={onSave} onClose={onClose} /></StrictMode>)
+    const course = screen.getByLabelText('Kursname', { selector: 'input' }) as HTMLInputElement
+    await waitFor(() => expect(course.value).toBe('CrossFit'))
+  })
+
+  it('leert den Kursnamen, wenn der Wochentag geändert wird', async () => {
+    render(<JobModal job={jobWithFacility} onSave={onSave} onClose={onClose} />)
+    fireEvent.change(screen.getByRole('combobox', { name: 'Wochentag' }), { target: { value: '3' } })
+    const course = screen.getByLabelText('Kursname', { selector: 'input' }) as HTMLInputElement
+    await waitFor(() => expect(course.value).toBe(''))
   })
 })

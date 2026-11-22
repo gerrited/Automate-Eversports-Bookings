@@ -43,6 +43,7 @@ vi.mock('../api/auth', () => ({
 }))
 
 import { getMe } from '../api/account'
+import type { CurrentUser } from '../types'
 import { listJobs } from '../api/jobs'
 import DashboardPage from './DashboardPage'
 
@@ -58,23 +59,27 @@ beforeEach(() => {
   vi.mocked(listJobs).mockResolvedValue([])
 })
 
+function me(total: number): CurrentUser {
+  return { total_bookings_executed: total, max_active_jobs: null, notification_advance_minutes: 60 }
+}
+
 afterEach(() => {
   vi.clearAllMocks()
 })
 
 describe('DashboardPage – Buchungszähler-Nachricht', () => {
   it('zeigt keine Nachricht wenn total_bookings_executed === 0', async () => {
-    vi.mocked(getMe).mockResolvedValue({ total_bookings_executed: 0 } as any)
+    vi.mocked(getMe).mockResolvedValue(me(0))
 
     renderDashboard()
 
     // Wait for listJobs to settle, then confirm no counter message
-    await screen.findByText('+ Buchung planen')
+    await screen.findByRole('button', { name: 'Buchung planen' })
     expect(screen.queryByText(/automatisch durchgeführt/)).not.toBeInTheDocument()
   })
 
   it('zeigt Singular-Nachricht wenn total_bookings_executed === 1', async () => {
-    vi.mocked(getMe).mockResolvedValue({ total_bookings_executed: 1 } as any)
+    vi.mocked(getMe).mockResolvedValue(me(1))
 
     renderDashboard()
 
@@ -88,7 +93,7 @@ describe('DashboardPage – Buchungszähler-Nachricht', () => {
   })
 
   it('zeigt Plural-Nachricht wenn total_bookings_executed > 1', async () => {
-    vi.mocked(getMe).mockResolvedValue({ total_bookings_executed: 5 } as any)
+    vi.mocked(getMe).mockResolvedValue(me(5))
 
     renderDashboard()
 

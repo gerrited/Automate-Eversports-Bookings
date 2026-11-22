@@ -85,35 +85,57 @@ export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect, onE
     }
   }
 
+  const abbr = WEEKDAY_NAMES[job.weekday].slice(0, 2).toUpperCase()
+  const active = job.enabled
+
   return (
-    <div className="bg-surface-card rounded-xl overflow-hidden">
+    <article className="flex flex-col rounded-[20px] border border-[#15303a] bg-surface-card transition-colors hover:border-[#24464d] overflow-hidden">
       {/* Clickable body */}
       <div
         data-testid="job-card-body"
-        className="p-4 cursor-pointer hover:bg-surface-input transition-colors"
+        className="p-4 sm:p-[22px] sm:pb-5 cursor-pointer"
         onClick={() => onSelect(job)}
       >
-        <div className="flex justify-between items-start">
-          <div>
-            <p className="text-white font-semibold">
-              {WEEKDAY_NAMES[job.weekday]} · {time} Uhr · {job.class_name}
-            </p>
-            <p className="text-slate-400 text-sm mt-1">
-              {facilityLabel} · {job.days_in_advance} Tage im Voraus{job.one_time ? ' · Einmalig' : ''}{job.debug ? ' · ' : ''}{job.debug && <span className="text-amber-400 text-xs font-medium">Test</span>}
-            </p>
+        <div className="flex items-start gap-3 sm:gap-4">
+          <div className={`flex items-start gap-3 sm:gap-4 flex-1 min-w-0 transition-opacity ${active ? '' : 'opacity-60'}`}>
+            <span
+              aria-hidden="true"
+              className={`shrink-0 w-[62px] h-[62px] rounded-2xl flex flex-col items-center justify-center gap-0.5 ${active ? 'bg-brand' : 'bg-slate-800'}`}
+            >
+              <span className={`text-xs font-extrabold tracking-[0.08em] ${active ? 'text-accent' : 'text-muted'}`}>{abbr}</span>
+              <span className="text-[15px] font-extrabold tabular-nums text-white">{time}</span>
+            </span>
+            <span className="flex-1 min-w-0 flex flex-col gap-[5px]">
+              <span className="text-[17px] sm:text-lg font-extrabold text-white break-words">
+                {WEEKDAY_NAMES[job.weekday]} · {time} Uhr · {job.class_name}
+              </span>
+              <span className="text-sm leading-snug text-muted break-words">
+                {facilityLabel} · {job.days_in_advance} {job.days_in_advance === 1 ? 'Tag' : 'Tage'} im Voraus · {job.one_time ? 'Einmalig' : 'Wöchentlich'}
+              </span>
+              <span className="mt-1 flex flex-wrap gap-1.5">
+                <span className={`rounded-full px-2.5 py-[3px] text-xs font-bold ${active ? 'bg-accent/15 text-accent-hover' : 'bg-slate-400/15 text-slate-300'}`}>
+                  {active ? 'Aktiv' : 'Pausiert'}
+                </span>
+                {job.debug && (
+                  <span className="rounded-full bg-amber-400/15 px-2.5 py-[3px] text-xs font-bold text-amber-300">Test</span>
+                )}
+              </span>
+            </span>
           </div>
           {/* Toggle */}
           <button
             role="switch"
             aria-checked={job.enabled}
+            aria-label={`${WEEKDAY_NAMES[job.weekday]} ${time} Uhr ${job.class_name} automatisch buchen`}
+            disabled={toggling}
             onClick={e => { e.stopPropagation(); handleToggle() }}
-            className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${
-              job.enabled ? 'bg-green-700' : 'bg-slate-600'
+            className={`relative shrink-0 mt-1 w-[52px] h-[30px] rounded-full transition-colors disabled:opacity-70 ${
+              active ? 'bg-green-600' : 'bg-slate-700'
             }`}
           >
             <span
-              className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform mt-1 ${
-                job.enabled ? 'translate-x-6' : 'translate-x-1'
+              className={`absolute top-1 left-1 w-[22px] h-[22px] rounded-full bg-white shadow-[0_2px_6px_rgba(0,0,0,.3)] transition-transform duration-200 ${
+                active ? 'translate-x-[22px]' : 'translate-x-0'
               }`}
             />
           </button>
@@ -121,10 +143,9 @@ export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect, onE
       </div>
 
       {/* Action bar */}
-      <div className="flex items-center gap-2 px-4 pb-3 pt-3">
+      <div className="mx-4 sm:mx-[22px] flex flex-wrap items-center gap-2 sm:gap-2.5 border-t border-line-subtle py-4">
         <Button
           variant="slate"
-          size="sm"
           aria-label="Bearbeiten"
           onClick={() => onEdit(job)}
           disabled={executing}
@@ -134,7 +155,6 @@ export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect, onE
         {onExecute && (
           <Button
             variant="primary"
-            size="sm"
             aria-label="Jetzt buchen"
             onClick={handleExecute}
             loading={executing}
@@ -145,7 +165,6 @@ export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect, onE
         <div className="ml-auto">
           <Button
             variant="danger"
-            size="sm"
             aria-label="Löschen"
             onClick={() => onDelete(job.id)}
             disabled={executing}
@@ -157,10 +176,10 @@ export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect, onE
 
       {/* Feedback */}
       {feedback && (
-        <div className={`px-4 pb-3 text-sm font-medium ${feedbackClass}`}>
+        <div role="status" className={`mx-4 sm:mx-[22px] mb-4 -mt-1 text-sm font-medium ${feedbackClass}`}>
           {feedbackText}
         </div>
       )}
-    </div>
+    </article>
   )
 }
