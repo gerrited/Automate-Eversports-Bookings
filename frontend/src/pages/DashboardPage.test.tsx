@@ -104,4 +104,20 @@ describe('DashboardPage – Buchungszähler-Nachricht', () => {
     })
     expect(msg).toBeInTheDocument()
   })
+
+  it('zeigt die Nachricht unterhalb der Liste geplanter Buchungen', async () => {
+    vi.mocked(getMe).mockResolvedValue(me(5))
+    vi.mocked(listJobs).mockResolvedValue([{
+      id: 'j1', weekday: 1, target_time: '18:00:00', facility_id: 'f1',
+      facility_name: 'CrossFit Rabbit Hole', class_name: 'CrossFit', days_in_advance: 4,
+      enabled: true, one_time: false, debug: false, created_at: '',
+    }])
+
+    renderDashboard()
+
+    const card = await screen.findByText('Dienstag · 18:00 Uhr · CrossFit')
+    const msg = await screen.findByText((_, element) =>
+      element?.tagName === 'P' && (element.textContent ?? '').includes('automatisch durchgeführt'))
+    expect(card.compareDocumentPosition(msg) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
 })
