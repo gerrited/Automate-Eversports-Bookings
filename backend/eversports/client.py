@@ -7,6 +7,8 @@ Schwester-Module parsing.py und classify.py.
 from __future__ import annotations
 
 import logging
+import time
+from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from typing import Optional
 
@@ -14,7 +16,7 @@ import requests
 
 from backend.core.status import BookingStatus
 from backend.eversports.classify import CartOutcome, classify_cart_errors
-from backend.eversports.errors import AuthFailed, PlatformError, SlotNotFound
+from backend.eversports.errors import AuthFailed, CartRejected, PlatformError, SlotNotFound
 from backend.eversports.parsing import extract_facility_id, parse_calendar_slots, parse_upcoming_bookings
 
 log = logging.getLogger(__name__)
@@ -146,6 +148,27 @@ def eversports_login(email: str, password: str) -> Optional[dict]:
     }
 
 
+@dataclass
+class PreparedBooking:
+    """Eingeloggte Session samt aufgelöster Facility-ID.
+
+    Wird vor dem Öffnen des Buchungsfensters angelegt, damit Login und
+    Facility-Auflösung nicht in die zeitkritische Phase fallen.
+    """
+    session: requests.Session
+    numeric_facility_id: str
+
+
+def prepare_booking(email: str, password: str, facility_id: str) -> PreparedBooking:
+    """Login + Facility-Auflösung vorab. Wirft AuthFailed bei Login-Fehler."""
+    login_result = eversports_login(email, password)
+    if login_result is None:
+        raise AuthFailed("Eversports login failed")
+    session: requests.Session = login_result["session"]
+    # Slug → numerische ID (mit auth. Session, Cloudflare-kompatibel)
+    return PreparedBooking(session=session, numeric_facility_id=_resolve_facility_id(facility_id, session))
+
+
 def book_session(
     email: str,
     password: str,
@@ -154,6 +177,10 @@ def book_session(
     facility_id: str,
     class_name: str,
     event_type: Optional[str] = None,
+    prepared: Optional[PreparedBooking] = None,
+    attempts: int = 1,
+    retry_delay: float = 2.0,
+    _sleep=time.sleep,
 ) -> dict:
     """
     Full booking flow.
@@ -164,15 +191,38 @@ def book_session(
 
     If event_type is given, only that type is queried (faster).
     Otherwise all types (class, training, course) are tried in order.
+
+    prepared: vorab eingeloggte Session (prepare_booking) — spart Login-Latenz.
+    attempts: Anzahl Versuche, wenn der Slot noch nicht buchbar ist (SlotNotFound
+    oder abgelehnter Warenkorb). Gedacht für den Lauf genau zur Öffnung des
+    Buchungsfensters, falls Eversports den Slot ein paar Sekunden später freischaltet.
+    Wiederholt wird nur vor der Order-Erstellung — es kann keine Doppelbuchung entstehen.
     """
-    login_result = eversports_login(email, password)
-    if login_result is None:
-        raise AuthFailed("Eversports login failed")
-    session: requests.Session = login_result["session"]
+    if prepared is None:
+        prepared = prepare_booking(email, password, facility_id)
 
-    # Slug → numerische ID (mit auth. Session, Cloudflare-kompatibel)
-    numeric_facility_id = _resolve_facility_id(facility_id, session)
+    for attempt in range(1, max(attempts, 1) + 1):
+        try:
+            return _book_with_session(
+                prepared.session, prepared.numeric_facility_id,
+                target_date, target_time, class_name, event_type,
+            )
+        except (SlotNotFound, CartRejected) as exc:
+            if attempt >= attempts:
+                raise
+            log.info("Buchung noch nicht möglich (Versuch %d/%d): %s", attempt, attempts, exc)
+            _sleep(retry_delay)
+    raise AssertionError("unreachable")  # pragma: no cover
 
+
+def _book_with_session(
+    session: requests.Session,
+    numeric_facility_id: str,
+    target_date: date,
+    target_time: str,
+    class_name: str,
+    event_type: Optional[str],
+) -> dict:
     # Fetch calendar for the week containing target_date.
     # If a known event_type is given, try it first — but fall back to other types
     # in case the session type changed (e.g. training → course).
@@ -241,7 +291,7 @@ def book_session(
         if outcome is CartOutcome.SLOT_FULL:
             join_waitlist(session, bookable_item_id)
             return {"status": BookingStatus.WAITLIST, "order_id": None, "event_type": matched_event_type, "_session": session}
-        raise PlatformError(f"Cart creation failed: {'; '.join(messages)}")
+        raise CartRejected(f"Cart creation failed: {'; '.join(messages)}")
 
     cart_id = cart_result["id"]
 

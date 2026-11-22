@@ -5,7 +5,9 @@ metadata:
 spec:
   schedule: "*/15 * * * *"
   timeZone: "Europe/Berlin"
-  concurrencyPolicy: Forbid
+  # Allow: ein Lauf wartet ggf. bis kurz vor dem nächsten Tick auf sekundengenaue
+  # Buchungen. Parallele Läufe sind per FOR UPDATE SKIP LOCKED abgesichert.
+  concurrencyPolicy: Allow
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
   jobTemplate:

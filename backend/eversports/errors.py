@@ -21,6 +21,14 @@ class PlatformError(EversportsError):
     """HTTP- oder GraphQL-Fehler der Plattform (5xx, ExpectedErrors ohne bekannte Klassifikation)."""
 
 
+class CartRejected(PlatformError):
+    """Warenkorb-Erstellung abgelehnt, ohne bekannte Klassifikation.
+
+    Es wurde noch nichts gebucht — ein erneuter Versuch ist gefahrlos
+    (z.B. wenn das Buchungsfenster ein paar Sekunden später öffnet).
+    """
+
+
 class MarkupDrift(EversportsError):
     """Erwartete HTML-Struktur nicht gefunden — Eversports hat das Markup geändert.
 

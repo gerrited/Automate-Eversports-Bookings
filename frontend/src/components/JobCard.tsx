@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import type { Job } from '../types'
 import { WEEKDAY_NAMES } from '../types'
 import { Button } from './ui'
+import { nextRunPreview } from '../utils/nextRun'
 
 interface Props {
   job: Job
@@ -112,6 +113,14 @@ export default function JobCard({ job, onToggle, onEdit, onDelete, onSelect, onE
               <span className="text-sm leading-snug text-muted break-words">
                 {facilityLabel} · {job.days_in_advance} {job.days_in_advance === 1 ? 'Tag' : 'Tage'} im Voraus · {job.one_time ? 'Einmalig' : 'Wöchentlich'}
               </span>
+              {(() => {
+                const preview = nextRunPreview(job)
+                return preview && (
+                  <span data-testid="next-run-preview" className="text-[13px] leading-snug text-slate-300 break-words">
+                    {preview}
+                  </span>
+                )
+              })()}
               <span className="mt-1 flex flex-wrap gap-1.5">
                 <span className={`rounded-full px-2.5 py-[3px] text-xs font-bold ${active ? 'bg-accent/15 text-accent-hover' : 'bg-slate-400/15 text-slate-300'}`}>
                   {active ? 'Aktiv' : 'Pausiert'}

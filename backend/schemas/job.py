@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from datetime import time, datetime
+from datetime import date, time, datetime, timezone
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, computed_field, field_validator
+
+from backend.core.schedule import class_date_for_run
 
 
 class JobCreate(BaseModel):
@@ -42,6 +44,22 @@ class JobResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+    @field_validator("next_run_at")
+    @classmethod
+    def _next_run_utc(cls, v: Optional[datetime]) -> Optional[datetime]:
+        # SQLite liefert naive Werte (gespeichert als UTC) — immer mit Zeitzone ausliefern
+        if v is None:
+            return None
+        return v.replace(tzinfo=timezone.utc) if v.tzinfo is None else v.astimezone(timezone.utc)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def next_class_date(self) -> Optional[date]:
+        """Kurstermin, für den der nächste Lauf bucht (Vorschau im Frontend)."""
+        if self.next_run_at is None:
+            return None
+        return class_date_for_run(self.next_run_at, self.days_in_advance)
 
 
 class AdminJobResponse(JobResponse):

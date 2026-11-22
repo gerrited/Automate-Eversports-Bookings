@@ -449,3 +449,26 @@ def test_toggle_on_berechnet_next_run_at_neu(client, db_session):
     next_run = _parse_next_run(resp.json())
     # kein Nachhol-Lauf aus der Deaktivierungs-Zeit: Termin liegt in der Zukunft
     assert next_run > datetime.now(timezone.utc)
+
+
+def test_job_response_enthaelt_vorschau_kurstermin(client, db_session):
+    from datetime import date, datetime, timedelta
+    from zoneinfo import ZoneInfo
+
+    user = _create_user(db_session)
+    resp = client.post(
+        "/api/jobs",
+        json={"weekday": 1, "target_time": "18:00:00", "facility_id": "73041",
+              "facility_name": "X", "class_name": "CrossFit", "days_in_advance": 4},
+        headers=_auth_header(user.id),
+    )
+    body = resp.json()
+    # next_run_at wird immer mit Zeitzone ausgeliefert (auch auf SQLite)
+    assert datetime.fromisoformat(body["next_run_at"]).tzinfo is not None
+    run_berlin = datetime.fromisoformat(body["next_run_at"]).astimezone(ZoneInfo("Europe/Berlin"))
+    class_date = date.fromisoformat(body["next_class_date"])
+    assert class_date == run_berlin.date() + timedelta(days=4)
+    assert class_date.weekday() == 1
+
+    listed = client.get("/api/jobs", headers=_auth_header(user.id)).json()
+    assert listed[0]["next_class_date"] == body["next_class_date"]

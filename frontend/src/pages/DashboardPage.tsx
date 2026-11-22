@@ -10,6 +10,7 @@ import LogDrawer from '../components/LogDrawer'
 import UserManagementSection from '../components/UserManagementSection'
 import AllJobsSection from '../components/AllJobsSection'
 import AllLogsSection from '../components/AllLogsSection'
+import WorkerStatusCard from '../components/WorkerStatusCard'
 import HamburgerMenu from '../components/HamburgerMenu'
 import SettingsModal from '../components/SettingsModal'
 import TestEmailModal from '../components/TestEmailModal'
@@ -407,7 +408,12 @@ useEffect(() => {
       {isAdmin() && activeTab === 'users' && <UserManagementSection onJobsClick={handleUserJobsClick} initialEmailFilter={usersEmailFilter} />}
 
       {/* Admin: Jobs-Tab */}
-      {isAdmin() && activeTab === 'jobs' && <AllJobsSection initialEmailFilter={jobsEmailFilter} onUserClick={handleJobUserClick} />}
+      {isAdmin() && activeTab === 'jobs' && (
+        <>
+          <WorkerStatusCard />
+          <AllJobsSection initialEmailFilter={jobsEmailFilter} onUserClick={handleJobUserClick} />
+        </>
+      )}
 
       {/* Admin: Logs-Tab */}
       {isAdmin() && activeTab === 'logs' && <AllLogsSection />}
