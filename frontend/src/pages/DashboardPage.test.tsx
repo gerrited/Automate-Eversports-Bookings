@@ -69,7 +69,7 @@ describe('DashboardPage – Buchungszähler-Nachricht', () => {
     renderDashboard()
 
     // Wait for listJobs to settle, then confirm no counter message
-    await screen.findByText('+ Buchung planen')
+    await screen.findByRole('button', { name: 'Buchung planen' })
     expect(screen.queryByText(/automatisch durchgeführt/)).not.toBeInTheDocument()
   })
 

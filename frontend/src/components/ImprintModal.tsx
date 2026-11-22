@@ -27,7 +27,7 @@ export default function ImprintModal({ onClose }: Props) {
         </div>
 
         <section className="flex flex-col gap-3">
-          <h3 className="text-base font-semibold text-white border-b border-slate-700/60 pb-2">Impressum</h3>
+          <h3 className="text-base font-semibold text-white border-b border-line-subtle pb-2">Impressum</h3>
           <p className="text-xs text-slate-500">Anbieterkennzeichnung gemäß § 5 DDG</p>
           <div className="text-sm text-slate-300 leading-relaxed">
             <p>Gerrit Edzards</p>
@@ -73,7 +73,7 @@ export default function ImprintModal({ onClose }: Props) {
         </section>
 
         <section className="flex flex-col gap-3">
-          <h3 className="text-base font-semibold text-white border-b border-slate-700/60 pb-2">Datenschutzerklärung</h3>
+          <h3 className="text-base font-semibold text-white border-b border-line-subtle pb-2">Datenschutzerklärung</h3>
 
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-1">
@@ -127,7 +127,7 @@ export default function ImprintModal({ onClose }: Props) {
                 Das Kernstück dieses Projekts ist die Verwaltung von Eversports-Buchungen. Dazu werden
                 Ihre Zugangsdaten (E-Mail/Passwort) wie folgt verarbeitet:
               </p>
-              <div className="flex flex-col gap-2 pl-3 border-l border-slate-700/60">
+              <div className="flex flex-col gap-2 pl-3 border-l border-line-subtle">
                 <div className="flex flex-col gap-0.5">
                   <p className="text-sm font-medium text-slate-300">Verschlüsselung</p>
                   <p className="text-sm text-slate-400 leading-relaxed">

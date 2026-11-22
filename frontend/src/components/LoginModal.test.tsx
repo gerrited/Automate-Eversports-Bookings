@@ -18,16 +18,16 @@ beforeEach(() => {
 describe('LoginModal', () => {
   it('renders email and password fields', () => {
     render(<MemoryRouter><LoginModal onClose={vi.fn()} /></MemoryRouter>)
-    expect(screen.getByPlaceholderText(/e-mail/i)).toBeInTheDocument()
-    expect(screen.getByPlaceholderText(/passwort/i)).toBeInTheDocument()
+    expect(screen.getByLabelText("E-Mail")).toBeInTheDocument()
+    expect(screen.getByLabelText("Passwort")).toBeInTheDocument()
   })
 
   it('calls login, navigates and closes on success', async () => {
     const onClose = vi.fn()
     vi.spyOn(authApi, 'login').mockResolvedValue(undefined)
     render(<MemoryRouter><LoginModal onClose={onClose} /></MemoryRouter>)
-    fireEvent.change(screen.getByPlaceholderText(/e-mail/i), { target: { value: 'a@b.com' } })
-    fireEvent.change(screen.getByPlaceholderText(/passwort/i), { target: { value: 'pass' } })
+    fireEvent.change(screen.getByLabelText("E-Mail"), { target: { value: 'a@b.com' } })
+    fireEvent.change(screen.getByLabelText("Passwort"), { target: { value: 'pass' } })
     fireEvent.click(screen.getByRole('button', { name: /anmelden/i }))
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith('/dashboard')
@@ -38,8 +38,8 @@ describe('LoginModal', () => {
   it('shows error message on failed login', async () => {
     vi.spyOn(authApi, 'login').mockRejectedValue(new Error('Invalid credentials'))
     render(<MemoryRouter><LoginModal onClose={vi.fn()} /></MemoryRouter>)
-    fireEvent.change(screen.getByPlaceholderText(/e-mail/i), { target: { value: 'bad@b.com' } })
-    fireEvent.change(screen.getByPlaceholderText(/passwort/i), { target: { value: 'wrong' } })
+    fireEvent.change(screen.getByLabelText("E-Mail"), { target: { value: 'bad@b.com' } })
+    fireEvent.change(screen.getByLabelText("Passwort"), { target: { value: 'wrong' } })
     fireEvent.click(screen.getByRole('button', { name: /anmelden/i }))
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument())
   })

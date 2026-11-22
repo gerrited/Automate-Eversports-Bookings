@@ -19,7 +19,7 @@ describe('LandingPage', () => {
 
   it('renders logo in navbar', () => {
     render(<MemoryRouter><LandingPage /></MemoryRouter>)
-    expect(screen.getByAltText(/logo/i)).toBeInTheDocument()
+    expect(screen.getAllByRole('img', { name: /logo/i }).length).toBeGreaterThan(0)
   })
 
   it('renders Anmelden button in navbar', () => {
@@ -42,7 +42,8 @@ describe('LandingPage', () => {
 
   it('renders video section label', () => {
     render(<MemoryRouter><LandingPage /></MemoryRouter>)
-    expect(screen.getByText(/so funktioniert/i)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /einmal einrichten/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /demo-video/i })).toHaveAttribute('href', expect.stringContaining('youtube.com'))
   })
 
   it('renders screenshot 2 section label', () => {
