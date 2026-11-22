@@ -79,7 +79,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
     `flex-1 min-h-10 rounded-[9px] text-sm font-bold transition-colors ${on ? 'bg-brand text-white' : 'text-muted hover:text-white'}`
 
   return (
-    <ModalShell>
+    <ModalShell onClose={onClose}>
       <div className="flex items-center justify-between gap-3 mb-3 sm:mb-4">
         <h2 className="text-xl sm:text-2xl font-extrabold tracking-[-0.02em] text-white">
           {job ? 'Geplante Buchung bearbeiten' : 'Neue Buchung planen'}

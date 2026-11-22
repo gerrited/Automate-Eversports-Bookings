@@ -81,6 +81,10 @@ export default function FacilityCombobox({ value, onChange }: Props) {
         placeholder={value ? value.name : 'Anbieter suchen…'}
         onFocus={handleOpen}
         onChange={e => handleQueryChange(e.target.value)}
+        onKeyDown={e => {
+          // Erstes Esc schließt nur die Vorschlagsliste, nicht den umgebenden Dialog.
+          if (e.key === 'Escape' && isOpen) { e.preventDefault(); setIsOpen(false); setQuery('') }
+        }}
         autoComplete="off"
       />
 

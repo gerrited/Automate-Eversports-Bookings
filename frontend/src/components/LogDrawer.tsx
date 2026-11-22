@@ -85,8 +85,10 @@ export default function LogDrawer({ job, logs, loading, onClose }: Props) {
         >
           <div className="flex flex-col gap-4">
             <div className="flex justify-between items-center">
-              <p className="text-white font-semibold">Fehlermeldung</p>
+              <h2 className="text-white font-semibold">Fehlermeldung</h2>
               <button
+                type="button"
+                aria-label="Schließen"
                 onClick={() => setActiveMessage(null)}
                 className="text-slate-400 hover:text-white text-xl leading-none"
               >
