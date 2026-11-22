@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import type { FormEvent } from 'react'
 import type { Job, JobFormData, Facility } from '../types'
 import FacilityCombobox from './FacilityCombobox'
@@ -25,27 +25,36 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
   const [daysInAdvance, setDaysInAdvance] = useState(job?.days_in_advance ?? 4)
   const [oneTime, setOneTime] = useState(job?.one_time ?? false)
   const [debug, setDebug] = useState(job?.debug ?? false)
-  const [courses, setCourses] = useState<string[]>([])
-  const [isLoadingCourses, setIsLoadingCourses] = useState(false)
-
-  const isInitialMount = useRef(true)
+  // Kursliste je (Anbieter, Wochentag, Uhrzeit) – Ladezustand wird daraus abgeleitet.
+  const courseKey = facility ? `${facility.id}|${weekday}|${targetTime}` : null
+  const [loadedCourses, setLoadedCourses] = useState<{ key: string; courses: string[] } | null>(null)
+  const coursesReady = courseKey !== null && loadedCourses?.key === courseKey
+  const courses = coursesReady ? loadedCourses.courses : []
+  const isLoadingCourses = courseKey !== null && !coursesReady
 
   useEffect(() => {
-    if (!facility) {
-      setCourses([])
-      setIsLoadingCourses(false)
-      return
-    }
+    if (!facility) return
+    const key = `${facility.id}|${weekday}|${targetTime}`
     let cancelled = false
-    setCourses([])
-    setIsLoadingCourses(true)
     getCourses(facility.id, weekday, targetTime)
-      .then(data => { if (!cancelled) { setCourses(data); setIsLoadingCourses(false) } })
-      .catch(() => { if (!cancelled) { setCourses([]); setIsLoadingCourses(false) } })
-    if (!isInitialMount.current) setClassName('')
-    isInitialMount.current = false
+      .then(data => { if (!cancelled) setLoadedCourses({ key, courses: data }) })
+      .catch(() => { if (!cancelled) setLoadedCourses({ key, courses: [] }) })
     return () => { cancelled = true }
-  }, [facility?.id, weekday, targetTime])
+  }, [facility, weekday, targetTime])
+
+  // Ändert der Nutzer Anbieter, Tag oder Uhrzeit, passt der gewählte Kurs nicht mehr.
+  function changeFacility(f: Facility) {
+    if (f.id !== facility?.id) setClassName('')
+    setFacility(f)
+  }
+  function changeWeekday(d: number) {
+    if (d !== weekday) setClassName('')
+    setWeekday(d)
+  }
+  function changeTargetTime(t: string) {
+    if (t !== targetTime) setClassName('')
+    setTargetTime(t)
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -90,7 +99,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
           <span className={labelClass}>Anbieter</span>
           <div className={`${fieldClass} ${boxClass}`}>
             <div className="flex-1 min-w-0">
-              <FacilityCombobox value={facility} onChange={setFacility} />
+              <FacilityCombobox value={facility} onChange={changeFacility} />
             </div>
           </div>
         </div>
@@ -101,7 +110,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
             <select
               aria-label="Wochentag"
               value={weekday}
-              onChange={e => setWeekday(Number(e.target.value))}
+              onChange={e => changeWeekday(Number(e.target.value))}
               className="w-full min-h-11 bg-transparent px-3 text-[15px] text-white outline-none [color-scheme:dark] [&>option]:bg-surface-input"
             >
               <option value={0}>Montag</option>
@@ -122,7 +131,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
               aria-label="Uhrzeit"
               type="time"
               value={targetTime}
-              onChange={e => setTargetTime(e.target.value)}
+              onChange={e => changeTargetTime(e.target.value)}
               required
               className="w-full min-h-11 bg-transparent px-3 text-[15px] text-white outline-none [color-scheme:dark]"
             />

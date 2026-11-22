@@ -34,7 +34,6 @@ export default function FacilityCombobox({ value, onChange }: Props) {
   // Load recent facilities once when dropdown opens
   useEffect(() => {
     if (!isOpen) return
-    setError(null)
     getRecentFacilities()
       .then(setRecentFacilities)
       .catch(() => setError('Fehler beim Laden'))
@@ -43,8 +42,6 @@ export default function FacilityCombobox({ value, onChange }: Props) {
   // Debounced search when query reaches 5+ chars
   useEffect(() => {
     if (!inSearchMode) return
-    setLoading(true)
-    setError(null)
     const timer = setTimeout(() => {
       searchFacilities(query)
         .then(setSearchResults)
@@ -53,6 +50,20 @@ export default function FacilityCombobox({ value, onChange }: Props) {
     }, 300)
     return () => clearTimeout(timer)
   }, [query, inSearchMode])
+
+  function handleOpen() {
+    setIsOpen(true)
+    setQuery('')
+    setLoading(false)
+    setError(null)
+  }
+
+  function handleQueryChange(q: string) {
+    setQuery(q)
+    // Suche startet ab 5 Zeichen (debounced im Effect); darunter nichts laden.
+    setLoading(q.length >= 5)
+    setError(null)
+  }
 
   function handleSelect(facility: Facility) {
     onChange(facility)
@@ -68,8 +79,8 @@ export default function FacilityCombobox({ value, onChange }: Props) {
         type="text"
         value={isOpen ? query : (value?.name ?? '')}
         placeholder={value ? value.name : 'Anbieter suchen…'}
-        onFocus={() => { setIsOpen(true); setQuery('') }}
-        onChange={e => setQuery(e.target.value)}
+        onFocus={handleOpen}
+        onChange={e => handleQueryChange(e.target.value)}
         autoComplete="off"
       />
 
