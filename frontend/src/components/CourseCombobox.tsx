@@ -49,6 +49,10 @@ export default function CourseCombobox({ value, onChange, facilityCourses, isLoa
           onChange(e.target.value)
         }}
         required
+        onKeyDown={e => {
+          // Erstes Esc schließt nur die Vorschlagsliste, nicht den umgebenden Dialog.
+          if (e.key === 'Escape' && isOpen) { e.preventDefault(); setIsOpen(false); setQuery('') }
+        }}
         autoComplete="off"
       />
 

@@ -88,6 +88,22 @@ describe('JobModal', () => {
     expect(onClose).toHaveBeenCalled()
   })
 
+  it('schließt mit Esc', () => {
+    render(<JobModal onSave={onSave} onClose={onClose} />)
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('Esc in offener Kursliste schließt erst die Liste, dann den Dialog', () => {
+    render(<JobModal job={jobWithFacility} onSave={onSave} onClose={onClose} />)
+    const course = screen.getByLabelText('Kursname', { selector: 'input' })
+    fireEvent.focus(course)
+    fireEvent.keyDown(course, { key: 'Escape' })
+    expect(onClose).not.toHaveBeenCalled()
+    fireEvent.keyDown(course, { key: 'Escape' })
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
   it('behält den Kursnamen beim Öffnen zum Bearbeiten (auch unter StrictMode)', async () => {
     render(<StrictMode><JobModal job={jobWithFacility} onSave={onSave} onClose={onClose} /></StrictMode>)
     const course = screen.getByLabelText('Kursname', { selector: 'input' }) as HTMLInputElement
