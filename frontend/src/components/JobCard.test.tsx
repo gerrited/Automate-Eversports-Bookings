@@ -162,3 +162,27 @@ describe('JobCard', () => {
     expect(onToggle).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('JobCard Vorschau', () => {
+  it('zeigt nächsten Lauf und Kurstermin', () => {
+    render(
+      <JobCard
+        job={{ ...job, next_run_at: '2026-11-27T17:00:00Z', next_class_date: '2026-12-01' }}
+        onToggle={vi.fn()} onEdit={vi.fn()} onDelete={vi.fn()} onSelect={vi.fn()}
+      />
+    )
+    expect(screen.getByTestId('next-run-preview')).toHaveTextContent(
+      'Bucht Fr., 27.11. 18:00 Uhr für den Kurs am Di., 01.12.'
+    )
+  })
+
+  it('zeigt bei pausiertem Job keinen Termin', () => {
+    render(
+      <JobCard
+        job={{ ...job, enabled: false, next_run_at: '2026-11-27T17:00:00Z', next_class_date: '2026-12-01' }}
+        onToggle={vi.fn()} onEdit={vi.fn()} onDelete={vi.fn()} onSelect={vi.fn()}
+      />
+    )
+    expect(screen.getByTestId('next-run-preview')).toHaveTextContent('Keine Buchung geplant')
+  })
+})

@@ -4,7 +4,7 @@ Der Lauf findet um target_time (Europe/Berlin) an dem Tag statt, der
 days_in_advance Tage vor dem gewünschten Kurstag (weekday) liegt — also genau
 dann, wenn das Buchungsfenster beim Anbieter öffnet.
 """
-from datetime import datetime, time, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 BERLIN = ZoneInfo("Europe/Berlin")
@@ -26,3 +26,13 @@ def compute_next_run(weekday: int, target_time: time, days_in_advance: int, afte
     if candidate <= after_berlin:
         candidate = datetime.combine(run_date + timedelta(days=7), target_time, tzinfo=BERLIN)
     return candidate.astimezone(timezone.utc)
+
+
+def class_date_for_run(run_at: datetime, days_in_advance: int) -> date:
+    """Kurstag, der zu einem (geplanten) Lauf gehört: Lauftag in Berlin + days_in_advance.
+
+    Naive Werte (SQLite) werden als UTC interpretiert.
+    """
+    if run_at.tzinfo is None:
+        run_at = run_at.replace(tzinfo=timezone.utc)
+    return run_at.astimezone(BERLIN).date() + timedelta(days=days_in_advance)

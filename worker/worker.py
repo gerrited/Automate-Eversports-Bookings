@@ -30,7 +30,7 @@ from backend.models.user import User
 from backend.core.encryption import decrypt
 from backend.core.status import BookingStatus
 from backend.eversports import book_session, cancel_booking, fetch_upcoming_bookings, prepare_booking
-from backend.core.schedule import compute_next_run
+from backend.core.schedule import class_date_for_run, compute_next_run
 from worker.email import send_booking_failure_email, send_admin_booking_failure_email, send_debug_cancel_failure_email, send_waitlist_notification
 from backend.models.push_subscription import PushSubscription
 from worker.notifications import send_push_notifications
@@ -134,7 +134,7 @@ def process_job(
 
         # target_date leitet sich vom geplanten Lauf ab — bei Nachholläufen
         # bleibt so das ursprünglich gemeinte Kursdatum erhalten
-        target_date = scheduled_at.astimezone(BERLIN).date() + timedelta(days=job.days_in_advance)
+        target_date = class_date_for_run(scheduled_at, job.days_in_advance)
         log.info("Job %s: due for %s (geplant %s)", job.id, target_date, scheduled_at)
 
         class_start = datetime.combine(target_date, job.target_time, tzinfo=BERLIN)

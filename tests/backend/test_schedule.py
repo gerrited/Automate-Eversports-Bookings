@@ -68,3 +68,26 @@ def test_after_in_utc_funktioniert():
     after_utc = berlin(2026, 6, 10, 12, 0).astimezone(timezone.utc)
     result = compute_next_run(weekday=1, target_time=time(18, 0), days_in_advance=4, after=after_utc)
     assert result == berlin(2026, 6, 12, 18, 0)
+
+
+# --- class_date_for_run ---
+
+from datetime import date  # noqa: E402
+
+from backend.core.schedule import class_date_for_run  # noqa: E402
+
+
+def test_kurstag_aus_lauf():
+    # Lauf Fr 10.04. 18:00 Berlin, 4 Tage Vorlauf → Kurs Di 14.04.
+    assert class_date_for_run(berlin(2026, 4, 10, 18, 0).astimezone(timezone.utc), 4) == date(2026, 4, 14)
+
+
+def test_kurstag_nutzt_berliner_datum_nicht_utc():
+    # 00:30 Berlin = 22:30 UTC am Vortag — maßgeblich ist der Berliner Kalendertag
+    run = berlin(2026, 4, 11, 0, 30).astimezone(timezone.utc)
+    assert run.date() == date(2026, 4, 10)
+    assert class_date_for_run(run, 2) == date(2026, 4, 13)
+
+
+def test_kurstag_naive_werte_gelten_als_utc():
+    assert class_date_for_run(datetime(2026, 4, 10, 16, 0), 4) == date(2026, 4, 14)

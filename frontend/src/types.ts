@@ -9,6 +9,8 @@ export interface Job {
   enabled: boolean
   one_time: boolean
   debug: boolean
+  next_run_at?: string | null      // ISO-UTC, nächster Buchungsversuch
+  next_class_date?: string | null  // "YYYY-MM-DD", Kurstermin dieses Versuchs
   created_at: string
 }
 
