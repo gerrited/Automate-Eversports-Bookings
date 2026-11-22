@@ -73,7 +73,7 @@ export default function SettingsModal({ onClose }: Props) {
   }
 
   return (
-    <ModalShell>
+    <ModalShell onClose={onClose}>
       <div className="flex justify-between items-center mb-5">
         <h2 className="text-white font-bold text-lg">Einstellungen</h2>
         <button

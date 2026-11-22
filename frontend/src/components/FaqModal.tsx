@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import type { ReactNode } from 'react'
 import { ModalShell } from './ui'
 
@@ -65,6 +65,7 @@ interface Props {
 
 export default function FaqModal({ onClose }: Props) {
   const [openIndex, setOpenIndex] = useState<number | null>(null)
+  const idPrefix = useId()
 
   return (
     <ModalShell
@@ -90,18 +91,21 @@ export default function FaqModal({ onClose }: Props) {
         <div className="flex flex-col gap-2">
           {FAQ_ITEMS.map(({ question, answer }, index) => {
             const isOpen = openIndex === index
+            const answerId = `${idPrefix}-answer-${index}`
             return (
               <div key={question} className="border border-line-subtle rounded-lg">
                 <button
                   type="button"
                   onClick={() => setOpenIndex(isOpen ? null : index)}
+                  aria-expanded={isOpen}
+                  aria-controls={answerId}
                   className="w-full cursor-pointer px-4 py-3 text-sm font-medium text-white select-none flex justify-between items-center gap-2 text-left"
                 >
                   {question}
-                  <span className={`text-slate-400 transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`}>▾</span>
+                  <span aria-hidden="true" className={`text-slate-400 transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`}>▾</span>
                 </button>
                 {isOpen && (
-                  <div className="px-4 pb-4 pt-1 text-sm text-slate-400 leading-relaxed">
+                  <div id={answerId} className="px-4 pb-4 pt-1 text-sm text-slate-400 leading-relaxed">
                     {answer}
                   </div>
                 )}

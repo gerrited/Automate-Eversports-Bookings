@@ -221,7 +221,7 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
                           onChange={e => setLimitInputValue(e.target.value)}
                           onKeyDown={e => {
                             if (e.key === 'Enter') handleSaveLimit(user)
-                            if (e.key === 'Escape') cancelEditLimit()
+                            if (e.key === 'Escape') { e.preventDefault(); cancelEditLimit() }
                           }}
                           placeholder="∞"
                           className="w-12 px-1 py-0.5 text-xs bg-slate-800 border border-line rounded text-center text-white focus:outline-none focus:border-violet-500"
@@ -323,8 +323,8 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
         </div>
       )}
       {pendingLimit && (
-        <ModalShell maxWidth="sm">
-            <p className="text-white font-semibold mb-3">Alle Jobs werden deaktiviert</p>
+        <ModalShell maxWidth="sm" onClose={() => setPendingLimit(null)}>
+            <h2 className="text-white font-semibold mb-3">Alle Jobs werden deaktiviert</h2>
             <p className="text-slate-400 text-sm mb-5">
               Das neue Limit von{' '}
               <strong className="text-white">{pendingLimit.value}</strong> liegt unter den aktuell{' '}
@@ -342,10 +342,10 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
         </ModalShell>
       )}
       {messagingUser && (
-        <ModalShell maxWidth="sm">
+        <ModalShell maxWidth="sm" onClose={messageSending ? undefined : closeMessageModal}>
             {messageSent ? (
               <>
-                <p className="text-white font-semibold mb-3">Nachricht gesendet</p>
+                <h2 className="text-white font-semibold mb-3">Nachricht gesendet</h2>
                 <div className="bg-teal-950 border-l-3 border-teal-500 rounded-r-md px-4 py-3 mb-5 text-sm text-teal-300">
                   Die Nachricht wurde an {messagingUser.email} gesendet.
                 </div>
@@ -357,7 +357,7 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
               </>
             ) : (
               <>
-                <p className="text-white font-semibold mb-4">Nachricht an {messagingUser.email}</p>
+                <h2 className="text-white font-semibold mb-4">Nachricht an {messagingUser.email}</h2>
                 <div className="flex flex-col gap-3 mb-4">
                   <Input
                     variant="filter"

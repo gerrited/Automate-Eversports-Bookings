@@ -31,7 +31,7 @@ export default function Stepper({ value, onChange, min, max, 'aria-label': ariaL
 
   function handleKeyDown(e: KeyboardEvent) {
     if (e.key === 'Enter') commitEdit()
-    if (e.key === 'Escape') setEditing(false)
+    if (e.key === 'Escape') { e.preventDefault(); setEditing(false) }
   }
 
   const sideBtnClass =

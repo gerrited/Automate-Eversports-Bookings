@@ -38,4 +38,24 @@ describe('FaqModal', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Schließen' }))
     expect(onClose).toHaveBeenCalledOnce()
   })
+
+  it('meldet den Aufklapp-Zustand der Fragen per aria-expanded', async () => {
+    const user = userEvent.setup()
+    render(<FaqModal onClose={vi.fn()} />)
+    const question = screen.getByRole('button', { name: 'Wie funktioniert die Anmeldung?' })
+    expect(question).toHaveAttribute('aria-expanded', 'false')
+    await user.click(question)
+    expect(question).toHaveAttribute('aria-expanded', 'true')
+    const answer = document.getElementById(question.getAttribute('aria-controls')!)
+    expect(answer).toBeInTheDocument()
+  })
+
+  it('ist nach der Überschrift benannt und schließt mit Esc', async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+    render(<FaqModal onClose={onClose} />)
+    expect(screen.getByRole('dialog', { name: 'Häufig gestellte Fragen' })).toBeInTheDocument()
+    await user.keyboard('{Escape}')
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
 })
