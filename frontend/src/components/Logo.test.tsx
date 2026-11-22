@@ -4,9 +4,15 @@ import { render, screen } from '@testing-library/react'
 import Logo from './Logo'
 
 describe('Logo', () => {
-  it('rendert das Logo-Bild', () => {
+  it('rendert das Logo-Bild mit dem Markennamen als Alternativtext', () => {
     render(<Logo />)
-    expect(screen.getByRole('img', { name: 'Logo' })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'FOREversports' })).toBeInTheDocument()
+  })
+
+  it('ist mit alt="" dekorativ und für Screenreader unsichtbar', () => {
+    const { container } = render(<Logo alt="" />)
+    expect(screen.queryByRole('img')).not.toBeInTheDocument()
+    expect(container.querySelector('img')).toHaveAttribute('alt', '')
   })
 
   it('App-Logo (gehasht) und E-Mail-Logo (public/logo.png) sind identisch', () => {

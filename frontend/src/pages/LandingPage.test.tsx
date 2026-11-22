@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, within, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { vi } from 'vitest'
 import LandingPage from './LandingPage'
@@ -17,9 +17,17 @@ describe('LandingPage', () => {
     expect(screen.getByText(/nie wieder/i)).toBeInTheDocument()
   })
 
-  it('renders logo in navbar', () => {
+  it('renders logo in navbar as home link', () => {
     render(<MemoryRouter><LandingPage /></MemoryRouter>)
-    expect(screen.getAllByRole('img', { name: /logo/i }).length).toBeGreaterThan(0)
+    const nav = screen.getByRole('navigation', { name: 'Hauptnavigation' })
+    const home = within(nav).getByRole('link', { name: 'Startseite' })
+    // Logo ist dekorativ, der Link trägt den Namen.
+    expect(home.querySelector('img')).toHaveAttribute('alt', '')
+  })
+
+  it('has a main landmark', () => {
+    render(<MemoryRouter><LandingPage /></MemoryRouter>)
+    expect(screen.getByRole('main')).toBeInTheDocument()
   })
 
   it('renders Anmelden button in navbar', () => {

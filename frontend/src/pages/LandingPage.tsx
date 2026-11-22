@@ -115,11 +115,11 @@ export default function LandingPage() {
         style={{ top: 'var(--notice-height, 0px)' }}
       >
         <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-3.5 sm:py-[18px] flex items-center justify-between gap-4">
-          <a href="/" aria-label="Startseite"><Logo /></a>
-          <div className="flex items-center gap-7">
-            <a href="#so-funktionierts" className="hidden md:inline text-[15px] font-medium text-muted hover:text-[#f2f7f7] transition-colors">So funktioniert’s</a>
-            <a href="#uebersicht" className="hidden md:inline text-[15px] font-medium text-muted hover:text-[#f2f7f7] transition-colors">Übersicht</a>
-            <button type="button" onClick={() => setFaqOpen(true)} className="hidden md:inline text-[15px] font-medium text-muted hover:text-[#f2f7f7] transition-colors">FAQ</button>
+          <a href="/" aria-label="Startseite"><Logo alt="" /></a>
+          <div className="flex items-center gap-4 sm:gap-7">
+            <a href="#so-funktionierts" className="hidden md:inline-flex items-center min-h-6 text-[15px] font-medium text-muted hover:text-[#f2f7f7] transition-colors">So funktioniert’s</a>
+            <a href="#uebersicht" className="hidden md:inline-flex items-center min-h-6 text-[15px] font-medium text-muted hover:text-[#f2f7f7] transition-colors">Übersicht</a>
+            <button type="button" onClick={() => setFaqOpen(true)} className="inline-flex items-center min-h-6 text-[15px] font-medium text-muted hover:text-[#f2f7f7] transition-colors">FAQ</button>
             <button type="button" onClick={openModal} className={`${PRIMARY_BTN} min-h-[46px] px-5 sm:px-[22px] rounded-[14px] text-base`}>
               Anmelden
             </button>
@@ -127,8 +127,9 @@ export default function LandingPage() {
         </div>
       </nav>
 
+      <main>
       {/* Hero */}
-      <header className="relative">
+      <section className="relative">
         <div aria-hidden className="pointer-events-none absolute left-1/2 -top-[340px] w-[1100px] h-[700px] -ml-[150px] rounded-full bg-brand opacity-[.28] blur-[140px]" />
         <div className="relative max-w-[1200px] mx-auto px-4 sm:px-6 pt-14 pb-20 lg:pt-24 lg:pb-28 flex flex-col lg:flex-row items-center gap-14 lg:gap-16">
           <div className="lg:flex-[1.3] min-w-0 flex flex-col gap-7">
@@ -199,7 +200,7 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
-      </header>
+      </section>
 
       {/* So funktioniert's */}
       <section id="so-funktionierts" className="scroll-mt-24 border-t border-line-subtle px-4 sm:px-6 py-20 lg:py-28">
@@ -282,7 +283,7 @@ export default function LandingPage() {
       <section className="relative overflow-hidden border-t border-line-subtle px-4 sm:px-6 py-24 lg:py-[120px]">
         <div aria-hidden className="pointer-events-none absolute left-1/2 top-1/2 w-[900px] h-[420px] -ml-[450px] -mt-[210px] rounded-full bg-brand opacity-30 blur-[120px]" />
         <div className="relative max-w-[720px] mx-auto flex flex-col items-center gap-[22px] text-center">
-          <Logo size="lg" />
+          <Logo size="lg" alt="" />
           <h2 className="text-[38px] sm:text-[50px] lg:text-[62px] leading-[1.05] font-extrabold tracking-[-0.035em] text-white">Bereit loszulegen?</h2>
           <p className="text-lg sm:text-xl leading-relaxed text-muted">Melde dich mit deinen Eversports-Daten an und plane deine erste Buchung in wenigen Minuten.</p>
           <button type="button" onClick={openModal} className={`${PRIMARY_BTN} mt-2 min-h-[60px] px-9 text-[19px]`}>
@@ -290,6 +291,7 @@ export default function LandingPage() {
           </button>
         </div>
       </section>
+      </main>
 
       {modalOpen && <LoginModal onClose={closeModal} />}
       {faqOpen && <FaqModal onClose={() => setFaqOpen(false)} />}

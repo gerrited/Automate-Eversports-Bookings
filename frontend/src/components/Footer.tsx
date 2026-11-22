@@ -8,7 +8,8 @@ interface Props {
   withLogo?: boolean
 }
 
-const LINK = 'text-muted hover:text-white transition-colors'
+// min-h-6: Klickfläche mindestens 24 px hoch (WCAG 2.5.8).
+const LINK = 'inline-flex items-center min-h-6 text-muted hover:text-white transition-colors'
 
 export default function Footer({ withLogo = false }: Props) {
   const sha = import.meta.env.VITE_COMMIT_SHA as string | undefined
@@ -27,7 +28,7 @@ export default function Footer({ withLogo = false }: Props) {
         <div
           className={`max-w-[1152px] mx-auto flex flex-wrap items-center gap-4 ${withLogo ? 'justify-center sm:justify-between' : 'justify-center'}`}
         >
-          {withLogo && <Logo size="sm" />}
+          {withLogo && <Logo size="sm" alt="" />}
           <div className="flex flex-wrap items-center justify-center gap-2.5 text-sm text-muted">
             <button type="button" aria-label="Impressum & Datenschutz" onClick={() => setImprintOpen(true)} className={LINK}>
               Impressum & Datenschutz

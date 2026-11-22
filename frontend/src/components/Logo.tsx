@@ -7,6 +7,8 @@ import logoUrl from '../assets/logo.png'
 
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg'
+  /** Alternativtext. "" markiert das Logo als dekorativ, z. B. in einem bereits benannten Link. */
+  alt?: string
 }
 
 const HEIGHTS = {
@@ -15,6 +17,6 @@ const HEIGHTS = {
   lg: 'h-12',
 }
 
-export default function Logo({ size = 'md' }: LogoProps) {
-  return <img src={logoUrl} alt="Logo" className={`${HEIGHTS[size]} w-auto`} />
+export default function Logo({ size = 'md', alt = 'FOREversports' }: LogoProps) {
+  return <img src={logoUrl} alt={alt} className={`${HEIGHTS[size]} w-auto`} />
 }

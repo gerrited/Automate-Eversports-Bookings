@@ -248,7 +248,7 @@ useEffect(() => {
         <div className="max-w-[1120px] mx-auto px-4 sm:px-5 pt-3.5 sm:pt-[18px] flex flex-col gap-3.5 sm:gap-[18px]">
           <div className="flex justify-between items-center gap-4">
             <button type="button" aria-label="Zur Übersicht" onClick={() => navigate('/dashboard')}>
-              <Logo />
+              <Logo alt="" />
             </button>
             <HamburgerMenu
               onLogout={handleLogout}
