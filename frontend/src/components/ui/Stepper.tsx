@@ -35,15 +35,17 @@ export default function Stepper({ value, onChange, min, max, 'aria-label': ariaL
   }
 
   const sideBtnClass =
-    'w-[30px] h-[30px] text-slate-400 bg-surface-card border border-slate-700 text-base flex items-center justify-center'
+    'w-11 h-11 text-xl text-slate-200 bg-surface-input hover:bg-[#12313a] transition-colors flex items-center justify-center'
+  const valueClass =
+    'min-w-12 h-11 px-1 text-center text-[17px] font-extrabold tabular-nums text-white bg-transparent'
 
   return (
-    <div role="group" aria-label={ariaLabel} className="flex items-center">
+    <div role="group" aria-label={ariaLabel} className="flex items-center border border-line-strong rounded-xl overflow-hidden">
       <button
         type="button"
         onClick={() => onChange(Math.max(min, value - 1))}
         aria-label="Verringern"
-        className={`${sideBtnClass} rounded-l-md border-r-0`}
+        className={sideBtnClass}
       >
         −
       </button>
@@ -57,14 +59,10 @@ export default function Stepper({ value, onChange, min, max, 'aria-label': ariaL
           onChange={e => setDraft(e.target.value)}
           onBlur={commitEdit}
           onKeyDown={handleKeyDown}
-          className="w-8 h-[30px] text-center text-sm font-semibold text-white bg-surface-input border-y border-slate-700 outline-none [color-scheme:dark]"
+          className={`${valueClass} w-12 outline-none [color-scheme:dark] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none`}
         />
       ) : (
-        <button
-          type="button"
-          onClick={startEdit}
-          className="min-w-8 h-[30px] px-1 text-center text-sm font-semibold text-white bg-surface-input border-y border-slate-700"
-        >
+        <button type="button" onClick={startEdit} className={valueClass}>
           {value}
         </button>
       )}
@@ -72,7 +70,7 @@ export default function Stepper({ value, onChange, min, max, 'aria-label': ariaL
         type="button"
         onClick={() => onChange(Math.min(max, value + 1))}
         aria-label="Erhöhen"
-        className={`${sideBtnClass} rounded-r-md border-l-0`}
+        className={sideBtnClass}
       >
         +
       </button>

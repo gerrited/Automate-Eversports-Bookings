@@ -1,8 +1,16 @@
 import { useState } from 'react'
 import FaqModal from './FaqModal'
 import ImprintModal from './ImprintModal'
+import Logo from './Logo'
 
-export default function Footer() {
+interface Props {
+  /** Logo links anzeigen (Landing Page). */
+  withLogo?: boolean
+}
+
+const LINK = 'text-muted hover:text-white transition-colors'
+
+export default function Footer({ withLogo = false }: Props) {
   const sha = import.meta.env.VITE_COMMIT_SHA as string | undefined
   const repo = import.meta.env.VITE_GITHUB_REPO as string | undefined
   const version = (import.meta.env.VITE_VERSION as string | undefined)?.replace(/^v/, '')
@@ -15,45 +23,42 @@ export default function Footer() {
 
   return (
     <>
-      <footer style={{ position: 'fixed', bottom: 0, left: 0, right: 0, textAlign: 'center', padding: '6px', fontSize: '0.7rem', color: '#9ca3af', background: '#021214', borderTop: '1px solid #0d3538', display: 'flex', justifyContent: 'center', gap: '8px' }}>
-        <button
-          type="button"
-          aria-label="Impressum & Datenschutz"
-          onClick={() => setImprintOpen(true)}
-          style={{ color: 'inherit', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 'inherit' }}
+      <footer className="border-t border-line-subtle px-5 pt-6 pb-[calc(1.75rem+env(safe-area-inset-bottom))]">
+        <div
+          className={`max-w-[1152px] mx-auto flex flex-wrap items-center gap-4 ${withLogo ? 'justify-center sm:justify-between' : 'justify-center'}`}
         >
-          Impressum & Datenschutz
-        </button>
-        <span>·</span>
-        <button
-          type="button"
-          aria-label="FAQ"
-          onClick={() => setFaqOpen(true)}
-          style={{ color: 'inherit', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 'inherit' }}
-        >
-          FAQ
-        </button>
-        <span>·</span>
-        {version && (
-          <span>
-            {versionHref ? (
-              <a href={versionHref} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>
-                v{version}
-              </a>
-            ) : `v${version}`}
-          </span>
-        )}
-        {shortSha && (
-          <span>
-            {version && "("}
-            {commitHref ? (
-              <a href={commitHref} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>
-                {shortSha}
-              </a>
-            ) : shortSha}
-            {version && ")"}
-          </span>
-        )}
+          {withLogo && <Logo size="sm" />}
+          <div className="flex flex-wrap items-center justify-center gap-2.5 text-sm text-muted">
+            <button type="button" aria-label="Impressum & Datenschutz" onClick={() => setImprintOpen(true)} className={LINK}>
+              Impressum & Datenschutz
+            </button>
+            <span aria-hidden="true">·</span>
+            <button type="button" aria-label="FAQ" onClick={() => setFaqOpen(true)} className={LINK}>
+              FAQ
+            </button>
+            {(version || shortSha) && <span aria-hidden="true">·</span>}
+            {version && (
+              <span>
+                {versionHref ? (
+                  <a href={versionHref} target="_blank" rel="noopener noreferrer" className={LINK}>
+                    v{version}
+                  </a>
+                ) : `v${version}`}
+              </span>
+            )}
+            {shortSha && (
+              <span>
+                {version && '('}
+                {commitHref ? (
+                  <a href={commitHref} target="_blank" rel="noopener noreferrer" className={LINK}>
+                    {shortSha}
+                  </a>
+                ) : shortSha}
+                {version && ')'}
+              </span>
+            )}
+          </div>
+        </div>
       </footer>
       {faqOpen && <FaqModal onClose={() => setFaqOpen(false)} />}
       {imprintOpen && <ImprintModal onClose={() => setImprintOpen(false)} />}

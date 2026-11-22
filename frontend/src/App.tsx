@@ -21,22 +21,31 @@ function NoticeArea() {
   return <NoticeBanner url={userContent ? userUrl : publicUrl} />
 }
 
+function AppFooter() {
+  const { pathname } = useLocation()
+  return <Footer withLogo={pathname === '/'} />
+}
+
 export default function App() {
   const ready = useAuthInit()
   if (!ready) return null
 
   return (
     <BrowserRouter>
-      <NoticeArea />
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route
-          path="/dashboard"
-          element={<RequireAuth><DashboardPage /></RequireAuth>}
-        />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
-      <Footer />
+      <div className="min-h-dvh flex flex-col">
+        <NoticeArea />
+        <div className="flex-1 flex flex-col">
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route
+              path="/dashboard"
+              element={<RequireAuth><DashboardPage /></RequireAuth>}
+            />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </div>
+        <AppFooter />
+      </div>
     </BrowserRouter>
   )
 }

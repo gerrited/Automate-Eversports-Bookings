@@ -10,7 +10,7 @@ interface ModalShellProps {
   children: ReactNode
 }
 
-const MAX_WIDTHS = { sm: 'max-w-sm', md: 'max-w-md', lg: 'max-w-lg' }
+const MAX_WIDTHS = { sm: 'max-w-[460px]', md: 'max-w-[560px]', lg: 'max-w-2xl' }
 
 export default function ModalShell({
   onBackdropClick,
@@ -23,12 +23,14 @@ export default function ModalShell({
 }: ModalShellProps) {
   return (
     <div
-      className={`fixed inset-0 bg-black/60 ${zIndex} flex items-center justify-center px-4 touch-none`}
+      className={`fixed inset-0 bg-[rgba(2,10,12,.74)] backdrop-blur-[2px] ${zIndex} flex items-center justify-center px-4 py-6 touch-none`}
       data-testid={testId}
       onClick={onBackdropClick}
     >
       <div
-        className={`relative bg-surface-card border border-slate-700 rounded-xl w-full ${MAX_WIDTHS[maxWidth]} p-6 touch-pan-y${scrollable ? ' max-h-[80vh] overflow-y-auto overscroll-contain' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        className={`relative bg-surface-card border border-line rounded-[26px] shadow-[0_40px_120px_rgba(0,0,0,.6)] w-full ${MAX_WIDTHS[maxWidth]} p-6 sm:p-8 touch-pan-y${scrollable ? ' max-h-[80vh] overflow-y-auto overscroll-contain' : ''}`}
         data-testid={cardTestId}
         onClick={(e: MouseEvent) => e.stopPropagation()}
       >

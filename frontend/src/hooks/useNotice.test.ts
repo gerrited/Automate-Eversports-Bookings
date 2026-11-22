@@ -43,4 +43,20 @@ describe('useNotice', () => {
     const { result } = renderHook(() => useNotice('https://gist.example.com/notice.md'))
     await waitFor(() => expect(result.current).toBeNull())
   })
+
+  it('zeigt nach URL-Wechsel nicht den Inhalt der alten URL', async () => {
+    let resolveSecond: (v: { text: () => Promise<string> }) => void = () => {}
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce({ text: () => Promise.resolve('alt') })
+      .mockReturnValueOnce(new Promise(r => { resolveSecond = r })))
+    const { result, rerender } = renderHook(({ url }) => useNotice(url), {
+      initialProps: { url: 'https://gist.example.com/a.md' },
+    })
+    await waitFor(() => expect(result.current).toBe('alt'))
+    rerender({ url: 'https://gist.example.com/b.md' })
+    expect(result.current).toBeNull()
+    resolveSecond({ text: () => Promise.resolve('neu') })
+    await waitFor(() => expect(result.current).toBe('neu'))
+  })
 })
+

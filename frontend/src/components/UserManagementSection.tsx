@@ -172,7 +172,7 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
                   ? 'bg-green-900 border-green-700 text-green-300'
                   : activeFilter === 'inactive'
                   ? 'bg-red-900 border-red-700 text-red-300'
-                  : 'bg-surface-card border-slate-700 text-slate-400 hover:bg-slate-700'
+                  : 'bg-surface-card border-line text-slate-400 hover:bg-slate-700'
               }`}
             >
               {activeFilter === 'active' ? 'Aktiv' : activeFilter === 'inactive' ? 'Inaktiv' : 'Alle'}
@@ -224,7 +224,7 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
                             if (e.key === 'Escape') cancelEditLimit()
                           }}
                           placeholder="∞"
-                          className="w-12 px-1 py-0.5 text-xs bg-slate-800 border border-slate-700 rounded text-center text-white focus:outline-none focus:border-violet-500"
+                          className="w-12 px-1 py-0.5 text-xs bg-slate-800 border border-line rounded text-center text-white focus:outline-none focus:border-violet-500"
                           autoFocus
                         />
                         <button
@@ -242,7 +242,7 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
                         className={`text-xs px-2 py-0.5 rounded-full border cursor-pointer hover:opacity-80 transition-opacity ${
                           user.max_active_jobs !== null
                             ? 'bg-violet-900/50 border-violet-700 text-violet-300'
-                            : 'bg-slate-800 border-slate-700 text-slate-500'
+                            : 'bg-slate-800 border-line text-slate-500'
                         }`}
                       >
                         {user.max_active_jobs !== null ? `Limit: ${user.max_active_jobs} ✎` : 'Kein Limit ✎'}
@@ -371,7 +371,7 @@ export default function UserManagementSection({ onJobsClick, initialEmailFilter 
                     onChange={e => setMessageContent(e.target.value)}
                     placeholder="Nachricht"
                     rows={5}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-slate-500 resize-none"
+                    className="w-full bg-slate-800 border border-line rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-slate-500 resize-none"
                   />
                 </div>
                 {messageError && (

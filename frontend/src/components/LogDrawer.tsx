@@ -30,7 +30,7 @@ export default function LogDrawer({ job, logs, loading, onClose }: Props) {
       />
       {/* Drawer */}
       <div className="fixed right-0 top-0 h-full w-full max-w-sm bg-surface-card z-50 shadow-2xl flex flex-col">
-        <div className="flex justify-between items-center px-5 py-4 border-b border-slate-800">
+        <div className="flex justify-between items-center px-5 py-4 border-b border-line-subtle">
           <div>
             <p className="text-white font-semibold">
               {WEEKDAY_NAMES[job.weekday]} · {job.target_time.slice(0, 5)} · {job.class_name}
@@ -53,7 +53,7 @@ export default function LogDrawer({ job, logs, loading, onClose }: Props) {
             <p className="text-slate-400 text-sm">Noch keine Ausführungen.</p>
           )}
           {!loading && logs.map(log => (
-            <div key={log.id} className="mb-4 border-b border-slate-800 pb-4">
+            <div key={log.id} className="mb-4 border-b border-line-subtle pb-4">
               <div className="flex justify-between items-center">
                 <span className={`text-sm font-medium ${STATUS_STYLES[log.status] ?? 'text-slate-300'}`}>
                   {STATUS_DRAWER_LABELS[log.status] ?? log.status}

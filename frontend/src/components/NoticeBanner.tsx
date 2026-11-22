@@ -38,12 +38,12 @@ export default function NoticeBanner({ url, topOffset = '0px', cssVar = '--notic
         left: 0,
         right: 0,
         zIndex: 30,
-        background: '#021214',
-        borderBottom: '1px solid #0d3538',
-        padding: '6px',
+        background: '#062228',
+        borderBottom: '1px solid #13363c',
+        padding: '8px 16px',
         textAlign: 'center',
         fontSize: '0.85rem',
-        color: '#9ca3af',
+        color: '#cbd5e1',
       }}
     >
       {parseNotice(content)}

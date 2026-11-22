@@ -34,7 +34,6 @@ export default function FacilityCombobox({ value, onChange }: Props) {
   // Load recent facilities once when dropdown opens
   useEffect(() => {
     if (!isOpen) return
-    setError(null)
     getRecentFacilities()
       .then(setRecentFacilities)
       .catch(() => setError('Fehler beim Laden'))
@@ -43,8 +42,6 @@ export default function FacilityCombobox({ value, onChange }: Props) {
   // Debounced search when query reaches 5+ chars
   useEffect(() => {
     if (!inSearchMode) return
-    setLoading(true)
-    setError(null)
     const timer = setTimeout(() => {
       searchFacilities(query)
         .then(setSearchResults)
@@ -53,6 +50,20 @@ export default function FacilityCombobox({ value, onChange }: Props) {
     }, 300)
     return () => clearTimeout(timer)
   }, [query, inSearchMode])
+
+  function handleOpen() {
+    setIsOpen(true)
+    setQuery('')
+    setLoading(false)
+    setError(null)
+  }
+
+  function handleQueryChange(q: string) {
+    setQuery(q)
+    // Suche startet ab 5 Zeichen (debounced im Effect); darunter nichts laden.
+    setLoading(q.length >= 5)
+    setError(null)
+  }
 
   function handleSelect(facility: Facility) {
     onChange(facility)
@@ -68,13 +79,13 @@ export default function FacilityCombobox({ value, onChange }: Props) {
         type="text"
         value={isOpen ? query : (value?.name ?? '')}
         placeholder={value ? value.name : 'Anbieter suchen…'}
-        onFocus={() => { setIsOpen(true); setQuery('') }}
-        onChange={e => setQuery(e.target.value)}
+        onFocus={handleOpen}
+        onChange={e => handleQueryChange(e.target.value)}
         autoComplete="off"
       />
 
       {isOpen && (
-        <div className="absolute z-10 mt-1 w-full bg-surface-card rounded-lg shadow-lg overflow-hidden">
+        <div className="absolute z-10 mt-3 -mx-3.5 w-[calc(100%+1.75rem)] bg-surface-input border border-line rounded-xl shadow-[0_20px_50px_rgba(0,0,0,.45)] overflow-hidden">
           {loading && (
             <div className="px-3 py-2 text-slate-400 text-sm">Laden…</div>
           )}
@@ -94,7 +105,7 @@ export default function FacilityCombobox({ value, onChange }: Props) {
               key={facility.id}
               type="button"
               onClick={() => handleSelect(facility)}
-              className="w-full text-left px-3 py-2 text-white hover:bg-surface-input transition-colors text-sm"
+              className="w-full text-left px-3.5 py-2.5 text-white hover:bg-surface-raised transition-colors text-sm"
             >
               {facility.name}
             </button>

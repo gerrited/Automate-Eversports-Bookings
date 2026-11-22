@@ -29,28 +29,28 @@ export default function HamburgerMenu({ onLogout, onSettings, onTestEmails, user
   }, [])
 
   return (
-    <div ref={ref} className="relative flex items-center gap-2">
+    <div ref={ref} className="relative flex items-center gap-2.5">
       {userEmail && (
         <div className="relative">
           <button
             onClick={() => { setTooltipVisible(v => !v); setOpen(false) }}
-            className="flex items-center justify-center w-9 h-9 rounded-full bg-slate-700 hover:bg-slate-600 transition-colors"
+            className="flex items-center justify-center w-11 h-11 sm:w-[46px] sm:h-[46px] rounded-full border-2 border-line-strong bg-surface-input text-slate-300 hover:bg-[#1e2c3d] transition-colors overflow-hidden"
             aria-label={`Angemeldet als ${userEmail}`}
           >
             {userAvatar
-              ? <img src={userAvatar} alt="Profil" className="w-7 h-7 rounded-full object-cover" />
-              : <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-slate-200" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+              ? <img src={userAvatar} alt="Profil" className="w-full h-full rounded-full object-cover" />
+              : <svg className="w-[22px] h-[22px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="8.5" r="4" /><path d="M4.5 20.5c1.2-3.6 4-5.5 7.5-5.5s6.3 1.9 7.5 5.5" />
                 </svg>
             }
           </button>
           {tooltipVisible && (
-            <div className="absolute right-0 mt-2 w-56 rounded-lg bg-[#1e293b] border border-slate-700 shadow-xl z-50 overflow-hidden">
-              <div className="px-3 py-3 text-xs text-slate-400 leading-relaxed">
+            <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-surface-card border border-line shadow-[0_20px_50px_rgba(0,0,0,.45)] z-50 overflow-hidden">
+              <div className="px-4 py-3.5 text-[13px] text-muted leading-relaxed">
                 Angemeldet als<br />
-                <span className="text-slate-300 font-medium">{userEmail}</span>
+                <span className="text-white font-semibold break-all">{userEmail}</span>
                 {maxActiveJobs !== undefined && (
-                  <span className="block mt-1 text-slate-500">
+                  <span className="block mt-1 text-faint">
                     {maxActiveJobs != null
                       ? `Max. ${maxActiveJobs} geplante ${maxActiveJobs === 1 ? 'Buchung' : 'Buchungen'}`
                       : 'Beliebig viele geplante Buchungen'}
@@ -59,8 +59,8 @@ export default function HamburgerMenu({ onLogout, onSettings, onTestEmails, user
               </div>
               {isActualAdmin && (
                 <>
-                  <div className="border-t border-slate-700" />
-                  <label className="flex items-center gap-2 px-3 py-3 text-xs text-slate-300 hover:bg-slate-700 transition-colors cursor-pointer">
+                  <div className="border-t border-line-subtle" />
+                  <label className="flex items-center gap-2.5 px-4 py-3 text-sm text-slate-200 hover:bg-surface-raised transition-colors cursor-pointer">
                     <input
                       type="checkbox"
                       checked={isAdminView ?? false}
@@ -69,7 +69,7 @@ export default function HamburgerMenu({ onLogout, onSettings, onTestEmails, user
                         window.dispatchEvent(new Event('auth-changed'))
                         setTooltipVisible(false)
                       }}
-                      className="accent-brand"
+                      className="w-4 h-4 accent-accent"
                     />
                     Admin
                   </label>
@@ -82,37 +82,38 @@ export default function HamburgerMenu({ onLogout, onSettings, onTestEmails, user
       <div className="relative">
         <button
           onClick={() => { setOpen(o => !o); setTooltipVisible(false) }}
-          className="flex flex-col justify-center items-center w-9 h-9 gap-1.5 rounded-md bg-slate-700 hover:bg-slate-600 transition-colors"
+          className="flex justify-center items-center w-11 h-11 sm:w-[46px] sm:h-[46px] rounded-xl bg-[#162433] text-slate-300 hover:bg-[#1e2c3d] transition-colors"
           aria-label="Menü öffnen"
+          aria-expanded={open}
         >
-          <span className="block w-5 h-0.5 bg-slate-200" />
-          <span className="block w-5 h-0.5 bg-slate-200" />
-          <span className="block w-5 h-0.5 bg-slate-200" />
+          <svg className="w-[22px] h-[22px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+            <path d="M4 7h16M4 12h16M4 17h16" />
+          </svg>
         </button>
 
         {open && (
-          <div className="absolute right-0 mt-2 w-44 rounded-lg bg-surface-card border border-slate-700 shadow-lg z-50 overflow-hidden">
+          <div className="absolute right-0 mt-2 w-52 rounded-2xl bg-surface-card border border-line shadow-[0_20px_50px_rgba(0,0,0,.45)] z-50 overflow-hidden">
             <button
               onClick={() => { setOpen(false); onSettings() }}
-              className="w-full text-left px-4 py-3 text-sm text-slate-200 hover:bg-slate-700 transition-colors"
+              className="w-full text-left px-4 py-3 text-[15px] font-medium text-slate-200 hover:bg-surface-raised hover:text-white transition-colors"
             >
               Einstellungen
             </button>
             {isAdminView && (
               <>
-                <div className="border-t border-slate-700" />
+                <div className="border-t border-line-subtle" />
                 <button
                   onClick={() => { setOpen(false); onTestEmails() }}
-                  className="w-full text-left px-4 py-3 text-sm text-slate-200 hover:bg-slate-700 transition-colors"
+                  className="w-full text-left px-4 py-3 text-[15px] font-medium text-slate-200 hover:bg-surface-raised hover:text-white transition-colors"
                 >
                   Test-Mails
                 </button>
               </>
             )}
-            <div className="border-t border-slate-700" />
+            <div className="border-t border-line-subtle" />
             <button
               onClick={() => { setOpen(false); onLogout() }}
-              className="w-full text-left px-4 py-3 text-sm text-slate-200 hover:bg-slate-700 transition-colors"
+              className="w-full text-left px-4 py-3 text-[15px] font-medium text-slate-200 hover:bg-surface-raised hover:text-white transition-colors"
             >
               Abmelden
             </button>

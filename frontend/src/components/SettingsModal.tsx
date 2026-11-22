@@ -86,7 +86,7 @@ export default function SettingsModal({ onClose }: Props) {
       </div>
 
         {/* Gruppe: Termine */}
-        <div className="border-t border-slate-700">
+        <div className="border-t border-line">
           <button
             onClick={() => setOpenGroup('termine')}
             aria-expanded={openGroup === 'termine'}
@@ -103,7 +103,7 @@ export default function SettingsModal({ onClose }: Props) {
         </div>
 
         {/* Gruppe: Verhalten */}
-        <div className="border-t border-slate-700">
+        <div className="border-t border-line">
           <button
             onClick={() => setOpenGroup('verhalten')}
             aria-expanded={openGroup === 'verhalten'}
@@ -150,7 +150,7 @@ export default function SettingsModal({ onClose }: Props) {
         </div>
 
         {/* Gruppe: Konto */}
-        <div className="border-t border-slate-700">
+        <div className="border-t border-line">
           <button
             onClick={() => setOpenGroup('konto')}
             aria-expanded={openGroup === 'konto'}
