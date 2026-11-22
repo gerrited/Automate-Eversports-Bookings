@@ -19,7 +19,14 @@ Diese Regeln müssen bei Änderungen erhalten bleiben:
 * **Jeder Code-Pfad, der einen Job anlegt oder Scheduling-Felder (`weekday`, `target_time`, `days_in_advance`) ändert oder einen Job reaktiviert, muss `next_run_at` neu berechnen** (siehe `backend/api/jobs.py`).
 * `next_run_at = NULL` heißt „noch nicht berechnet": Der Worker initialisiert solche Jobs beim nächsten Lauf, ohne rückwirkend zu buchen.
 * Verpasste Läufe werden nachgeholt, solange der Kurstermin in der Zukunft liegt; `target_date` leitet sich vom **geplanten** Lauf ab (`next_run_at`), nie von `now`.
-* Nach jedem Verarbeitungsversuch (Erfolg, Fehler, already_booked, verpasst) wird `next_run_at` weitergeschaltet — ein Slot wird genau einmal versucht.
+* Nach jedem Verarbeitungsversuch (Erfolg, Fehler, already_booked, verpasst) wird `next_run_at` weitergeschaltet — ein Slot wird genau einmal versucht. Weitergeschaltet wird ab `max(now, next_run_at)`, damit ein vorzeitig geclaimter Job nicht denselben Slot erneut plant.
+* Sekundengenaues Buchen: Ein Lauf claimt auch Jobs mit `next_run_at <= now + LOOKAHEAD` (15 Min), loggt vorab ein (`prepare_booking`), wartet bis zum geplanten Zeitpunkt und hält währenddessen den Row-Lock. Deshalb läuft der CronJob mit `concurrencyPolicy: Allow` — parallele Läufe sichert ausschließlich `SKIP LOCKED` ab.
+* Wiederholungen in `book_session` (`attempts`) nur bei `SlotNotFound`/`CartRejected`, also **vor** der Order-Erstellung — nie nach einem möglicherweise erfolgreichen Order-Call.
+* Der Kurstag eines Laufs wird nur über `class_date_for_run()` (`backend/core/schedule.py`) abgeleitet (Worker und Job-Vorschau `next_class_date`).
+
+### Worker-Heartbeat
+
+* Jeder Worker-Lauf schreibt Start/Ende in `worker_heartbeats` (`backend/core/heartbeat.py`). Der Backend-Watchdog (`backend/main.py`, alle 5 Min) mailt aktiven Admins einmal pro Ausfall, wenn > 35 Min kein Start; der Claim läuft per bedingtem UPDATE auf `alert_sent_at` (mehrere Replikas). Tests setzen `WORKER_WATCHDOG_INTERVAL_SECONDS=0`.
 
 ### Status & Verschlüsselung
 
@@ -105,3 +112,6 @@ Neue E-Mails: Template unter `backend/templates/email/` oder `worker/templates/e
 | `FRONTEND_URL` | ✓ | CORS-Origin, z.B. `http://localhost:5173` |
 | `RESEND_API_KEY` | — | E-Mail-Versand via Resend (optional, ohne keine E-Mails) |
 | `FROM_EMAIL` | — | Absender-Adresse für E-Mails (optional) |
+| `WORKER_LOOKAHEAD_MINUTES` | — | Worker: Vorlauf fürs sekundengenaue Buchen (Default 15 = CronJob-Intervall) |
+| `WORKER_WATCHDOG_INTERVAL_SECONDS` | — | Backend: Intervall der Heartbeat-Prüfung (Default 300, `0` = aus) |
+| `DB_POOL_SIZE` / `DB_MAX_OVERFLOW` | — | Connection-Pool (nur PostgreSQL); der Worker setzt `DB_MAX_OVERFLOW` per Default auf 35 |

@@ -109,7 +109,7 @@ Three containers run on Kubernetes (see [ADR-001](docs/adr/001-three-container-a
 | Container | Dockerfile | K8s resource | Purpose |
 |---|---|---|---|
 | `backend` | `Dockerfile.backend` | Deployment + Service | REST API; runs `alembic upgrade head` on start |
-| `worker` | `Dockerfile.worker` | CronJob (`*/15 * * * *`, `Europe/Berlin`, `concurrencyPolicy: Forbid`) | Executes due booking jobs for all users |
+| `worker` | `Dockerfile.worker` | CronJob (`*/15 * * * *`, `Europe/Berlin`, `concurrencyPolicy: Allow`) | Executes due booking jobs for all users |
 | `frontend` | `Dockerfile.frontend` | Deployment + Service | nginx serves the SPA and proxies `/api/` to the backend |
 
 A fourth image, `cronjob` (`cronjob/book.py`, `Dockerfile.cronjob`), is the original single-user script and still works standalone — see [Legacy](#legacy-standalone-cronjob-single-user).
@@ -169,7 +169,8 @@ Example: class on **Thursday 18:00**, booking opens **4 days** before → the jo
 
 ### 3. Worker run (every 15 minutes)
 
-1. Select all enabled jobs of active users with `next_run_at <= now` and claim them with `FOR UPDATE SKIP LOCKED` (PostgreSQL), so overlapping runs never process the same job twice.
+1. Record a heartbeat (`worker_heartbeats`), then select all enabled jobs of active users with `next_run_at <= now + 15 min` (lookahead, `WORKER_LOOKAHEAD_MINUTES`) and claim them with `FOR UPDATE SKIP LOCKED` (PostgreSQL), so overlapping runs never process the same job twice.
+   Jobs that are not due yet are **prepared** (Eversports login ahead of time), the thread waits until the exact scheduled second and books then. If the slot is not bookable yet, the booking is retried up to 4× every 2 s (only before the order is created — no double booking). Because a run can wait up to the next tick, the CronJob uses `concurrencyPolicy: Allow`; the row lock keeps the job claimed in the meantime.
 2. Derive `target_date` from the **scheduled** run (`next_run_at`), never from `now`. Missed runs are caught up as long as the class is still in the future.
 3. Skip the slot if a terminal log (`success` / `waitlist`) already exists for that date.
 4. Decrypt the credentials and call `book_session()`:
@@ -179,7 +180,9 @@ Example: class on **Thursday 18:00**, booking opens **4 days** before → the jo
 6. Side effects: failure → e-mail to user and admins; waitlist → e-mail; debug job → cancel the booking immediately; one-time job → disable after success.
 7. **Always** advance `next_run_at` after an attempt — each slot is tried exactly once.
 
-Jobs are processed in parallel (thread pool, up to 10 workers). Afterwards the worker sends push reminders for upcoming appointments of users with a push subscription.
+Jobs are processed in parallel (thread pool sized to the number of claimed jobs, 10–30 threads). Push reminders for upcoming appointments run in parallel to the bookings.
+
+**Heartbeat & watchdog:** every run writes its start/end into `worker_heartbeats`. Admins see the status on the *All jobs* tab. The backend checks every 5 minutes (`WORKER_WATCHDOG_INTERVAL_SECONDS`) and e-mails all active admins once if no run has started for more than 35 minutes; the next run resets the alarm.
 
 ### 4. Calendar feed
 
@@ -422,10 +425,13 @@ kubectl create job --from=cronjob/eversports-booking-tuesday-1800 test-tuesday \
 | `RESEND_API_KEY` | no | Enables e-mails via Resend |
 | `FROM_EMAIL` | no | Sender address for e-mails |
 | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` | no | Enable Web Push reminders |
+| `WORKER_WATCHDOG_INTERVAL_SECONDS` | no | Interval of the worker heartbeat check (default `300`, `0` disables it) |
+| `DB_POOL_SIZE` / `DB_MAX_OVERFLOW` | no | SQLAlchemy connection pool (PostgreSQL only, default `5` / `10`) |
 
 ### Worker
 
 `DATABASE_URL`, `ENCRYPTION_KEY` (required, same values as the backend), plus optionally `FRONTEND_URL`, `RESEND_API_KEY`, `FROM_EMAIL` and the `VAPID_*` variables for notifications.
+`WORKER_LOOKAHEAD_MINUTES` (default `15`, should match the CronJob interval) controls how far ahead a run claims jobs to book them on the second. The worker raises `DB_MAX_OVERFLOW` to 35 by default, because each waiting job holds a DB connection.
 
 ### Frontend (runtime, nginx container)
 

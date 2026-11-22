@@ -164,3 +164,23 @@ def send_admin_message(user_email: str, subject: str, content: str) -> None:
         log.info("Admin message sent to %s (subject=%r)", user_email, subject)
     except Exception as exc:
         log.error("Failed to send admin message to %s: %s", user_email, exc)
+
+
+def send_worker_stale_email(admin_emails: list[str], last_started_at: datetime | None, stale_after_minutes: int) -> None:
+    """Alarmiert Admins, dass der Worker nicht mehr läuft. Best-effort — kein Crash bei Fehlern."""
+    if not admin_emails:
+        return
+    try:
+        frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:5173")
+        last_started = (
+            last_started_at.astimezone(BERLIN).strftime("%d.%m.%Y %H:%M") if last_started_at else "unbekannt"
+        )
+        html = _templates.get_template("worker_stale.html").render(
+            last_started=last_started,
+            stale_after_minutes=stale_after_minutes,
+            frontend_url=frontend_url,
+        )
+        _send(admin_emails, "⚠ Booking-Worker reagiert nicht", html)
+        log.info("Worker stale alert sent to %d admin(s)", len(admin_emails))
+    except Exception as exc:
+        log.error("Failed to send worker stale alert: %s", exc)

@@ -760,3 +760,59 @@ def test_wait_until_schlaeft_bis_zum_zeitpunkt(mocker):
     from datetime import timedelta
     w.wait_until(start + timedelta(seconds=75))
     assert clock["now"] == start + timedelta(seconds=75)
+
+
+# --- Heartbeat ---
+
+def test_run_schreibt_heartbeat(db_session, session_factory, mocker):
+    from backend.models.worker_heartbeat import WorkerHeartbeat
+    _user(db_session, uid="hb1", ev="ev_hb1", email="hb1@b.com")
+    _job(db_session, jid="jhb1", uid="hb1")
+    mocker.patch("worker.worker.decrypt", return_value="pass")
+    mocker.patch("worker.worker.book_session", return_value={"status": "success", "order_id": "o"})
+
+    run(datetime(2026, 4, 10, 18, 0), session_factory)
+
+    hb = db_session.get(WorkerHeartbeat, "worker")
+    assert hb is not None
+    assert hb.last_started_at.replace(tzinfo=timezone.utc) == _utc(datetime(2026, 4, 10, 18, 0))
+    assert hb.last_finished_at is not None
+    assert hb.last_job_count == 1
+
+
+import os  # noqa: E402
+import threading  # noqa: E402
+
+import pytest  # noqa: E402
+
+
+@pytest.mark.skipif(not os.environ.get("TEST_DATABASE_URL"), reason="FOR UPDATE SKIP LOCKED nur auf PostgreSQL")
+def test_paralleler_lauf_ueberspringt_wartenden_job(db_session, session_factory, mocker):
+    # Lauf A (17:50) hat den 18:00-Job geclaimt und wartet. Lauf B (18:00, nächster
+    # CronJob-Tick bei concurrencyPolicy Allow) darf ihn nicht noch einmal buchen.
+    _user(db_session, uid="pl1", ev="ev_pl1", email="pl1@b.com")
+    _job(db_session, jid="jpl1", uid="pl1", next_run=datetime(2026, 4, 10, 18, 0))
+    mocker.patch("worker.worker.decrypt", return_value="pass")
+    mocker.patch("worker.worker.prepare_booking", return_value=None)
+
+    waiting = threading.Event()
+    release = threading.Event()
+
+    def blocking_wait(_target):
+        waiting.set()
+        assert release.wait(10)
+
+    mocker.patch("worker.worker.wait_until", side_effect=blocking_wait)
+    mock_book = mocker.patch("worker.worker.book_session", return_value={"status": "success", "order_id": "o"})
+
+    a = threading.Thread(target=process_job, args=("jpl1", datetime(2026, 4, 10, 17, 50), session_factory, []))
+    a.start()
+    assert waiting.wait(10)
+
+    process_job("jpl1", datetime(2026, 4, 10, 18, 0), session_factory, [])  # Lauf B
+    assert mock_book.call_count == 0
+
+    release.set()
+    a.join(10)
+    assert mock_book.call_count == 1
+    assert db_session.query(BookingLog).filter(BookingLog.job_id == "jpl1").count() == 1

@@ -30,6 +30,7 @@ from backend.models.user import User
 from backend.core.encryption import decrypt
 from backend.core.status import BookingStatus
 from backend.eversports import book_session, cancel_booking, fetch_upcoming_bookings, prepare_booking
+from backend.core.heartbeat import record_finish, record_start
 from backend.core.schedule import class_date_for_run, compute_next_run
 from worker.email import send_booking_failure_email, send_admin_booking_failure_email, send_debug_cancel_failure_email, send_waitlist_notification
 from backend.models.push_subscription import PushSubscription
@@ -258,6 +259,11 @@ def run(now: datetime, session_factory=None) -> None:
     now_utc = now.astimezone(timezone.utc)
     db = session_factory()
     try:
+        try:
+            record_start(db, now_utc)
+        except Exception as exc:
+            db.rollback()
+            log.error("Heartbeat (start) konnte nicht geschrieben werden: %s", exc)
         due_job_ids = [
             row.id
             for row in db.query(BookingJob.id)
@@ -293,6 +299,15 @@ def run(now: datetime, session_factory=None) -> None:
             push_future.result()
         except Exception as exc:
             log.error("Push notifications: unhandled error — %s", exc)
+
+    db = session_factory()
+    try:
+        # Ende in Echtzeit (nicht `now`): ein Lauf kann bis LOOKAHEAD warten
+        record_finish(db, max(now_utc, _utcnow()), len(due_job_ids))
+    except Exception as exc:
+        log.error("Heartbeat (finish) konnte nicht geschrieben werden: %s", exc)
+    finally:
+        db.close()
 
 
 def _run_push_notifications(now: datetime, session_factory) -> None:

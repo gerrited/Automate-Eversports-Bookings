@@ -1,5 +1,6 @@
 import logging
 import os
+from datetime import datetime, timezone
 from typing import List, Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
@@ -9,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from backend.api.deps import require_admin
 from backend.core.email import send_account_status_email, send_admin_message, send_limit_enforced_email, send_test_email
+from backend.core.heartbeat import get_status as get_worker_status
 from backend.core.push import send_test_push_to_user
 from backend.db import get_db
 from backend.core.status import BookingStatus
@@ -298,3 +300,20 @@ def send_test_email_endpoint(
         log.error("Failed to send test email: %s", exc)
         raise HTTPException(status_code=500, detail="E-Mail konnte nicht gesendet werden")
     return {"detail": "Test-Mail gesendet"}
+
+
+class WorkerStatusResponse(BaseModel):
+    last_started_at: Optional[datetime]
+    last_finished_at: Optional[datetime]
+    last_job_count: Optional[int]
+    alert_sent_at: Optional[datetime]
+    stale: bool
+    stale_after_minutes: int
+
+
+@router.get("/admin/worker-status", response_model=WorkerStatusResponse)
+def worker_status(
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    return get_worker_status(db, datetime.now(timezone.utc))
