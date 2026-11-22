@@ -71,7 +71,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
     })
   }
 
-  const rowClass = 'flex flex-wrap items-center gap-x-4 gap-y-2.5 rounded-[14px] border border-[#15303a] bg-surface-row px-4 py-3'
+  const rowClass = 'flex flex-wrap items-center gap-x-4 gap-y-2 sm:gap-y-2.5 rounded-[14px] border border-[#15303a] bg-surface-row px-3 py-2.5 sm:px-4 sm:py-3'
   const labelClass = 'flex items-center gap-2 basis-[150px] shrink-0 text-[15px] font-semibold text-slate-200'
   const fieldClass = 'flex-[1_1_220px] min-w-0'
   const boxClass = 'flex items-center min-h-11 rounded-[10px] border border-line bg-surface-input px-3.5 transition-[border-color,box-shadow] focus-within:border-accent focus-within:shadow-[0_0_0_4px_rgba(46,184,166,.18)]'
@@ -80,8 +80,8 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
 
   return (
     <ModalShell>
-      <div className="flex items-center justify-between gap-3 mb-4">
-        <h2 className="text-2xl font-extrabold tracking-[-0.02em] text-white">
+      <div className="flex items-center justify-between gap-3 mb-3 sm:mb-4">
+        <h2 className="text-xl sm:text-2xl font-extrabold tracking-[-0.02em] text-white">
           {job ? 'Geplante Buchung bearbeiten' : 'Neue Buchung planen'}
         </h2>
         <button
@@ -93,7 +93,7 @@ export default function JobModal({ job, onSave, onClose, error }: Props) {
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
         </button>
       </div>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-2.5 sm:gap-3.5">
 
         <div className={rowClass}>
           <span className={labelClass}>Anbieter</span>

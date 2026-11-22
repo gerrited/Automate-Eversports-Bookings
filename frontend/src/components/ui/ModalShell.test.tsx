@@ -35,4 +35,30 @@ describe('ModalShell', () => {
     render(<ModalShell testId="mein-modal"><p>Inhalt</p></ModalShell>)
     expect(screen.getByTestId('mein-modal')).toBeInTheDocument()
   })
+
+  it('Klick auf den freien Bereich neben der Karte schließt ebenfalls', () => {
+    const onBackdropClick = vi.fn()
+    render(<ModalShell onBackdropClick={onBackdropClick} testId="bd"><p>Inhalt</p></ModalShell>)
+    // Zwischen Backdrop und Karte liegt ein Zentrier-Container – auch dessen Fläche zählt als Hintergrund.
+    fireEvent.click(screen.getByTestId('bd').firstChild!)
+    expect(onBackdropClick).toHaveBeenCalledTimes(1)
+  })
+
+  it('macht den Hintergrund scrollbar, damit hohe Dialoge auf kleinen Bildschirmen erreichbar bleiben', () => {
+    render(<ModalShell testId="bd"><p>Inhalt</p></ModalShell>)
+    const backdrop = screen.getByTestId('bd')
+    expect(backdrop).toHaveClass('overflow-y-auto')
+    // Kein touch-none: das würde das Scrollen per Touch auf Mobilgeräten blockieren.
+    expect(backdrop).not.toHaveClass('touch-none')
+  })
+
+  it('sperrt das Scrollen der Seite und gibt es beim Schließen wieder frei', () => {
+    document.body.style.overflow = 'auto'
+    const { unmount } = render(<ModalShell><p>Inhalt</p></ModalShell>)
+    expect(document.body.style.overflow).toBe('hidden')
+    unmount()
+    expect(document.body.style.overflow).toBe('auto')
+    document.body.style.overflow = ''
+  })
 })
+
