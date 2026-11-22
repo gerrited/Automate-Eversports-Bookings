@@ -327,19 +327,6 @@ useEffect(() => {
             </div>
           </div>
 
-          {totalBookingsExecuted > 0 && (
-            <div className="flex items-center gap-4 rounded-[18px] border border-[#13363c] bg-[#062228] px-5 py-4 sm:px-[22px] sm:py-[18px]">
-              <span className="shrink-0 w-11 h-11 rounded-xl bg-brand text-accent flex items-center justify-center">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" /></svg>
-              </span>
-              <p className="text-base leading-normal text-slate-300">
-                Für dich wurde{totalBookingsExecuted === 1 ? '' : 'n'} bereits{' '}
-                <strong className="text-xl text-white">{totalBookingsExecuted}</strong>{' '}
-                Buchung{totalBookingsExecuted === 1 ? '' : 'en'} automatisch durchgeführt.
-              </p>
-            </div>
-          )}
-
           {loading && <p className="text-muted text-sm">Lädt…</p>}
 
           {!loading && visibleJobs.length === 0 && (
@@ -362,6 +349,19 @@ useEffect(() => {
                   onExecute={handleExecute}
                 />
               ))}
+            </div>
+          )}
+
+          {totalBookingsExecuted > 0 && (
+            <div className="flex items-center gap-4 rounded-[18px] border border-[#13363c] bg-[#062228] px-5 py-4 sm:px-[22px] sm:py-[18px]">
+              <span className="shrink-0 w-11 h-11 rounded-xl bg-brand text-accent flex items-center justify-center">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" /></svg>
+              </span>
+              <p className="text-base leading-normal text-slate-300">
+                Für dich wurde{totalBookingsExecuted === 1 ? '' : 'n'} bereits{' '}
+                <strong className="text-xl text-white">{totalBookingsExecuted}</strong>{' '}
+                Buchung{totalBookingsExecuted === 1 ? '' : 'en'} automatisch durchgeführt.
+              </p>
             </div>
           )}
         </div>
