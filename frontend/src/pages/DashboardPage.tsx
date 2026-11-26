@@ -19,6 +19,8 @@ import BookedAppointmentCard from '../components/BookedAppointmentCard'
 import Logo from '../components/Logo'
 import type { BookedAppointment } from '../types'
 import { usePushNotifications } from '../hooks/usePushNotifications'
+import { takeJobDraft } from '../utils/draftJob'
+import type { JobDraft } from '../utils/draftJob'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
@@ -54,6 +56,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [editingJob, setEditingJob] = useState<Job | 'new' | null>(null)
   const [showModal, setShowModal] = useState(false)
+  // Auf der Landing Page geplanter Termin: öffnet direkt den Dialog „Neue Buchung“.
+  const [draft, setDraft] = useState<JobDraft | null>(null)
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [logs, setLogs] = useState<BookingLog[]>([])
   const [logsLoading, setLogsLoading] = useState(false)
@@ -80,6 +84,14 @@ export default function DashboardPage() {
 
   useEffect(() => {
     bookedPrefetch.current = getUpcomingBookings()
+  }, [])
+
+  useEffect(() => {
+    const d = takeJobDraft()
+    if (!d) return
+    setDraft(d)
+    setEditingJob('new')
+    setShowModal(true)
   }, [])
 
   useEffect(() => {
@@ -183,6 +195,7 @@ useEffect(() => {
       }
       setShowModal(false)
       setEditingJob(null)
+      setDraft(null)
       loadJobs()
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : 'Fehler beim Speichern.')
@@ -416,8 +429,9 @@ useEffect(() => {
       {showModal && (
         <JobModal
           job={editingJob !== 'new' && editingJob !== null ? editingJob : undefined}
+          draft={editingJob === 'new' ? draft ?? undefined : undefined}
           onSave={handleSave}
-          onClose={() => { setShowModal(false); setEditingJob(null); setSaveError(null) }}
+          onClose={() => { setShowModal(false); setEditingJob(null); setSaveError(null); setDraft(null) }}
           error={saveError}
         />
       )}

@@ -121,3 +121,18 @@ describe('DashboardPage – Buchungszähler-Nachricht', () => {
     expect(card.compareDocumentPosition(msg) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 })
+
+describe('DashboardPage – Plan von der Landing Page', () => {
+  it('öffnet „Neue Buchung planen“ vorbelegt mit dem Entwurf', async () => {
+    vi.mocked(getMe).mockResolvedValue(me(0))
+    sessionStorage.setItem('jobDraft', JSON.stringify({ weekday: 4, target_time: '09:15', days_in_advance: 7 }))
+
+    renderDashboard()
+
+    expect(await screen.findByRole('heading', { name: 'Neue Buchung planen' })).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: 'Wochentag' })).toHaveValue('4')
+    expect(screen.getByLabelText('Uhrzeit', { selector: 'input' })).toHaveValue('09:15')
+    // Der Entwurf wird genau einmal übernommen.
+    expect(sessionStorage.getItem('jobDraft')).toBeNull()
+  })
+})

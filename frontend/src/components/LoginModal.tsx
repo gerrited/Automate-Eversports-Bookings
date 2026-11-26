@@ -7,9 +7,17 @@ import Logo from './Logo'
 
 interface Props {
   onClose: () => void
+  /** Überschrift; Standard „Willkommen zurück“. */
+  title?: string
+  /** Text unter der Überschrift. */
+  subtitle?: string
 }
 
-export default function LoginModal({ onClose }: Props) {
+export default function LoginModal({
+  onClose,
+  title = 'Willkommen zurück',
+  subtitle = 'Nutze deine Eversports-Anmeldedaten, um fortzufahren.',
+}: Props) {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -51,8 +59,8 @@ export default function LoginModal({ onClose }: Props) {
         <Logo size="lg" alt="" />
 
         <div className="flex flex-col items-center gap-2 text-center">
-          <h2 className="text-[26px] font-extrabold tracking-[-0.02em] text-white">Willkommen zurück</h2>
-          <p className="text-base leading-normal text-muted">Nutze deine Eversports-Anmeldedaten, um fortzufahren.</p>
+          <h2 className="text-[26px] font-extrabold tracking-[-0.02em] text-white">{title}</h2>
+          <p className="text-base leading-normal text-muted">{subtitle}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="w-full flex flex-col gap-[18px]">
