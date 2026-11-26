@@ -7,22 +7,25 @@ import HelpIcon from './HelpIcon'
 import { getCourses } from '../api/facilities'
 import { isAdmin } from '../api/client'
 import { AlertMessage, Button, ModalShell, Stepper } from './ui'
+import type { JobDraft } from '../utils/draftJob'
 
 interface Props {
   job?: Job
+  /** Vorbelegung für eine neue Buchung, z. B. aus der Planung auf der Landing Page. */
+  draft?: JobDraft
   onSave: (data: JobFormData) => Promise<void>
   onClose: () => void
   error?: string | null
 }
 
-export default function JobModal({ job, onSave, onClose, error }: Props) {
-  const [weekday, setWeekday] = useState(job?.weekday ?? 0)
-  const [targetTime, setTargetTime] = useState(job?.target_time.slice(0, 5) ?? '18:00')
+export default function JobModal({ job, draft, onSave, onClose, error }: Props) {
+  const [weekday, setWeekday] = useState(job?.weekday ?? draft?.weekday ?? 0)
+  const [targetTime, setTargetTime] = useState(job?.target_time.slice(0, 5) ?? draft?.target_time ?? '18:00')
   const [facility, setFacility] = useState<Facility | null>(
     job ? { id: job.facility_id, name: job.facility_name } : null
   )
   const [className, setClassName] = useState(job?.class_name ?? '')
-  const [daysInAdvance, setDaysInAdvance] = useState(job?.days_in_advance ?? 4)
+  const [daysInAdvance, setDaysInAdvance] = useState(job?.days_in_advance ?? draft?.days_in_advance ?? 4)
   const [oneTime, setOneTime] = useState(job?.one_time ?? false)
   const [debug, setDebug] = useState(job?.debug ?? false)
   // Kursliste je (Anbieter, Wochentag, Uhrzeit) – Ladezustand wird daraus abgeleitet.

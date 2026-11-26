@@ -116,4 +116,11 @@ describe('JobModal', () => {
     const course = screen.getByLabelText('Kursname', { selector: 'input' }) as HTMLInputElement
     await waitFor(() => expect(course.value).toBe(''))
   })
+
+  it('übernimmt einen Entwurf von der Landing Page', () => {
+    render(<JobModal draft={{ weekday: 3, target_time: '07:30', days_in_advance: 6 }} onSave={onSave} onClose={onClose} />)
+    expect(screen.getByRole('combobox', { name: 'Wochentag' })).toHaveValue('3')
+    expect(screen.getByLabelText('Uhrzeit', { selector: 'input' })).toHaveValue('07:30')
+    expect(within(screen.getByRole('group', { name: 'Tage im Voraus' })).getByText('6')).toBeInTheDocument()
+  })
 })
