@@ -63,8 +63,8 @@ function openKontoGroup() {
   fireEvent.click(groupHeader(/^Konto löschen$/i))
 }
 
-function openBenachrichtigungGroup() {
-  fireEvent.click(groupHeader(/^Benachrichtigung$/i))
+function openTerminerinnerungGroup() {
+  fireEvent.click(groupHeader(/^Terminerinnerung$/i))
 }
 
 beforeAll(() => {
@@ -92,17 +92,17 @@ describe('SettingsModal', () => {
     expect(screen.getByRole('heading', { name: 'Einstellungen' })).toBeInTheDocument()
   })
 
-  it('renders Kalender abonnieren, Benachrichtigung and Konto löschen group headers', () => {
+  it('renders Kalender abonnieren, Terminerinnerung and Konto löschen group headers', () => {
     renderModal()
     expect(groupHeader(/^Kalender abonnieren$/i)).toBeInTheDocument()
-    expect(groupHeader(/^Benachrichtigung$/i)).toBeInTheDocument()
+    expect(groupHeader(/^Terminerinnerung$/i)).toBeInTheDocument()
     expect(groupHeader(/^Konto löschen$/i)).toBeInTheDocument()
   })
 
   it('Kalender abonnieren group is expanded by default', () => {
     renderModal()
     expect(groupHeader(/^Kalender abonnieren$/i)).toHaveAttribute('aria-expanded', 'true')
-    expect(groupHeader(/^Benachrichtigung$/i)).toHaveAttribute('aria-expanded', 'false')
+    expect(groupHeader(/^Terminerinnerung$/i)).toHaveAttribute('aria-expanded', 'false')
   })
 
   it('Konto löschen group is collapsed by default', () => {
@@ -110,9 +110,9 @@ describe('SettingsModal', () => {
     expect(groupHeader(/^Konto löschen$/i)).toHaveAttribute('aria-expanded', 'false')
   })
 
-  it('Terminerinnerung content is visible when Benachrichtigung is open', async () => {
+  it('Terminerinnerung content is visible when its group is open', async () => {
     renderModal()
-    openBenachrichtigungGroup()
+    openTerminerinnerungGroup()
     expect(await screen.findByLabelText('Minuten vor dem Termin')).toBeInTheDocument()
   })
 
@@ -134,12 +134,12 @@ describe('SettingsModal', () => {
     expect(groupHeader(/^Kalender abonnieren$/i)).toHaveAttribute('aria-expanded', 'false')
   })
 
-  it('opening Benachrichtigung group collapses Konto', () => {
+  it('opening Terminerinnerung group collapses Konto', () => {
     renderModal()
     openKontoGroup()
-    openBenachrichtigungGroup()
+    openTerminerinnerungGroup()
     expect(screen.queryByText(/dauerhaft gelöscht/i)).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /^Benachrichtigung$/i })).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('button', { name: /^Terminerinnerung$/i })).toHaveAttribute('aria-expanded', 'true')
   })
 
   it('shows the irreversibility warning when Konto is open', () => {
@@ -201,7 +201,7 @@ describe('SettingsModal', () => {
 
   it('loads current notification_advance_minutes from API', async () => {
     renderModal()
-    openBenachrichtigungGroup()
+    openTerminerinnerungGroup()
     const input = await screen.findByLabelText('Minuten vor dem Termin') as HTMLInputElement
     expect(input.value).toBe('60')
   })
@@ -209,7 +209,7 @@ describe('SettingsModal', () => {
   it('saves notification_advance_minutes on submit', async () => {
     const { updateAccount } = await import('../api/account')
     renderModal()
-    openBenachrichtigungGroup()
+    openTerminerinnerungGroup()
     const input = await screen.findByLabelText('Minuten vor dem Termin')
     fireEvent.change(input, { target: { value: '30' } })
     fireEvent.click(screen.getByRole('button', { name: 'Speichern' }))

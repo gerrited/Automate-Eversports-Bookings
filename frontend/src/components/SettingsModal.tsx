@@ -9,7 +9,7 @@ interface Props {
   onClose: () => void
 }
 
-type Group = 'termine' | 'benachrichtigung' | 'konto'
+type Group = 'termine' | 'terminerinnerung' | 'konto'
 
 function ChevronIcon({ open }: { open: boolean }) {
   return (
@@ -102,17 +102,17 @@ export default function SettingsModal({ onClose }: Props) {
           )}
         </div>
 
-        {/* Gruppe: Benachrichtigung */}
+        {/* Gruppe: Terminerinnerung */}
         <div className="border-t border-line">
           <button
-            onClick={() => setOpenGroup('benachrichtigung')}
-            aria-expanded={openGroup === 'benachrichtigung'}
+            onClick={() => setOpenGroup('terminerinnerung')}
+            aria-expanded={openGroup === 'terminerinnerung'}
             className="w-full flex justify-between items-center py-4 text-white font-semibold hover:text-slate-200 transition-colors"
           >
-            <span>Benachrichtigung</span>
-            <ChevronIcon open={openGroup === 'benachrichtigung'} />
+            <span>Terminerinnerung</span>
+            <ChevronIcon open={openGroup === 'terminerinnerung'} />
           </button>
-          {openGroup === 'benachrichtigung' && (
+          {openGroup === 'terminerinnerung' && (
             <div className="pb-5">
               {notificationsSupported ? (
                 <>
