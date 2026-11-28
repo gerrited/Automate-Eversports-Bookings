@@ -1,8 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useId } from 'react'
 import type { ReactNode } from 'react'
 import LoginModal from '../components/LoginModal'
 import FaqModal from '../components/FaqModal'
 import Logo from '../components/Logo'
+import { Stepper } from '../components/ui'
+import { WEEKDAY_NAMES } from '../types'
 
 const ROTATING_TEXTS = ['eine Klasse verpassen.', 'einen Kurs verpassen.', 'ein Training verpassen.']
 const VIDEO_URL = 'https://www.youtube.com/watch?v=spngnOZDBQo'
@@ -38,34 +40,116 @@ function CheckIcon() {
   )
 }
 
-function MockField({ label, children, highlight = false }: { label: string; children: ReactNode; highlight?: boolean }) {
+function CrossIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="text-red-400 shrink-0">
+      <path d="M7 7l10 10M17 7L7 17" />
+    </svg>
+  )
+}
+
+const FIELD =
+  'w-full min-h-[48px] rounded-xl border border-transparent bg-[#0b252b] px-4 text-base font-medium text-[#f2f7f7] outline-none [color-scheme:dark] focus:border-accent focus:shadow-[0_0_0_4px_rgba(46,184,166,.18)]'
+
+function DemoField({ label, children }: { label: string; children: (id: string) => ReactNode }) {
+  const id = useId()
   return (
     <div className="flex flex-col gap-[7px] min-w-0 flex-1">
-      <span className="text-[13px] font-semibold text-muted">{label}</span>
-      <span
-        className={`flex items-center justify-between rounded-xl bg-[#0b252b] px-4 py-[13px] text-base font-medium text-[#f2f7f7] ${highlight ? 'border border-accent py-3 px-[15px]' : ''}`}
-      >
-        {children}
-      </span>
+      <label htmlFor={id} className="text-[13px] font-semibold text-muted">{label}</label>
+      {children(id)}
     </div>
   )
 }
 
-function MockJob({ title, sub, active }: { title: string; sub: string; active: boolean }) {
+/** Echtes, bedienbares Formular – „Buchung speichern“ führt zur Anmeldung. */
+function DemoBookingForm({ onSubmit }: { onSubmit: () => void }) {
+  const [facility, setFacility] = useState('CrossFit Rabbit Hole')
+  const [className, setClassName] = useState('CrossFit')
+  const [weekday, setWeekday] = useState(0)
+  const [time, setTime] = useState('18:00')
+  const [days, setDays] = useState(4)
+
+  return (
+    <form
+      aria-label="Neue Buchung planen"
+      onSubmit={e => { e.preventDefault(); onSubmit() }}
+      className="w-full max-w-[460px] rounded-3xl border border-line bg-surface-card p-6 sm:p-7 shadow-[0_40px_100px_rgba(0,0,0,.5)] flex flex-col gap-[18px]"
+    >
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-xl font-extrabold text-white">Neue Buchung planen</span>
+        <span aria-hidden className="w-2.5 h-2.5 rounded-full bg-accent shadow-[0_0_0_5px_rgba(46,184,166,.18)] animate-pulse" />
+      </div>
+      <DemoField label="Anbieter">
+        {id => <input id={id} className={FIELD} value={facility} onChange={e => setFacility(e.target.value)} />}
+      </DemoField>
+      <DemoField label="Kursname">
+        {id => <input id={id} className={FIELD} value={className} onChange={e => setClassName(e.target.value)} />}
+      </DemoField>
+      <div className="flex flex-wrap gap-3">
+        <DemoField label="Wochentag">
+          {id => (
+            <select id={id} className={FIELD} value={weekday} onChange={e => setWeekday(Number(e.target.value))}>
+              {WEEKDAY_NAMES.map((name, i) => <option key={name} value={i}>{name}</option>)}
+            </select>
+          )}
+        </DemoField>
+        <DemoField label="Uhrzeit">
+          {id => <input id={id} type="time" className={`${FIELD} tabular-nums`} value={time} onChange={e => e.target.value && setTime(e.target.value)} />}
+        </DemoField>
+      </div>
+      <div className="flex flex-col gap-[7px]">
+        <span className="text-[13px] font-semibold text-muted">Tage im Voraus</span>
+        <div className="self-start flex items-center gap-3">
+          <Stepper aria-label="Tage im Voraus" value={days} onChange={setDays} min={1} max={30} />
+          <span className="text-sm text-muted">{days === 1 ? 'Tag' : 'Tage'}</span>
+        </div>
+      </div>
+      <button type="submit" className={`${PRIMARY_BTN} mt-1 min-h-[52px] rounded-[14px] text-base`}>
+        Buchung speichern
+      </button>
+    </form>
+  )
+}
+
+interface DemoJobData {
+  id: number
+  weekday: number
+  time: string
+  enabled: boolean
+}
+
+const DEMO_JOBS: DemoJobData[] = [
+  { id: 1, weekday: 1, time: '18:00', enabled: true },
+  { id: 2, weekday: 6, time: '09:00', enabled: true },
+  { id: 3, weekday: 0, time: '18:00', enabled: false },
+]
+
+function DemoJob({ job, onToggle, onAction }: { job: DemoJobData; onToggle: () => void; onAction: () => void }) {
+  const active = job.enabled
+  const title = `${WEEKDAY_NAMES[job.weekday]} · ${job.time} Uhr · CrossFit`
   return (
     <div className="rounded-2xl border border-line-subtle bg-[#071f24] px-5 py-[18px] flex flex-col gap-4">
       <div className="flex items-start justify-between gap-3">
         <span className="flex flex-col gap-1 min-w-0">
           <span className={`text-base sm:text-[17px] font-bold ${active ? 'text-white' : 'text-muted'}`}>{title}</span>
-          <span className={`text-sm ${active ? 'text-muted' : 'text-faint'}`}>{sub}</span>
+          <span className={`text-sm ${active ? 'text-muted' : 'text-faint'}`}>
+            CrossFit Rabbit Hole · {active ? '4 Tage im Voraus' : 'Pausiert'}
+          </span>
         </span>
-        <span className={`relative shrink-0 w-[46px] h-[26px] rounded-full ${active ? 'bg-green-600' : 'bg-slate-700'}`}>
-          <span className={`absolute top-[3px] w-5 h-5 rounded-full ${active ? 'right-[3px] bg-white' : 'left-[3px] bg-slate-300'}`} />
-        </span>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={active}
+          aria-label={`${WEEKDAY_NAMES[job.weekday]} ${job.time} Uhr CrossFit automatisch buchen`}
+          onClick={onToggle}
+          className={`relative shrink-0 w-[46px] h-[26px] rounded-full transition-colors ${active ? 'bg-green-600' : 'bg-slate-700'}`}
+        >
+          <span className={`absolute top-[3px] w-5 h-5 rounded-full transition-all ${active ? 'left-[23px] bg-white' : 'left-[3px] bg-slate-300'}`} />
+        </button>
       </div>
       <div className="flex justify-between gap-3">
-        <span className="rounded-lg bg-slate-700 px-3 py-1.5 text-[13px] font-semibold text-slate-200">Bearbeiten</span>
-        <span className="rounded-lg bg-red-800 px-3 py-1.5 text-[13px] font-semibold text-red-100">Löschen</span>
+        <button type="button" onClick={onAction} className="min-h-8 rounded-lg bg-slate-700 hover:bg-slate-600 px-3 py-1.5 text-[13px] font-semibold text-slate-200 transition-colors">Bearbeiten</button>
+        <button type="button" onClick={onAction} className="min-h-8 rounded-lg bg-red-800 hover:bg-red-700 px-3 py-1.5 text-[13px] font-semibold text-red-100 transition-colors">Löschen</button>
       </div>
     </div>
   )
@@ -77,9 +161,24 @@ const STEPS = [
   { title: 'Die App bucht für dich', text: 'Sobald die Buchung öffnet, sichert FOREversports deinen Platz – Woche für Woche, ganz automatisch.' },
 ]
 
+const WITHOUT = [
+  'Wecker stellen, nur um pünktlich zu buchen',
+  'Im Meeting oder unterwegs – Buchungsstart verpasst',
+  'Kurs voll, Warteliste statt Training',
+  'Und nächste Woche das gleiche Spiel',
+]
+
+const WITH = [
+  'Einmal einrichten, fertig',
+  'Gebucht wird automatisch, sobald die Buchung öffnet',
+  'Bestätigung kommt wie gewohnt von Eversports',
+  'Im Urlaub einfach pausieren',
+]
+
 export default function LandingPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [faqOpen, setFaqOpen] = useState(false)
+  const [demoJobs, setDemoJobs] = useState(DEMO_JOBS)
   const [textIdx, setTextIdx] = useState(0)
   const [visible, setVisible] = useState(true)
   const pendingIdx = useRef(0)
@@ -172,31 +271,37 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* Formular-Vorschau */}
+          {/* Buchungsformular (Demo) */}
           <div className="flex-1 min-w-0 w-full flex justify-center lg:justify-end">
-            <div
-              role="img"
-              aria-label="Formular „Neue Buchung planen“ mit Einrichtung CrossFit Rabbit Hole, Kurs CrossFit, Montag, 18:00 Uhr, 4 Tage im Voraus"
-              className="w-full max-w-[460px] rounded-3xl border border-line bg-surface-card p-6 sm:p-7 shadow-[0_40px_100px_rgba(0,0,0,.5)] flex flex-col gap-[18px]"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-xl font-extrabold text-white">Neue Buchung planen</span>
-                <span className="w-2.5 h-2.5 rounded-full bg-accent shadow-[0_0_0_5px_rgba(46,184,166,.18)] animate-pulse" />
-              </div>
-              <MockField label="Einrichtung">CrossFit Rabbit Hole</MockField>
-              <MockField label="Kursname" highlight>CrossFit</MockField>
-              <div className="flex flex-wrap gap-3">
-                <MockField label="Wochentag">
-                  Montag
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
-                </MockField>
-                <MockField label="Uhrzeit">
-                  <span className="tabular-nums">18:00</span>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></svg>
-                </MockField>
-              </div>
-              <MockField label="Tage im Voraus">4 Tage</MockField>
-              <span className="mt-1 flex items-center justify-center min-h-[52px] rounded-[14px] bg-brand text-base font-bold text-white">Buchung speichern</span>
+            <DemoBookingForm onSubmit={openModal} />
+          </div>
+        </div>
+      </section>
+
+      {/* Ohne / Mit */}
+      <section className="border-t border-line-subtle bg-surface-alt px-4 sm:px-6 py-20 lg:py-28">
+        <div className="max-w-[1152px] mx-auto flex flex-col gap-12">
+          <div className="max-w-[720px] flex flex-col gap-4">
+            <span className={EYEBROW}>Das Problem</span>
+            <h2 className={H2}>Beliebte Kurse sind schnell ausgebucht.</h2>
+            <p className={LEAD}>Wer nicht genau zum Buchungsstart am Handy ist, landet auf der Warteliste. Das muss nicht sein.</p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-5">
+            <div className="rounded-3xl border border-line-subtle bg-surface-page p-6 sm:p-8 flex flex-col gap-5">
+              <span className="text-[13px] font-bold uppercase tracking-[0.12em] text-red-300">Ohne FOREversports</span>
+              <ul className="flex flex-col gap-4">
+                {WITHOUT.map(t => (
+                  <li key={t} className="flex items-start gap-3 text-base sm:text-[17px] text-muted"><CrossIcon />{t}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="relative rounded-3xl border border-accent/40 bg-[linear-gradient(160deg,rgba(0,67,73,.55),rgba(7,28,33,1)_60%)] p-6 sm:p-8 flex flex-col gap-5 shadow-[0_30px_80px_rgba(0,67,73,.35)]">
+              <span className="text-[13px] font-bold uppercase tracking-[0.12em] text-accent">Mit FOREversports</span>
+              <ul className="flex flex-col gap-4">
+                {WITH.map(t => (
+                  <li key={t} className="flex items-start gap-3 text-base sm:text-[17px] font-medium text-white"><CheckIcon />{t}</li>
+                ))}
+              </ul>
             </div>
           </div>
         </div>
@@ -266,14 +371,21 @@ export default function LandingPage() {
           </div>
           <div className="flex-[1.2] min-w-0">
             <div
-              role="img"
-              aria-label="Liste geplanter Buchungen: Dienstag 18:00 CrossFit aktiv, Sonntag 09:00 CrossFit aktiv, Montag 18:00 CrossFit pausiert"
+              role="region"
+              aria-label="Beispiel: geplante Buchungen"
               className="rounded-3xl border border-line bg-surface-page p-4 sm:p-[22px] flex flex-col gap-3.5 shadow-[0_40px_100px_rgba(0,0,0,.4)]"
             >
-              <span className="flex items-center justify-center min-h-[50px] rounded-[14px] bg-brand text-base font-bold text-white">+ Buchung planen</span>
-              <MockJob title="Dienstag · 18:00 Uhr · CrossFit" sub="CrossFit Rabbit Hole · 4 Tage im Voraus" active />
-              <MockJob title="Sonntag · 09:00 Uhr · CrossFit" sub="CrossFit Rabbit Hole · 4 Tage im Voraus" active />
-              <MockJob title="Montag · 18:00 Uhr · CrossFit" sub="CrossFit Rabbit Hole · Pausiert" active={false} />
+              <button type="button" onClick={openModal} className={`${PRIMARY_BTN} min-h-[50px] rounded-[14px] text-base`}>
+                + Buchung planen
+              </button>
+              {demoJobs.map(job => (
+                <DemoJob
+                  key={job.id}
+                  job={job}
+                  onToggle={() => setDemoJobs(jobs => jobs.map(j => (j.id === job.id ? { ...j, enabled: !j.enabled } : j)))}
+                  onAction={openModal}
+                />
+              ))}
             </div>
           </div>
         </div>
